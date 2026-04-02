@@ -1,11 +1,14 @@
 const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 4022;
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-
-const app = express();
-const PORT = process.env.PORT || 4022;
+require("dotenv").config();
+const http = require("http");
+const server = http.createServer(app);
+const connectDb = require("./configDb");
 
 // Middleware
 app.use(cors());
@@ -642,13 +645,15 @@ app.get('*', (req, res, next) => {
 initializeData();
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`🚀 ParseForge server running on http://localhost:${PORT}`);
-    console.log(`📚 Documentation available at http://localhost:${PORT}/docs`);
-    console.log(`🔑 Dashboard at http://localhost:${PORT}/dashboard`);
-    console.log(`⚙️  Admin Panel at http://localhost:${PORT}/admin`);
-    console.log(`🛒 Marketplace at http://localhost:${PORT}/marketplace`);
-    console.log(`✨ Dashboard API endpoints ready`);
-    console.log(`🛡️  Admin API endpoints ready`);
-    console.log(`🌐 Clean URLs enabled (no .html extension needed)`);
-});
+const start = () => {
+  try {
+    connectDb();
+    server.listen(PORT, () => {
+      console.log(`Server is Running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.log(`Having Errors Running On Port : ${PORT}`);
+  }
+};
+
+start();
