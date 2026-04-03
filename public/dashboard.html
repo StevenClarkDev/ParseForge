@@ -42,7 +42,7 @@
                 <li><a href="marketplace.html">Marketplace</a></li>
                 <li><a href="pricing.html">Pricing</a></li>
                 <li><a href="dashboard.html" class="active">Dashboard</a></li>
-                <li><a href="login.html" class="btn-primary">Logout</a></li>
+                <li><a href="login.html" class="btn-primary" id="logoutLink">Logout</a></li>
             </ul>
         </div>
     </nav>
@@ -74,7 +74,7 @@
             <!-- Overview Section -->
             <section id="overview">
                 <div class="dashboard-header">
-                    <h1>Welcome back, Developer!</h1>
+                    <h1 id="dashboardWelcome">Welcome back, Developer!</h1>
                     <p>Manage your API keys, monitor usage, and configure your projects.</p>
                 </div>
 
@@ -150,7 +150,7 @@
                         <h3>Top Endpoints</h3>
                         <a href="#" class="view-all">View All →</a>
                     </div>
-                    <div class="endpoints-list">
+                    <div class="endpoints-list" id="topEndpointsList">
                         <div class="endpoint-item">
                             <div class="endpoint-info">
                                 <span class="endpoint-method get">GET</span>
@@ -204,7 +204,7 @@
                     <button class="btn-primary" onclick="showCreateKeyModal()">+ Create New Key</button>
                 </div>
 
-                <div class="keys-list">
+                <div class="keys-list" id="keysList">
                     <div class="key-item">
                         <div class="key-info">
                             <div class="key-name">Production Key</div>
@@ -255,7 +255,7 @@
                     <a href="#" class="view-all">View All →</a>
                 </div>
 
-                <div class="activity-list">
+                <div class="activity-list" id="recentActivityList">
                     <div class="activity-item">
                         <div class="activity-icon success">✓</div>
                         <div class="activity-info">

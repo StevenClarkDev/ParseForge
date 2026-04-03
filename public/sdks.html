@@ -5,274 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SDKs & APIs - ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css?v=1.1">
-    <style>
-        .sdks-hero {
-            background: linear-gradient(135deg, rgba(10, 14, 39, 0.95) 0%, rgba(21, 25, 50, 0.95) 100%);
-            padding: 4rem 0;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .sdks-hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 30%, rgba(0, 217, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(29, 233, 182, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .sdks-hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-            background: linear-gradient(135deg, var(--neon-blue), var(--cyber-green));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            position: relative;
-            z-index: 1;
-        }
-
-        .sdks-hero p {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            max-width: 700px;
-            margin: 0 auto 2rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .sdk-tabs {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin: 3rem 0 2rem;
-            flex-wrap: wrap;
-        }
-
-        .sdk-tab {
-            padding: 1rem 2rem;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 2px solid var(--border-glass);
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .sdk-tab:hover {
-            border-color: var(--neon-blue);
-            color: var(--neon-blue);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
-        }
-
-        .sdk-tab.active {
-            background: linear-gradient(135deg, var(--electric-blue), var(--neon-blue));
-            color: white;
-            border-color: var(--neon-blue);
-            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.4);
-        }
-
-        .sdk-content {
-            display: none;
-        }
-
-        .sdk-content.active {
-            display: block;
-        }
-
-        .sdk-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
-        }
-        
-        .sdk-card:hover {
-            border-color: var(--border-neon);
-            box-shadow: 0 8px 30px rgba(0, 217, 255, 0.2);
-        }
-
-        .sdk-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 2rem;
-        }
-
-        .sdk-title {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .sdk-icon {
-            font-size: 3rem;
-        }
-
-        .sdk-info h2 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-primary);
-        }
-
-        .sdk-version {
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        .install-box {
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid var(--border-glass);
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin: 2rem 0;
-            position: relative;
-        }
-        
-        .install-box::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: linear-gradient(180deg, var(--neon-blue), var(--cyber-green));
-            border-radius: 12px 0 0 12px;
-        }
-
-        .install-box pre {
-            color: var(--cyber-green);
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 0.95rem;
-            margin: 0;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin: 2rem 0;
-        }
-
-        .feature-item {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .feature-item {
-            color: var(--text-secondary);
-        }
-        
-        .feature-item .icon {
-            color: var(--cyber-green);
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-
-        .api-section {
-            background: var(--bg-secondary);
-            padding: 4rem 0;
-        }
-
-        .api-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .api-card {
-            padding: 2rem;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
-            transition: all 0.3s;
-        }
-
-        .api-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0, 217, 255, 0.2);
-            border-color: var(--neon-blue);
-        }
-
-        .api-card-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .api-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-
-        .api-endpoints {
-            list-style: none;
-            margin: 1.5rem 0;
-        }
-
-        .api-endpoints li {
-            padding: 0.5rem 0;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .api-endpoints li::before {
-            content: '▸';
-            color: var(--neon-blue);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 0.5rem 1.5rem;
-            background: rgba(29, 233, 182, 0.15);
-            border: 1px solid var(--cyber-green);
-            color: var(--cyber-green);
-            border-radius: 24px;
-            font-size: 0.875rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 0 20px rgba(29, 233, 182, 0.3);
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Override all gray text to use proper cyber colors */
-        p[style*="var(--gray)"],
-        li[style*="var(--gray)"] {
-            color: var(--text-secondary) !important;
-        }
-        
-        h3 {
-            color: var(--text-primary);
-        }
-        
-        .sdk-content p,
-        .api-card p {
-            color: var(--text-secondary);
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/sdks.css">
 </head>
 <body>
     <!-- Navigation -->
@@ -328,22 +61,22 @@
     <section style="padding: 3rem 0; background: var(--bg-primary);">
         <div class="container">
             <div class="sdk-tabs">
-                <button class="sdk-tab active" onclick="showSDK('nodejs')">
+                <button class="sdk-tab active" onclick="showSDK(this, 'nodejs')">
                     📦 Node.js
                 </button>
-                <button class="sdk-tab" onclick="showSDK('python')">
+                <button class="sdk-tab" onclick="showSDK(this, 'python')">
                     🐍 Python
                 </button>
-                <button class="sdk-tab" onclick="showSDK('ruby')">
+                <button class="sdk-tab" onclick="showSDK(this, 'ruby')">
                     💎 Ruby
                 </button>
-                <button class="sdk-tab" onclick="showSDK('go')">
+                <button class="sdk-tab" onclick="showSDK(this, 'go')">
                     🔷 Go
                 </button>
-                <button class="sdk-tab" onclick="showSDK('java')">
+                <button class="sdk-tab" onclick="showSDK(this, 'java')">
                     ☕ Java
                 </button>
-                <button class="sdk-tab" onclick="showSDK('php')">
+                <button class="sdk-tab" onclick="showSDK(this, 'php')">
                     🐘 PHP
                 </button>
             </div>
@@ -815,24 +548,10 @@ $result = \ParseForge\Data::create([
         </div>
     </footer>
 
-    <script>
-        function showSDK(sdk) {
-            // Hide all SDK contents
-            document.querySelectorAll('.sdk-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            // Remove active class from all tabs
-            document.querySelectorAll('.sdk-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected SDK content
-            document.getElementById('sdk-' + sdk).classList.add('active');
-            
-            // Add active class to clicked tab
-            event.target.closest('.sdk-tab').classList.add('active');
-        }
-    </script>
+    <script src="assets/js/sdks.js"></script>
 </body>
 </html>
+
+
+
+
