@@ -1,4 +1,5 @@
 const express = require('express');
+const { serializeCatalogItem } = require('../utils/serializers');
 
 function normalizeFeatureInput(features) {
     return Array.isArray(features)
@@ -9,12 +10,25 @@ function normalizeFeatureInput(features) {
             .filter(Boolean);
 }
 
+function normalizeBooleanInput(value, fallback = false) {
+    if (typeof value === 'boolean') {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        return ['true', '1', 'on', 'yes'].includes(value.toLowerCase());
+    }
+
+    return fallback;
+}
+
 function createAdminRoutes({
     authMiddleware,
     requireAdmin,
     User,
     PricingPlan,
     ApiCatalogItem,
+    CatalogPurchase,
     ContentPage,
     BrandingSettings,
     createPasswordHash
@@ -25,12 +39,22 @@ function createAdminRoutes({
 
     router.get('/overview', async (req, res) => {
         const totalUsers = await User.countDocuments();
-        const activeSubscriptions = await User.countDocuments({ status: 'active' });
+        const activeSubscriptions = await CatalogPurchase.countDocuments({
+            status: 'active',
+            purchaseType: { $in: ['monthly', 'yearly'] }
+        });
         const totalAPIs = await ApiCatalogItem.countDocuments();
-        const pricingPlans = await PricingPlan.find();
-        const planMap = new Map(pricingPlans.map((plan) => [plan.name.toLowerCase(), plan.monthlyPrice]));
-        const activeUsers = await User.find({ status: 'active' }).select('plan');
-        const monthlyRevenue = activeUsers.reduce((sum, user) => sum + (planMap.get(String(user.plan || '').toLowerCase()) || 0), 0);
+        const subscriptions = await CatalogPurchase.find({
+            status: 'active',
+            purchaseType: { $in: ['monthly', 'yearly'] }
+        });
+        const monthlyRevenue = subscriptions.reduce((sum, purchase) => {
+            if (purchase.purchaseType === 'yearly') {
+                return sum + purchase.unitPrice / 12;
+            }
+
+            return sum + purchase.unitPrice;
+        }, 0);
 
         return res.json({
             totalUsers,
@@ -122,41 +146,37 @@ function createAdminRoutes({
 
     router.get('/apis', async (req, res) => {
         const apis = await ApiCatalogItem.find().sort({ createdAt: 1 });
-        return res.json(apis.map((api) => ({
-            id: api._id.toString(),
-            name: api.name,
-            type: api.type,
-            language: api.language,
-            version: api.version,
-            description: api.description,
-            documentation: api.documentation,
-            status: api.status
-        })));
+        return res.json(apis.map((api) => serializeCatalogItem(api)));
     });
 
     router.post('/apis', async (req, res) => {
         const newApi = await ApiCatalogItem.create({
             name: req.body.name,
+            slug: req.body.slug,
             type: req.body.type,
             language: req.body.language,
             version: req.body.version,
             description: req.body.description,
             documentation: req.body.documentation,
+            features: normalizeFeatureInput(req.body.features),
+            icon: req.body.icon,
+            badge: req.body.badge || '',
+            allowOneTimePurchase: normalizeBooleanInput(req.body.allowOneTimePurchase, true),
+            allowMonthlySubscription: normalizeBooleanInput(req.body.allowMonthlySubscription, true),
+            allowYearlySubscription: normalizeBooleanInput(req.body.allowYearlySubscription, true),
+            oneTimePrice: Number(req.body.oneTimePrice) || 0,
+            monthlyPrice: Number(req.body.monthlyPrice) || 0,
+            yearlyPrice: Number(req.body.yearlyPrice) || 0,
+            downloads: Number(req.body.downloads) || 0,
+            rating: Number(req.body.rating) || 0,
+            reviews: Number(req.body.reviews) || 0,
+            isPublished: normalizeBooleanInput(req.body.isPublished, true),
             status: req.body.status || 'stable'
         });
 
         return res.json({
             success: true,
-            api: {
-                id: newApi._id.toString(),
-                name: newApi.name,
-                type: newApi.type,
-                language: newApi.language,
-                version: newApi.version,
-                description: newApi.description,
-                documentation: newApi.documentation,
-                status: newApi.status
-            }
+            api: serializeCatalogItem(newApi)
         });
     });
 
@@ -165,11 +185,25 @@ function createAdminRoutes({
             req.params.id,
             {
                 name: req.body.name,
+                slug: req.body.slug,
                 type: req.body.type,
                 language: req.body.language,
                 version: req.body.version,
                 description: req.body.description,
                 documentation: req.body.documentation,
+                features: normalizeFeatureInput(req.body.features),
+                icon: req.body.icon,
+                badge: req.body.badge || '',
+                allowOneTimePurchase: normalizeBooleanInput(req.body.allowOneTimePurchase, true),
+                allowMonthlySubscription: normalizeBooleanInput(req.body.allowMonthlySubscription, true),
+                allowYearlySubscription: normalizeBooleanInput(req.body.allowYearlySubscription, true),
+                oneTimePrice: Number(req.body.oneTimePrice) || 0,
+                monthlyPrice: Number(req.body.monthlyPrice) || 0,
+                yearlyPrice: Number(req.body.yearlyPrice) || 0,
+                downloads: Number(req.body.downloads) || 0,
+                rating: Number(req.body.rating) || 0,
+                reviews: Number(req.body.reviews) || 0,
+                isPublished: normalizeBooleanInput(req.body.isPublished, true),
                 status: req.body.status || 'stable'
             },
             { new: true }
@@ -181,16 +215,7 @@ function createAdminRoutes({
 
         return res.json({
             success: true,
-            api: {
-                id: api._id.toString(),
-                name: api.name,
-                type: api.type,
-                language: api.language,
-                version: api.version,
-                description: api.description,
-                documentation: api.documentation,
-                status: api.status
-            }
+            api: serializeCatalogItem(api)
         });
     });
 

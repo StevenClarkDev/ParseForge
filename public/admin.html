@@ -394,8 +394,72 @@
                     <textarea id="apiDescription" class="form-control" rows="4" required></textarea>
                 </div>
                 <div class="form-group">
+                    <label for="apiFeatures">Included Features (one per line)</label>
+                    <textarea id="apiFeatures" class="form-control" rows="5" placeholder="API keys&#10;Documentation&#10;Version updates"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="apiIcon">Icon</label>
+                        <input type="text" id="apiIcon" class="form-control" placeholder="e.g. &lt;/&gt; or { }">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiBadge">Badge</label>
+                        <select id="apiBadge" class="form-control">
+                            <option value="">None</option>
+                            <option value="featured">Featured</option>
+                            <option value="bestseller">Bestseller</option>
+                            <option value="new">New</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label for="apiDocumentation">Documentation URL</label>
                     <input type="url" id="apiDocumentation" class="form-control">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="apiDownloads">Downloads</label>
+                        <input type="number" id="apiDownloads" class="form-control" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiRating">Rating</label>
+                        <input type="number" id="apiRating" class="form-control" min="0" max="5" step="0.1" value="4.8">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="apiReviews">Reviews</label>
+                    <input type="number" id="apiReviews" class="form-control" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Billing Options</label>
+                    <div class="option-grid">
+                        <label class="option-card">
+                            <input type="checkbox" id="apiAllowOneTime" checked>
+                            <span>One-time Purchase</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="checkbox" id="apiAllowMonthly" checked>
+                            <span>Monthly Subscription</span>
+                        </label>
+                        <label class="option-card">
+                            <input type="checkbox" id="apiAllowYearly" checked>
+                            <span>Yearly Subscription</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="apiOneTimePrice">One-time Price ($)</label>
+                        <input type="number" id="apiOneTimePrice" class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiMonthlyPrice">Monthly Price ($)</label>
+                        <input type="number" id="apiMonthlyPrice" class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="apiYearlyPrice">Yearly Price ($)</label>
+                    <input type="number" id="apiYearlyPrice" class="form-control" step="0.01" min="0" value="0">
                 </div>
                 <div class="form-group">
                     <label for="apiStatus">Status</label>
@@ -405,6 +469,10 @@
                         <option value="deprecated">Deprecated</option>
                     </select>
                 </div>
+                <label class="option-card option-card-inline">
+                    <input type="checkbox" id="apiPublished" checked>
+                    <span>Published in marketplace</span>
+                </label>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" onclick="closeAPIModal()">Cancel</button>
                     <button type="submit" class="btn-primary">Save API/SDK</button>

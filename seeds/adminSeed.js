@@ -30,38 +30,94 @@ const defaultPricingPlans = [
 const defaultApiCatalogItems = [
     {
         name: 'Users API',
+        slug: 'users-api',
         type: 'api',
         language: 'REST',
         version: 'v2.1.0',
         description: 'Complete user management with authentication, profiles, and permissions.',
         documentation: '/docs.html#users',
+        features: ['User profiles', 'Authentication flows', 'Role permissions'],
+        icon: '</>',
+        badge: 'featured',
+        allowOneTimePurchase: true,
+        allowMonthlySubscription: true,
+        allowYearlySubscription: true,
+        oneTimePrice: 99,
+        monthlyPrice: 19,
+        yearlyPrice: 190,
+        downloads: 18400,
+        rating: 4.9,
+        reviews: 214,
+        isPublished: true,
         status: 'stable'
     },
     {
         name: 'Node.js SDK',
+        slug: 'nodejs-sdk',
         type: 'sdk',
         language: 'JavaScript',
         version: 'v3.2.1',
         description: 'Full-featured Node.js SDK with TypeScript support and async/await.',
         documentation: '/sdks.html#nodejs',
+        features: ['TypeScript support', 'Async workflows', 'Webhook helpers'],
+        icon: '{ }',
+        badge: 'bestseller',
+        allowOneTimePurchase: true,
+        allowMonthlySubscription: true,
+        allowYearlySubscription: true,
+        oneTimePrice: 149,
+        monthlyPrice: 29,
+        yearlyPrice: 290,
+        downloads: 27600,
+        rating: 4.8,
+        reviews: 312,
+        isPublished: true,
         status: 'stable'
     },
     {
         name: 'Python SDK',
+        slug: 'python-sdk',
         type: 'sdk',
         language: 'Python',
         version: 'v2.8.0',
         description: 'Pythonic SDK with support for asyncio and type hints.',
         documentation: '/sdks.html#python',
+        features: ['Asyncio support', 'Typed clients', 'CLI utilities'],
+        icon: '{ }',
+        badge: 'new',
+        allowOneTimePurchase: true,
+        allowMonthlySubscription: true,
+        allowYearlySubscription: true,
+        oneTimePrice: 159,
+        monthlyPrice: 29,
+        yearlyPrice: 290,
+        downloads: 13800,
+        rating: 4.7,
+        reviews: 146,
+        isPublished: true,
         status: 'stable'
     },
     {
         name: 'Data API',
+        slug: 'data-api',
         type: 'api',
         language: 'REST',
         version: 'v1.5.2',
         description: 'Store, retrieve, and query data with powerful filtering capabilities.',
         documentation: '/docs.html#data',
+        features: ['Flexible schemas', 'Query filters', 'Webhook-ready events'],
+        icon: '</>',
+        badge: 'featured',
+        allowOneTimePurchase: true,
+        allowMonthlySubscription: true,
+        allowYearlySubscription: true,
+        oneTimePrice: 119,
+        monthlyPrice: 24,
+        yearlyPrice: 240,
+        downloads: 9400,
+        rating: 4.8,
+        reviews: 128,
+        isPublished: true,
         status: 'stable'
     }
 ];
@@ -101,6 +157,35 @@ async function seedAdminData() {
     if ((await ApiCatalogItem.countDocuments()) === 0) {
         await ApiCatalogItem.insertMany(defaultApiCatalogItems);
     }
+
+    await ApiCatalogItem.updateMany(
+        { allowOneTimePurchase: { $exists: false } },
+        { $set: { allowOneTimePurchase: true } }
+    );
+    await ApiCatalogItem.updateMany(
+        { allowMonthlySubscription: { $exists: false } },
+        { $set: { allowMonthlySubscription: true } }
+    );
+    await ApiCatalogItem.updateMany(
+        { allowYearlySubscription: { $exists: false } },
+        { $set: { allowYearlySubscription: true } }
+    );
+    await ApiCatalogItem.updateMany(
+        { type: 'api', oneTimePrice: { $exists: false } },
+        { $set: { oneTimePrice: 99, monthlyPrice: 19, yearlyPrice: 190, icon: '</>', badge: 'featured', isPublished: true } }
+    );
+    await ApiCatalogItem.updateMany(
+        { type: 'sdk', oneTimePrice: { $exists: false } },
+        { $set: { oneTimePrice: 149, monthlyPrice: 29, yearlyPrice: 290, icon: '{ }', badge: 'new', isPublished: true } }
+    );
+    await ApiCatalogItem.updateMany(
+        { features: { $exists: false } },
+        { $set: { features: [] } }
+    );
+    await ApiCatalogItem.updateMany(
+        { downloads: { $exists: false } },
+        { $set: { downloads: 0, rating: 4.8, reviews: 0 } }
+    );
 
     if ((await ContentPage.countDocuments()) === 0) {
         await ContentPage.insertMany(

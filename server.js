@@ -15,6 +15,7 @@ const User = require('./models/User');
 const ApiKey = require('./models/ApiKey');
 const PricingPlan = require('./models/PricingPlan');
 const ApiCatalogItem = require('./models/ApiCatalogItem');
+const CatalogPurchase = require('./models/CatalogPurchase');
 const ContentPage = require('./models/ContentPage');
 const BrandingSettings = require('./models/BrandingSettings');
 
@@ -24,6 +25,7 @@ const createKeyRoutes = require('./routes/keyRoutes');
 const createUserRoutes = require('./routes/userRoutes');
 const createDataRoutes = require('./routes/dataRoutes');
 const createAdminRoutes = require('./routes/adminRoutes');
+const createCatalogRoutes = require('./routes/catalogRoutes');
 const createSiteRoutes = require('./routes/siteRoutes');
 
 const app = express();
@@ -42,12 +44,20 @@ app.use('/api/dashboard', createDashboardRoutes({ optionalAuth, usageStats, getR
 app.use('/api/keys', createKeyRoutes({ authMiddleware, ApiKey, createApiKeyValue, hashApiKey, maskKeyFromParts }));
 app.use('/api/users', createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHash, logActivity }));
 app.use('/api/data', createDataRoutes({ authMiddleware, logActivity }));
+app.use('/api/catalog', createCatalogRoutes({
+    authMiddleware,
+    optionalAuth,
+    logActivity,
+    ApiCatalogItem,
+    CatalogPurchase
+}));
 app.use('/api/admin', createAdminRoutes({
     authMiddleware,
     requireAdmin,
     User,
     PricingPlan,
     ApiCatalogItem,
+    CatalogPurchase,
     ContentPage,
     BrandingSettings,
     createPasswordHash

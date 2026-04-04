@@ -30,6 +30,22 @@ async function fetchJson(url, options = {}) {
     return payload;
 }
 
+function formatCurrency(value) {
+    return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function buildBillingSummary(api) {
+    const options = api.pricing?.purchaseOptions || [];
+
+    if (!options.length) {
+        return 'No billing options configured';
+    }
+
+    return options
+        .map((option) => `${option.shortLabel} ${formatCurrency(option.price)}`)
+        .join(' | ');
+}
+
 function initializeNavigation() {
     const menuItems = document.querySelectorAll('.admin-menu-item');
     const sections = document.querySelectorAll('.admin-section');
@@ -251,9 +267,15 @@ async function loadAPIs() {
                         </div>
                         <span class="status-badge ${api.status}">${api.status}</span>
                     </div>
+                    <div class="api-meta">
+                        <span class="api-meta-chip">${api.type.toUpperCase()}</span>
+                        <span class="api-meta-chip">${api.language}</span>
+                        <span class="api-meta-chip">${api.isPublished ? 'Published' : 'Hidden'}</span>
+                    </div>
                     <p>${api.description}</p>
+                    <div class="api-billing-summary">${buildBillingSummary(api)}</div>
                     <div class="api-card-footer">
-                        <span style="color: var(--text-muted); font-size: 0.875rem;">${api.type.toUpperCase()} · ${api.language}</span>
+                        <span class="api-feature-count">${api.features.length} features</span>
                         <div class="action-buttons">
                             <button class="action-btn" onclick="editAPI('${api.id}')">Edit</button>
                             <button class="action-btn delete" onclick="deleteAPI('${api.id}')">Delete</button>
@@ -286,13 +308,37 @@ async function openAPIModal(apiId = null) {
             document.getElementById('apiLanguage').value = api.language;
             document.getElementById('apiVersion').value = api.version;
             document.getElementById('apiDescription').value = api.description;
+            document.getElementById('apiFeatures').value = api.features.join('\n');
+            document.getElementById('apiIcon').value = api.icon || '';
+            document.getElementById('apiBadge').value = api.badge || '';
             document.getElementById('apiDocumentation').value = api.documentation;
+            document.getElementById('apiDownloads').value = api.downloads || 0;
+            document.getElementById('apiRating').value = api.rating || 0;
+            document.getElementById('apiReviews').value = api.reviews || 0;
+            document.getElementById('apiAllowOneTime').checked = Boolean(api.pricing?.allowOneTimePurchase);
+            document.getElementById('apiAllowMonthly').checked = Boolean(api.pricing?.allowMonthlySubscription);
+            document.getElementById('apiAllowYearly').checked = Boolean(api.pricing?.allowYearlySubscription);
+            document.getElementById('apiOneTimePrice').value = api.pricing?.oneTimePrice || 0;
+            document.getElementById('apiMonthlyPrice').value = api.pricing?.monthlyPrice || 0;
+            document.getElementById('apiYearlyPrice').value = api.pricing?.yearlyPrice || 0;
             document.getElementById('apiStatus').value = api.status;
+            document.getElementById('apiPublished').checked = api.isPublished !== false;
         }
     } else {
         title.textContent = 'Add New API/SDK';
         form.reset();
         document.getElementById('apiId').value = '';
+        document.getElementById('apiBadge').value = '';
+        document.getElementById('apiAllowOneTime').checked = true;
+        document.getElementById('apiAllowMonthly').checked = true;
+        document.getElementById('apiAllowYearly').checked = true;
+        document.getElementById('apiOneTimePrice').value = '0';
+        document.getElementById('apiMonthlyPrice').value = '0';
+        document.getElementById('apiYearlyPrice').value = '0';
+        document.getElementById('apiDownloads').value = '0';
+        document.getElementById('apiRating').value = '4.8';
+        document.getElementById('apiReviews').value = '0';
+        document.getElementById('apiPublished').checked = true;
     }
 
     modal.classList.add('active');
@@ -336,8 +382,21 @@ document.getElementById('apiForm')?.addEventListener('submit', async (event) => 
         language: document.getElementById('apiLanguage').value,
         version: document.getElementById('apiVersion').value,
         description: document.getElementById('apiDescription').value,
+        features: document.getElementById('apiFeatures').value,
+        icon: document.getElementById('apiIcon').value,
+        badge: document.getElementById('apiBadge').value,
         documentation: document.getElementById('apiDocumentation').value,
-        status: document.getElementById('apiStatus').value
+        downloads: Number.parseInt(document.getElementById('apiDownloads').value, 10) || 0,
+        rating: Number.parseFloat(document.getElementById('apiRating').value) || 0,
+        reviews: Number.parseInt(document.getElementById('apiReviews').value, 10) || 0,
+        allowOneTimePurchase: document.getElementById('apiAllowOneTime').checked,
+        allowMonthlySubscription: document.getElementById('apiAllowMonthly').checked,
+        allowYearlySubscription: document.getElementById('apiAllowYearly').checked,
+        oneTimePrice: Number.parseFloat(document.getElementById('apiOneTimePrice').value) || 0,
+        monthlyPrice: Number.parseFloat(document.getElementById('apiMonthlyPrice').value) || 0,
+        yearlyPrice: Number.parseFloat(document.getElementById('apiYearlyPrice').value) || 0,
+        status: document.getElementById('apiStatus').value,
+        isPublished: document.getElementById('apiPublished').checked
     };
 
     try {

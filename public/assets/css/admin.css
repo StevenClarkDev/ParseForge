@@ -543,6 +543,33 @@
     border-top: 1px solid var(--border-glass);
 }
 
+.api-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.api-meta-chip {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(0, 217, 255, 0.08);
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.api-billing-summary {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.api-feature-count {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
 /* ========================================
    CONTENT SECTIONS
    ======================================== */
@@ -713,6 +740,34 @@ select.form-control::-webkit-calendar-picker-indicator {
     gap: 1rem;
     justify-content: flex-end;
     margin-top: 2rem;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.option-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: rgba(0, 217, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.option-card input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--neon-blue);
+}
+
+.option-card-inline {
+    margin-top: 0.5rem;
 }
 
 .search-input {
@@ -907,6 +962,10 @@ select.form-control::-webkit-calendar-picker-indicator {
     }
     
     .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .option-grid {
         grid-template-columns: 1fr;
     }
 }
