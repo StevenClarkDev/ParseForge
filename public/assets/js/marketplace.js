@@ -50,6 +50,17 @@ function getAuthHeaders(includeJson = false) {
     return headers;
 }
 
+function getCheckoutItemsPayload() {
+    return cart.map((item) => ({
+        productId: item.productId,
+        purchaseType: item.purchaseType
+    }));
+}
+
+function getSelectedPaymentMethod() {
+    return document.querySelector('input[name="payment"]:checked')?.value || 'stripe_checkout';
+}
+
 async function fetchCatalog() {
     const response = await fetch(`${API_BASE}/api/catalog`, {
         headers: getAuthHeaders()
@@ -527,7 +538,17 @@ function closeCheckoutModal() {
 function handlePaymentChange(event) {
     const cardDetails = document.getElementById('cardDetails');
     if (cardDetails) {
-        cardDetails.style.display = event.target.value === 'paypal-card' ? 'block' : 'none';
+        cardDetails.style.display = event.target.value === 'stripe_card' ? 'grid' : 'none';
+    }
+}
+
+function validateSimulatedCardFields(form) {
+    const cardNumber = form.elements.cardNumber?.value.trim() || '';
+    const expiry = form.elements.expiry?.value.trim() || '';
+    const cvv = form.elements.cvv?.value.trim() || '';
+
+    if (!cardNumber || !expiry || !cvv) {
+        throw new Error('Enter the simulated card details to continue.');
     }
 }
 
@@ -560,20 +581,53 @@ async function handleCheckout(event) {
     }
 
     const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+    const paymentMethodType = getSelectedPaymentMethod();
+    const items = getCheckoutItemsPayload();
+
     if (submitButton) {
         submitButton.disabled = true;
-        submitButton.textContent = 'Processing...';
+        submitButton.textContent = 'Creating Stripe session...';
     }
 
     try {
+        if (paymentMethodType === 'stripe_card') {
+            validateSimulatedCardFields(event.currentTarget);
+        }
+
+        const sessionResponse = await fetch(`${API_BASE}/api/catalog/checkout/session`, {
+            method: 'POST',
+            headers: getAuthHeaders(true),
+            body: JSON.stringify({
+                items,
+                paymentMethodType
+            })
+        });
+
+        const sessionPayload = await sessionResponse.json().catch(() => ({}));
+
+        if (sessionResponse.status === 401) {
+            window.localStorage.removeItem(AUTH_TOKEN_KEY);
+            window.location.href = '/login.html';
+            return;
+        }
+
+        if (!sessionResponse.ok) {
+            throw new Error(sessionPayload.error || 'Unable to create the simulated Stripe session');
+        }
+
+        if (submitButton) {
+            submitButton.textContent = 'Confirming simulated payment...';
+        }
+
         const response = await fetch(`${API_BASE}/api/catalog/checkout`, {
             method: 'POST',
             headers: getAuthHeaders(true),
             body: JSON.stringify({
-                items: cart.map((item) => ({
-                    productId: item.productId,
-                    purchaseType: item.purchaseType
-                }))
+                items,
+                paymentProvider: 'stripe_simulated',
+                paymentMethodType,
+                sessionId: sessionPayload.session?.id,
+                paymentIntentId: sessionPayload.session?.paymentIntentId
             })
         });
 
@@ -594,7 +648,7 @@ async function handleCheckout(event) {
         updateCartUI();
         renderProducts();
         closeCheckoutModal();
-        showNotification('Order completed successfully.', 'success');
+        showNotification('Simulated Stripe payment completed successfully.', 'success');
         window.setTimeout(() => {
             window.location.href = '/dashboard.html';
         }, 1200);
@@ -603,7 +657,7 @@ async function handleCheckout(event) {
     } finally {
         if (submitButton) {
             submitButton.disabled = false;
-            submitButton.textContent = 'Complete Order';
+            submitButton.textContent = 'Complete Simulated Payment';
         }
     }
 }
@@ -678,6 +732,7 @@ async function initializeMarketplace() {
         await fetchCatalog();
         normalizeCart();
         setupEventListeners();
+        handlePaymentChange({ target: { value: getSelectedPaymentMethod() } });
         renderProducts();
         updateCartUI();
         window.setTimeout(updateCartUI, 500);

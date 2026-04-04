@@ -32,6 +32,31 @@ const catalogPurchaseSchema = new mongoose.Schema(
             type: String,
             default: 'USD'
         },
+        paymentProvider: {
+            type: String,
+            enum: ['stripe_simulated'],
+            default: 'stripe_simulated'
+        },
+        paymentMethodType: {
+            type: String,
+            enum: ['stripe_checkout', 'stripe_card'],
+            default: 'stripe_checkout'
+        },
+        providerSessionId: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        providerPaymentIntentId: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        providerChargeId: {
+            type: String,
+            default: '',
+            trim: true
+        },
         orderReference: {
             type: String,
             required: true,
