@@ -300,7 +300,6 @@ function updateEndpoints() {
 
 function initializeEventListeners() {
     const usagePeriod = document.getElementById('usagePeriod');
-    const logoutLink = document.getElementById('logoutLink');
 
     if (usagePeriod) {
         usagePeriod.addEventListener('change', async (event) => {
@@ -310,14 +309,6 @@ function initializeEventListeners() {
             } catch (error) {
                 showNotification(error.message || 'Failed to update chart', 'error');
             }
-        });
-    }
-
-    if (logoutLink) {
-        logoutLink.addEventListener('click', (event) => {
-            event.preventDefault();
-            window.localStorage.removeItem(AUTH_TOKEN_KEY);
-            window.location.href = '/login.html';
         });
     }
 }
