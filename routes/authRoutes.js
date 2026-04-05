@@ -2,6 +2,10 @@ const express = require('express');
 const User = require('../models/User');
 const { createPasswordHash, verifyPassword, createToken } = require('../utils/auth');
 const { sanitizeUser } = require('../utils/serializers');
+const {
+    ensureBootstrapAdminUser,
+    getBootstrapAdminConfig
+} = require('../seeds/bootstrapAdminUser');
 
 function createAuthRoutes({ jwtSecret, authMiddleware }) {
     const router = express.Router();
@@ -63,7 +67,18 @@ function createAuthRoutes({ jwtSecret, authMiddleware }) {
                 return res.status(400).json({ error: 'Email and password are required' });
             }
 
-            const user = await User.findOne({ email: String(email).trim().toLowerCase() });
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const bootstrapAdmin = getBootstrapAdminConfig();
+
+            if (
+                bootstrapAdmin &&
+                normalizedEmail === bootstrapAdmin.email &&
+                password === bootstrapAdmin.password
+            ) {
+                await ensureBootstrapAdminUser({ User, createPasswordHash });
+            }
+
+            const user = await User.findOne({ email: normalizedEmail });
 
             if (!user || !verifyPassword(password, user.passwordHash)) {
                 return res.status(401).json({ error: 'Invalid email or password' });
