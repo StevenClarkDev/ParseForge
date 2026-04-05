@@ -3,6 +3,10 @@ const registerForm = document.getElementById('registerForm');
 const authMessage = document.getElementById('authMessage');
 const submitButton = document.getElementById('registerSubmit');
 
+if (window.localStorage.getItem(AUTH_TOKEN_KEY)) {
+    window.location.replace('dashboard.html');
+}
+
 function setRegisterMessage(message, type) {
     authMessage.className = `auth-message ${type}`;
     authMessage.textContent = message;

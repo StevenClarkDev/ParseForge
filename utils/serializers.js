@@ -21,10 +21,11 @@ const CATALOG_DEFAULTS = {
     api: {
         icon: '</>',
         badge: 'featured',
-        oneTimePrice: 99,
+        billingModel: 'subscription',
+        oneTimePrice: 0,
         monthlyPrice: 19,
         yearlyPrice: 190,
-        allowOneTimePurchase: true,
+        allowOneTimePurchase: false,
         allowMonthlySubscription: true,
         allowYearlySubscription: true,
         features: ['Production access', 'Documentation', 'API key support']
@@ -32,12 +33,13 @@ const CATALOG_DEFAULTS = {
     sdk: {
         icon: '{ }',
         badge: 'new',
+        billingModel: 'one_time',
         oneTimePrice: 149,
-        monthlyPrice: 29,
-        yearlyPrice: 290,
+        monthlyPrice: 0,
+        yearlyPrice: 0,
         allowOneTimePurchase: true,
-        allowMonthlySubscription: true,
-        allowYearlySubscription: true,
+        allowMonthlySubscription: false,
+        allowYearlySubscription: false,
         features: ['Source package', 'Integration guides', 'Version updates']
     }
 };
@@ -46,8 +48,36 @@ function getCatalogDefaults(type = 'api') {
     return CATALOG_DEFAULTS[type] || CATALOG_DEFAULTS.api;
 }
 
-function buildPurchaseOptions(item, defaults) {
-    const options = [];
+function getBillingModel(item, defaults) {
+    if (item.billingModel === 'subscription') {
+        return 'subscription';
+    }
+
+    if (item.billingModel === 'one_time') {
+        return 'one_time';
+    }
+
+    const allowOneTimePurchase =
+        typeof item.allowOneTimePurchase === 'boolean'
+            ? item.allowOneTimePurchase
+            : defaults.allowOneTimePurchase;
+    const allowMonthlySubscription =
+        typeof item.allowMonthlySubscription === 'boolean'
+            ? item.allowMonthlySubscription
+            : defaults.allowMonthlySubscription;
+    const allowYearlySubscription =
+        typeof item.allowYearlySubscription === 'boolean'
+            ? item.allowYearlySubscription
+            : defaults.allowYearlySubscription;
+
+    if (!allowOneTimePurchase && (allowMonthlySubscription || allowYearlySubscription)) {
+        return 'subscription';
+    }
+
+    return defaults.billingModel || 'one_time';
+}
+
+function getPricingState(item, defaults) {
     const oneTimePrice =
         typeof item.oneTimePrice === 'number' ? item.oneTimePrice : defaults.oneTimePrice;
     const monthlyPrice =
@@ -67,28 +97,46 @@ function buildPurchaseOptions(item, defaults) {
             ? item.allowYearlySubscription
             : defaults.allowYearlySubscription;
 
-    if (allowOneTimePurchase && oneTimePrice > 0) {
+    const billingModel = getBillingModel(item, defaults);
+
+    return {
+        billingModel,
+        allowOneTimePurchase: billingModel === 'one_time',
+        allowMonthlySubscription: billingModel === 'subscription' ? allowMonthlySubscription : false,
+        allowYearlySubscription: billingModel === 'subscription' ? allowYearlySubscription : false,
+        oneTimePrice: billingModel === 'one_time' ? oneTimePrice : 0,
+        monthlyPrice:
+            billingModel === 'subscription' && allowMonthlySubscription ? monthlyPrice : 0,
+        yearlyPrice:
+            billingModel === 'subscription' && allowYearlySubscription ? yearlyPrice : 0
+    };
+}
+
+function buildPurchaseOptions(pricingState) {
+    const options = [];
+
+    if (pricingState.allowOneTimePurchase && pricingState.oneTimePrice > 0) {
         options.push({
             type: 'one_time',
-            price: oneTimePrice,
+            price: pricingState.oneTimePrice,
             label: 'One-time purchase',
             shortLabel: 'Buy once'
         });
     }
 
-    if (allowMonthlySubscription && monthlyPrice > 0) {
+    if (pricingState.allowMonthlySubscription && pricingState.monthlyPrice > 0) {
         options.push({
             type: 'monthly',
-            price: monthlyPrice,
+            price: pricingState.monthlyPrice,
             label: 'Monthly subscription',
             shortLabel: 'Monthly'
         });
     }
 
-    if (allowYearlySubscription && yearlyPrice > 0) {
+    if (pricingState.allowYearlySubscription && pricingState.yearlyPrice > 0) {
         options.push({
             type: 'yearly',
-            price: yearlyPrice,
+            price: pricingState.yearlyPrice,
             label: 'Yearly subscription',
             shortLabel: 'Yearly'
         });
@@ -99,11 +147,9 @@ function buildPurchaseOptions(item, defaults) {
 
 function serializeCatalogItem(item, { ownership = [] } = {}) {
     const defaults = getCatalogDefaults(item.type);
-    const purchaseOptions = buildPurchaseOptions(item, defaults);
-    const defaultPurchaseType =
-        purchaseOptions.find((option) => option.type === 'one_time')?.type ||
-        purchaseOptions[0]?.type ||
-        null;
+    const pricingState = getPricingState(item, defaults);
+    const purchaseOptions = buildPurchaseOptions(pricingState);
+    const defaultPurchaseType = purchaseOptions[0]?.type || null;
     const minPrice = purchaseOptions.length
         ? Math.min(...purchaseOptions.map((option) => option.price))
         : 0;
@@ -133,24 +179,13 @@ function serializeCatalogItem(item, { ownership = [] } = {}) {
         rating: typeof item.rating === 'number' ? item.rating : 4.8,
         reviews: typeof item.reviews === 'number' ? item.reviews : 0,
         pricing: {
-            allowOneTimePurchase:
-                typeof item.allowOneTimePurchase === 'boolean'
-                    ? item.allowOneTimePurchase
-                    : defaults.allowOneTimePurchase,
-            allowMonthlySubscription:
-                typeof item.allowMonthlySubscription === 'boolean'
-                    ? item.allowMonthlySubscription
-                    : defaults.allowMonthlySubscription,
-            allowYearlySubscription:
-                typeof item.allowYearlySubscription === 'boolean'
-                    ? item.allowYearlySubscription
-                    : defaults.allowYearlySubscription,
-            oneTimePrice:
-                typeof item.oneTimePrice === 'number' ? item.oneTimePrice : defaults.oneTimePrice,
-            monthlyPrice:
-                typeof item.monthlyPrice === 'number' ? item.monthlyPrice : defaults.monthlyPrice,
-            yearlyPrice:
-                typeof item.yearlyPrice === 'number' ? item.yearlyPrice : defaults.yearlyPrice,
+            billingModel: pricingState.billingModel,
+            allowOneTimePurchase: pricingState.allowOneTimePurchase,
+            allowMonthlySubscription: pricingState.allowMonthlySubscription,
+            allowYearlySubscription: pricingState.allowYearlySubscription,
+            oneTimePrice: pricingState.oneTimePrice,
+            monthlyPrice: pricingState.monthlyPrice,
+            yearlyPrice: pricingState.yearlyPrice,
             purchaseOptions,
             defaultPurchaseType,
             minPrice

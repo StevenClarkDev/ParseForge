@@ -748,6 +748,10 @@ select.form-control::-webkit-calendar-picker-indicator {
     gap: 1rem;
 }
 
+.option-grid-two {
+    grid-template-columns: repeat(2, 1fr);
+}
+
 .option-card {
     display: flex;
     align-items: center;
@@ -768,6 +772,13 @@ select.form-control::-webkit-calendar-picker-indicator {
 
 .option-card-inline {
     margin-top: 0.5rem;
+}
+
+.form-helper {
+    margin-top: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.6;
 }
 
 .search-input {

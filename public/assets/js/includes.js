@@ -3,6 +3,8 @@
  * Loads header and footer from separate HTML files
  */
 
+const AUTH_TOKEN_KEY = 'parseforge_auth_token';
+
 // Load HTML includes on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadIncludes();
@@ -20,6 +22,9 @@ async function loadIncludes() {
                 
                 // Add page-specific elements after header is loaded
                 addPageSpecificElements();
+
+                // Keep the primary auth CTA aligned with login/register state
+                configurePrimaryAuthCta();
                 
                 // Set active nav link after header is loaded
                 setActiveNavLink();
@@ -42,6 +47,16 @@ async function loadIncludes() {
             console.error('Error loading footer:', error);
         }
     }
+}
+
+function configurePrimaryAuthCta() {
+    const primaryCta = document.querySelector('.nav-links .btn-primary');
+    if (!primaryCta) {
+        return;
+    }
+
+    const hasToken = Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
+    primaryCta.setAttribute('href', hasToken ? '/dashboard' : '/register');
 }
 
 // Add page-specific elements to header

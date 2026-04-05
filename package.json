@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "user:create-admin": "node scripts/createAdminUser.js",
+    "catalog:sync": "node scripts/syncCatalog.js",
+    "catalog:sync:dry": "node scripts/syncCatalog.js --dry-run"
   },
   "keywords": [
     "api",

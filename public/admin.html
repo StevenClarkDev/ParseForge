@@ -431,35 +431,49 @@
                     <input type="number" id="apiReviews" class="form-control" min="0" value="0">
                 </div>
                 <div class="form-group">
-                    <label>Billing Options</label>
-                    <div class="option-grid">
+                    <label>Billing Model</label>
+                    <div class="option-grid option-grid-two">
                         <label class="option-card">
-                            <input type="checkbox" id="apiAllowOneTime" checked>
+                            <input type="radio" name="apiBillingModel" id="apiBillingOneTime" value="one_time" checked>
                             <span>One-time Purchase</span>
                         </label>
                         <label class="option-card">
-                            <input type="checkbox" id="apiAllowMonthly" checked>
-                            <span>Monthly Subscription</span>
-                        </label>
-                        <label class="option-card">
-                            <input type="checkbox" id="apiAllowYearly" checked>
-                            <span>Yearly Subscription</span>
+                            <input type="radio" name="apiBillingModel" id="apiBillingSubscription" value="subscription">
+                            <span>Subscription</span>
                         </label>
                     </div>
+                    <p class="form-helper">Each product can use one billing model only: one-time or subscription.</p>
                 </div>
-                <div class="form-row">
+                <div id="apiOneTimePricingGroup">
                     <div class="form-group">
                         <label for="apiOneTimePrice">One-time Price ($)</label>
                         <input type="number" id="apiOneTimePrice" class="form-control" step="0.01" min="0" value="0">
                     </div>
-                    <div class="form-group">
-                        <label for="apiMonthlyPrice">Monthly Price ($)</label>
-                        <input type="number" id="apiMonthlyPrice" class="form-control" step="0.01" min="0" value="0">
-                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="apiYearlyPrice">Yearly Price ($)</label>
-                    <input type="number" id="apiYearlyPrice" class="form-control" step="0.01" min="0" value="0">
+                <div id="apiSubscriptionPricingGroup" hidden>
+                    <div class="form-group">
+                        <label>Subscription Plans</label>
+                        <div class="option-grid option-grid-two">
+                            <label class="option-card">
+                                <input type="checkbox" id="apiAllowMonthly" checked>
+                                <span>Monthly Subscription</span>
+                            </label>
+                            <label class="option-card">
+                                <input type="checkbox" id="apiAllowYearly" checked>
+                                <span>Yearly Subscription</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="apiMonthlyPrice">Monthly Price ($)</label>
+                            <input type="number" id="apiMonthlyPrice" class="form-control" step="0.01" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="apiYearlyPrice">Yearly Price ($)</label>
+                            <input type="number" id="apiYearlyPrice" class="form-control" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="apiStatus">Status</label>

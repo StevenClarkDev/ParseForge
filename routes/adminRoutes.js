@@ -22,6 +22,90 @@ function normalizeBooleanInput(value, fallback = false) {
     return fallback;
 }
 
+function normalizeBillingModel(value) {
+    return value === 'subscription' ? 'subscription' : 'one_time';
+}
+
+function normalizePositiveNumber(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function createValidationError(message) {
+    const error = new Error(message);
+    error.statusCode = 400;
+    return error;
+}
+
+function buildCatalogItemPayload(body) {
+    const billingModel = normalizeBillingModel(body.billingModel);
+    const oneTimePrice = normalizePositiveNumber(body.oneTimePrice);
+    const monthlyPrice = normalizePositiveNumber(body.monthlyPrice);
+    const yearlyPrice = normalizePositiveNumber(body.yearlyPrice);
+
+    const payload = {
+        name: body.name,
+        slug: body.slug,
+        type: body.type,
+        language: body.language,
+        version: body.version,
+        description: body.description,
+        documentation: body.documentation,
+        features: normalizeFeatureInput(body.features),
+        icon: body.icon,
+        badge: body.badge || '',
+        billingModel,
+        downloads: Number(body.downloads) || 0,
+        rating: Number(body.rating) || 0,
+        reviews: Number(body.reviews) || 0,
+        isPublished: normalizeBooleanInput(body.isPublished, true),
+        status: body.status || 'stable'
+    };
+
+    if (billingModel === 'one_time') {
+        if (!(oneTimePrice > 0)) {
+            throw createValidationError('One-time products must have a price greater than 0');
+        }
+
+        return {
+            ...payload,
+            allowOneTimePurchase: true,
+            allowMonthlySubscription: false,
+            allowYearlySubscription: false,
+            oneTimePrice,
+            monthlyPrice: 0,
+            yearlyPrice: 0
+        };
+    }
+
+    const allowMonthlySubscription = normalizeBooleanInput(body.allowMonthlySubscription, false);
+    const allowYearlySubscription = normalizeBooleanInput(body.allowYearlySubscription, false);
+
+    if (!allowMonthlySubscription && !allowYearlySubscription) {
+        throw createValidationError(
+            'Subscription products must include a monthly plan, yearly plan, or both'
+        );
+    }
+
+    if (allowMonthlySubscription && !(monthlyPrice > 0)) {
+        throw createValidationError('Monthly subscriptions must have a price greater than 0');
+    }
+
+    if (allowYearlySubscription && !(yearlyPrice > 0)) {
+        throw createValidationError('Yearly subscriptions must have a price greater than 0');
+    }
+
+    return {
+        ...payload,
+        allowOneTimePurchase: false,
+        allowMonthlySubscription,
+        allowYearlySubscription,
+        oneTimePrice: 0,
+        monthlyPrice: allowMonthlySubscription ? monthlyPrice : 0,
+        yearlyPrice: allowYearlySubscription ? yearlyPrice : 0
+    };
+}
+
 function createAdminRoutes({
     authMiddleware,
     requireAdmin,
@@ -150,73 +234,43 @@ function createAdminRoutes({
     });
 
     router.post('/apis', async (req, res) => {
-        const newApi = await ApiCatalogItem.create({
-            name: req.body.name,
-            slug: req.body.slug,
-            type: req.body.type,
-            language: req.body.language,
-            version: req.body.version,
-            description: req.body.description,
-            documentation: req.body.documentation,
-            features: normalizeFeatureInput(req.body.features),
-            icon: req.body.icon,
-            badge: req.body.badge || '',
-            allowOneTimePurchase: normalizeBooleanInput(req.body.allowOneTimePurchase, true),
-            allowMonthlySubscription: normalizeBooleanInput(req.body.allowMonthlySubscription, true),
-            allowYearlySubscription: normalizeBooleanInput(req.body.allowYearlySubscription, true),
-            oneTimePrice: Number(req.body.oneTimePrice) || 0,
-            monthlyPrice: Number(req.body.monthlyPrice) || 0,
-            yearlyPrice: Number(req.body.yearlyPrice) || 0,
-            downloads: Number(req.body.downloads) || 0,
-            rating: Number(req.body.rating) || 0,
-            reviews: Number(req.body.reviews) || 0,
-            isPublished: normalizeBooleanInput(req.body.isPublished, true),
-            status: req.body.status || 'stable'
-        });
+        try {
+            const newApi = await ApiCatalogItem.create(buildCatalogItemPayload(req.body));
 
-        return res.json({
-            success: true,
-            api: serializeCatalogItem(newApi)
-        });
+            return res.json({
+                success: true,
+                api: serializeCatalogItem(newApi)
+            });
+        } catch (error) {
+            const statusCode = error.name === 'ValidationError' ? 400 : error.statusCode || 500;
+            return res.status(statusCode).json({
+                error: error.message || 'Unable to create API/SDK'
+            });
+        }
     });
 
     router.put('/apis/:id', async (req, res) => {
-        const api = await ApiCatalogItem.findByIdAndUpdate(
-            req.params.id,
-            {
-                name: req.body.name,
-                slug: req.body.slug,
-                type: req.body.type,
-                language: req.body.language,
-                version: req.body.version,
-                description: req.body.description,
-                documentation: req.body.documentation,
-                features: normalizeFeatureInput(req.body.features),
-                icon: req.body.icon,
-                badge: req.body.badge || '',
-                allowOneTimePurchase: normalizeBooleanInput(req.body.allowOneTimePurchase, true),
-                allowMonthlySubscription: normalizeBooleanInput(req.body.allowMonthlySubscription, true),
-                allowYearlySubscription: normalizeBooleanInput(req.body.allowYearlySubscription, true),
-                oneTimePrice: Number(req.body.oneTimePrice) || 0,
-                monthlyPrice: Number(req.body.monthlyPrice) || 0,
-                yearlyPrice: Number(req.body.yearlyPrice) || 0,
-                downloads: Number(req.body.downloads) || 0,
-                rating: Number(req.body.rating) || 0,
-                reviews: Number(req.body.reviews) || 0,
-                isPublished: normalizeBooleanInput(req.body.isPublished, true),
-                status: req.body.status || 'stable'
-            },
-            { new: true }
-        );
+        try {
+            const api = await ApiCatalogItem.findByIdAndUpdate(
+                req.params.id,
+                buildCatalogItemPayload(req.body),
+                { new: true, runValidators: true }
+            );
 
-        if (!api) {
-            return res.status(404).json({ error: 'API/SDK not found' });
+            if (!api) {
+                return res.status(404).json({ error: 'API/SDK not found' });
+            }
+
+            return res.json({
+                success: true,
+                api: serializeCatalogItem(api)
+            });
+        } catch (error) {
+            const statusCode = error.name === 'ValidationError' ? 400 : error.statusCode || 500;
+            return res.status(statusCode).json({
+                error: error.message || 'Unable to update API/SDK'
+            });
         }
-
-        return res.json({
-            success: true,
-            api: serializeCatalogItem(api)
-        });
     });
 
     router.delete('/apis/:id', async (req, res) => {
