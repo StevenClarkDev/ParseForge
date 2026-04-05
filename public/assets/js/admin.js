@@ -1,9 +1,11 @@
 const API_BASE = `${window.location.origin}/api/admin`;
 const AUTH_TOKEN_KEY = 'parseforge_auth_token';
+const ADMIN_PATH = '/admin.html';
+const LOGIN_REDIRECT_URL = `/login.html?next=${encodeURIComponent(ADMIN_PATH)}`;
 const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
 
 if (!authToken) {
-    window.location.replace('/login.html');
+    window.location.replace(LOGIN_REDIRECT_URL);
 }
 
 function getHeaders() {
@@ -18,8 +20,13 @@ async function fetchJson(url, options = {}) {
     const payload = await response.json().catch(() => ({}));
 
     if (response.status === 401 || response.status === 403) {
-        window.localStorage.removeItem(AUTH_TOKEN_KEY);
-        window.location.replace('/login.html');
+        if (response.status === 401) {
+            window.localStorage.removeItem(AUTH_TOKEN_KEY);
+            window.location.replace(LOGIN_REDIRECT_URL);
+            return null;
+        }
+
+        window.location.replace('/dashboard.html');
         return null;
     }
 
@@ -210,11 +217,18 @@ async function loadProfile() {
     });
 
     if (payload?.user) {
+        if (payload.user.role !== 'admin') {
+            window.location.replace('/dashboard.html');
+            return false;
+        }
+
         const username = document.getElementById('adminUsername');
         if (username) {
             username.textContent = `${payload.user.firstName} ${payload.user.lastName}`;
         }
     }
+
+    return Boolean(payload?.user);
 }
 
 async function loadOverview() {
@@ -861,6 +875,9 @@ document.head.appendChild(style);
 document.addEventListener('DOMContentLoaded', async () => {
     resetAPIBillingDefaults();
     initializeNavigation();
-    await loadProfile();
+    const canAccessAdmin = await loadProfile();
+    if (!canAccessAdmin) {
+        return;
+    }
     await loadOverview();
 });

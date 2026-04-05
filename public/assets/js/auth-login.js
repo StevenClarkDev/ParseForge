@@ -2,9 +2,18 @@ const AUTH_TOKEN_KEY = 'parseforge_auth_token';
 const loginForm = document.getElementById('loginForm');
 const authMessage = document.getElementById('authMessage');
 const submitButton = document.getElementById('loginSubmit');
+const nextParam = new URLSearchParams(window.location.search).get('next');
+
+function getRedirectTarget() {
+    if (nextParam && nextParam.startsWith('/')) {
+        return nextParam;
+    }
+
+    return '/dashboard.html';
+}
 
 if (window.localStorage.getItem(AUTH_TOKEN_KEY)) {
-    window.location.replace('dashboard.html');
+    window.location.replace(getRedirectTarget());
 }
 
 function setLoginMessage(message, type) {
@@ -37,10 +46,10 @@ loginForm.addEventListener('submit', async (event) => {
         }
 
         window.localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
-        setLoginMessage('Login successful. Redirecting to your dashboard...', 'success');
+        setLoginMessage('Login successful. Redirecting...', 'success');
 
         setTimeout(() => {
-            window.location.href = 'dashboard.html';
+            window.location.href = getRedirectTarget();
         }, 600);
     } catch (error) {
         setLoginMessage(error.message, 'error');

@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
 
 const connectDb = require('../configDb');
-const User = require('../models/User');
-const { createPasswordHash } = require('../utils/auth');
+const { ensureBootstrapAdminUser } = require('../seeds/bootstrapAdminUser');
 
 function readArgument(flag, fallback) {
     const index = process.argv.indexOf(flag);
@@ -14,45 +13,26 @@ function readArgument(flag, fallback) {
 }
 
 async function main() {
-    const email = readArgument('--email', 'admin@parseforge.dev');
-    const password = readArgument('--password', 'ParseForgeAdmin123!');
-    const firstName = readArgument('--first-name', 'ParseForge');
-    const lastName = readArgument('--last-name', 'Admin');
+    process.env.BOOTSTRAP_ADMIN_EMAIL = readArgument('--email', 'admin@parseforge.dev');
+    process.env.BOOTSTRAP_ADMIN_PASSWORD = readArgument('--password', 'ParseForgeAdmin123!');
+    process.env.BOOTSTRAP_ADMIN_FIRST_NAME = readArgument('--first-name', 'ParseForge');
+    process.env.BOOTSTRAP_ADMIN_LAST_NAME = readArgument('--last-name', 'Admin');
 
     await connectDb();
 
-    const user = await User.findOneAndUpdate(
-        { email: String(email).trim().toLowerCase() },
-        {
-            $set: {
-                firstName: String(firstName).trim(),
-                lastName: String(lastName).trim(),
-                email: String(email).trim().toLowerCase(),
-                passwordHash: createPasswordHash(password),
-                company: 'ParseForge',
-                useCase: 'platform-admin',
-                newsletter: false,
-                plan: 'enterprise',
-                role: 'admin',
-                status: 'active'
-            }
-        },
-        {
-            upsert: true,
-            new: true,
-            runValidators: true,
-            setDefaultsOnInsert: true
-        }
-    );
+    const user = await ensureBootstrapAdminUser({
+        User: require('../models/User'),
+        createPasswordHash: require('../utils/auth').createPasswordHash
+    });
 
     console.log(
         JSON.stringify(
             {
                 success: true,
-                id: user._id.toString(),
+                id: user.id,
                 email: user.email,
                 role: user.role,
-                status: user.status
+                password: process.env.BOOTSTRAP_ADMIN_PASSWORD
             },
             null,
             2
