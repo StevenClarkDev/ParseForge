@@ -6,6 +6,10 @@ const {
     ensureBootstrapAdminUser,
     getBootstrapAdminConfig
 } = require('../seeds/bootstrapAdminUser');
+const {
+    ensureBootstrapTestUser,
+    getBootstrapTestUserConfig
+} = require('../seeds/bootstrapTestUser');
 
 function createAuthRoutes({ jwtSecret, authMiddleware }) {
     const router = express.Router();
@@ -69,6 +73,7 @@ function createAuthRoutes({ jwtSecret, authMiddleware }) {
 
             const normalizedEmail = String(email).trim().toLowerCase();
             const bootstrapAdmin = getBootstrapAdminConfig();
+            const bootstrapTestUser = getBootstrapTestUserConfig();
 
             if (
                 bootstrapAdmin &&
@@ -76,6 +81,14 @@ function createAuthRoutes({ jwtSecret, authMiddleware }) {
                 password === bootstrapAdmin.password
             ) {
                 await ensureBootstrapAdminUser({ User, createPasswordHash });
+            }
+
+            if (
+                bootstrapTestUser &&
+                normalizedEmail === bootstrapTestUser.email &&
+                password === bootstrapTestUser.password
+            ) {
+                await ensureBootstrapTestUser({ User, createPasswordHash });
             }
 
             const user = await User.findOne({ email: normalizedEmail });

@@ -11,6 +11,7 @@ const { sanitizeUser } = require('./utils/serializers');
 const { createAuthMiddleware, createOptionalAuthMiddleware, requireAdmin } = require('./middleware/auth');
 const { seedAdminData } = require('./seeds/adminSeed');
 const { ensureBootstrapAdminUser } = require('./seeds/bootstrapAdminUser');
+const { ensureBootstrapTestUser } = require('./seeds/bootstrapTestUser');
 
 const User = require('./models/User');
 const ApiKey = require('./models/ApiKey');
@@ -72,6 +73,7 @@ async function start() {
         await connectDb();
         await seedAdminData();
         await ensureBootstrapAdminUser({ User, createPasswordHash });
+        await ensureBootstrapTestUser({ User, createPasswordHash });
         server.listen(port, () => {
             console.log(`ParseForge server running on http://localhost:${port}`);
         });
