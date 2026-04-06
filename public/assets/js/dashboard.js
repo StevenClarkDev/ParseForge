@@ -3,7 +3,7 @@ const AUTH_TOKEN_KEY = 'parseforge_auth_token';
 const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
 
 if (!authToken) {
-    window.location.replace('/login.html');
+    window.location.replace('/login.html?next=/dashboard.html');
 }
 
 let charts = {
@@ -17,7 +17,8 @@ let dashboardData = {
     apiKeys: [],
     activity: [],
     endpoints: [],
-    profile: null
+    profile: null,
+    purchases: []
 };
 
 function toggleMenu() {
@@ -40,7 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initializeCharts();
     setInterval(refreshDashboardData, 30000);
-    console.log('Dashboard initialized');
 });
 
 function getAuthHeaders() {
@@ -53,7 +53,7 @@ function getAuthHeaders() {
 function handleAuthFailure(response) {
     if (response.status === 401) {
         window.localStorage.removeItem(AUTH_TOKEN_KEY);
-        window.location.replace('/login.html');
+        window.location.replace('/login.html?next=/dashboard.html');
         return true;
     }
 
@@ -105,7 +105,7 @@ function initializeScrollSpy() {
     const sections = document.querySelectorAll('.dashboard-content section[id]');
     const menuItems = document.querySelectorAll('.menu-item');
 
-    if (sections.length === 0) {
+    if (!sections.length) {
         return;
     }
 
@@ -128,7 +128,7 @@ function initializeScrollSpy() {
         },
         {
             threshold: 0.3,
-            rootMargin: '-100px 0px -50% 0px'
+            rootMargin: '-100px 0px -45% 0px'
         }
     );
 
@@ -137,16 +137,18 @@ function initializeScrollSpy() {
 
 async function loadDashboardData() {
     try {
-        const [profile, stats, usage, responseTimes, statusCodes, endpoints, activity, keys] = await Promise.all([
-            fetchJson(`${API_BASE}/api/auth/me`, { headers: getAuthHeaders() }),
-            fetchJson(`${API_BASE}/api/dashboard/stats`, { headers: getAuthHeaders() }),
-            fetchJson(`${API_BASE}/api/dashboard/usage?period=7`),
-            fetchJson(`${API_BASE}/api/dashboard/response-times`),
-            fetchJson(`${API_BASE}/api/dashboard/status-codes`),
-            fetchJson(`${API_BASE}/api/dashboard/endpoints`),
-            fetchJson(`${API_BASE}/api/dashboard/activity`),
-            fetchJson(`${API_BASE}/api/keys`, { headers: getAuthHeaders() })
-        ]);
+        const [profile, stats, usage, responseTimes, statusCodes, endpoints, activity, keys, purchasesPayload] =
+            await Promise.all([
+                fetchJson(`${API_BASE}/api/auth/me`, { headers: getAuthHeaders() }),
+                fetchJson(`${API_BASE}/api/dashboard/stats`, { headers: getAuthHeaders() }),
+                fetchJson(`${API_BASE}/api/dashboard/usage?period=7`),
+                fetchJson(`${API_BASE}/api/dashboard/response-times`),
+                fetchJson(`${API_BASE}/api/dashboard/status-codes`),
+                fetchJson(`${API_BASE}/api/dashboard/endpoints`),
+                fetchJson(`${API_BASE}/api/dashboard/activity`),
+                fetchJson(`${API_BASE}/api/keys`, { headers: getAuthHeaders() }),
+                fetchJson(`${API_BASE}/api/catalog/purchases`, { headers: getAuthHeaders() })
+            ]);
 
         if (!profile) {
             return false;
@@ -160,7 +162,8 @@ async function loadDashboardData() {
             statusCodes,
             endpoints,
             activity,
-            apiKeys: keys
+            apiKeys: keys || [],
+            purchases: purchasesPayload?.purchases || []
         };
 
         updateUI();
@@ -176,33 +179,182 @@ async function refreshDashboardData() {
     const loaded = await loadDashboardData();
     if (loaded) {
         updateCharts();
-        console.log('Dashboard data refreshed');
     }
 }
 
 function updateUI() {
     updateHeader();
     updateStats();
+    updatePurchaseSummary();
+    updatePurchases();
     updateAPIKeys();
     updateActivity();
     updateEndpoints();
 }
 
+function getPurchaseCounts() {
+    const purchases = dashboardData.purchases || [];
+
+    return {
+        total: purchases.length,
+        subscriptions: purchases.filter(
+            (purchase) => purchase.purchaseType === 'monthly' || purchase.purchaseType === 'yearly'
+        ).length,
+        oneTime: purchases.filter((purchase) => purchase.purchaseType === 'one_time').length
+    };
+}
+
+function formatPurchaseType(purchaseType) {
+    switch (purchaseType) {
+        case 'monthly':
+            return 'Monthly subscription';
+        case 'yearly':
+            return 'Yearly subscription';
+        default:
+            return 'One-time license';
+    }
+}
+
+function formatShortDate(value) {
+    return new Date(value).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+}
+
 function updateHeader() {
     const title = document.getElementById('dashboardWelcome');
+    const subtitle = document.getElementById('dashboardSubtitle');
+    const { total } = getPurchaseCounts();
 
     if (title && dashboardData.profile) {
         title.textContent = `Welcome back, ${dashboardData.profile.firstName}!`;
     }
+
+    if (subtitle) {
+        subtitle.textContent =
+            total > 0
+                ? 'Your buyer workspace is ready with product access, subscriptions, and API credentials.'
+                : 'Start by purchasing your first SDK license or API subscription, then manage everything here.';
+    }
 }
 
 function updateStats() {
+    const purchaseCounts = getPurchaseCounts();
     const { stats } = dashboardData;
 
-    document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = stats.apiCalls?.toLocaleString() || '0';
-    document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = String(stats.activeKeys || 0);
-    document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = `${stats.avgResponseTime || 0}ms`;
-    document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = `${stats.successRate || 0}%`;
+    document.getElementById('ownedProductsValue').textContent = String(purchaseCounts.total);
+    document.getElementById('subscriptionsValue').textContent = String(purchaseCounts.subscriptions);
+    document.getElementById('activeKeysValue').textContent = String(dashboardData.apiKeys.length);
+    document.getElementById('apiCallsValue').textContent = stats.apiCalls?.toLocaleString() || '0';
+
+    document.getElementById('ownedProductsMeta').textContent =
+        purchaseCounts.total > 0
+            ? `${purchaseCounts.oneTime} licenses and ${purchaseCounts.subscriptions} subscriptions`
+            : 'No active purchases yet';
+    document.getElementById('subscriptionsMeta').textContent =
+        purchaseCounts.subscriptions > 0
+            ? `${purchaseCounts.subscriptions} active recurring products`
+            : 'Monthly or yearly plans appear here';
+    document.getElementById('activeKeysMeta').textContent =
+        dashboardData.apiKeys.length > 0
+            ? `${dashboardData.apiKeys.filter((key) => key.type === 'production').length} production keys configured`
+            : 'Create and manage credentials';
+    document.getElementById('apiCallsMeta').textContent =
+        `${stats.successRate || 0}% success rate · ${stats.avgResponseTime || 0}ms average`;
+}
+
+function updatePurchaseSummary() {
+    const accessLine = document.getElementById('summaryAccessLine');
+    const orderLine = document.getElementById('summaryOrderLine');
+    const nextLine = document.getElementById('summaryNextLine');
+    const purchases = dashboardData.purchases || [];
+    const latestPurchase = purchases[0];
+    const counts = getPurchaseCounts();
+
+    if (accessLine) {
+        accessLine.textContent =
+            counts.total > 0
+                ? `${counts.total} active products across your workspace`
+                : 'No active products in this workspace yet';
+    }
+
+    if (orderLine) {
+        orderLine.textContent = latestPurchase
+            ? `${latestPurchase.product.name} · ${formatPurchaseType(latestPurchase.purchaseType)}`
+            : 'No completed purchases yet';
+    }
+
+    if (nextLine) {
+        nextLine.textContent =
+            dashboardData.apiKeys.length > 0
+                ? 'You are ready to integrate from the dashboard.'
+                : counts.total > 0
+                  ? 'Create an API key for your next environment.'
+                  : 'Browse the marketplace and attach your first product to this account.';
+    }
+}
+
+function updatePurchases() {
+    const purchasesList = document.getElementById('purchasesList');
+    if (!purchasesList) {
+        return;
+    }
+
+    if (!dashboardData.purchases.length) {
+        purchasesList.innerHTML = `
+            <div class="empty-state-card">
+                <h3>No products purchased yet</h3>
+                <p>Browse the marketplace to buy a one-time SDK or subscribe to an API and it will appear here immediately.</p>
+                <a href="marketplace.html" class="btn-primary">Browse Marketplace</a>
+            </div>
+        `;
+        return;
+    }
+
+    purchasesList.innerHTML = dashboardData.purchases
+        .map((purchase) => {
+            const renewalLine =
+                purchase.renewsAt && (purchase.purchaseType === 'monthly' || purchase.purchaseType === 'yearly')
+                    ? `Renews ${formatShortDate(purchase.renewsAt)}`
+                    : 'Lifetime access';
+
+            return `
+                <article class="purchase-card">
+                    <div class="purchase-card-top">
+                        <div>
+                            <span class="purchase-type">${formatPurchaseType(purchase.purchaseType)}</span>
+                            <h3>${purchase.product.name}</h3>
+                        </div>
+                        <span class="purchase-status">${purchase.status}</span>
+                    </div>
+                    <p class="purchase-description">${purchase.product.description}</p>
+                    <div class="purchase-meta">
+                        <span>${purchase.product.type.toUpperCase()}</span>
+                        <span>${purchase.product.language}</span>
+                        <span>${formatShortDate(purchase.createdAt)}</span>
+                    </div>
+                    <div class="purchase-features">
+                        ${(purchase.product.features || [])
+                            .slice(0, 3)
+                            .map((feature) => `<span>${feature}</span>`)
+                            .join('')}
+                    </div>
+                    <div class="purchase-card-bottom">
+                        <div class="purchase-pricing">
+                            <strong>$${Number(purchase.unitPrice || 0).toFixed(2)}</strong>
+                            <span>${renewalLine}</span>
+                        </div>
+                        <div class="purchase-actions">
+                            <a href="${purchase.product.documentation || 'docs.html'}" class="btn-secondary">Open Docs</a>
+                            <span class="purchase-order">${purchase.orderReference}</span>
+                        </div>
+                    </div>
+                </article>
+            `;
+        })
+        .join('');
 }
 
 function updateAPIKeys() {
@@ -212,27 +364,32 @@ function updateAPIKeys() {
     }
 
     if (!dashboardData.apiKeys.length) {
-        keysList.innerHTML = '<p class="empty-state">No API keys yet. Create your first key to start integrating.</p>';
+        keysList.innerHTML = `
+            <div class="empty-state-card compact">
+                <h3>No API keys yet</h3>
+                <p>Create your first key to connect the products you own to your environments.</p>
+                <button class="btn-primary" type="button" onclick="showCreateKeyModal()">Create API Key</button>
+            </div>
+        `;
         return;
     }
 
     keysList.innerHTML = dashboardData.apiKeys
         .map((key) => {
-            const created = new Date(key.created).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
+            const created = formatShortDate(key.created);
             const lastUsed = key.lastUsed ? getRelativeTime(new Date(key.lastUsed)) : 'Never used';
 
             return `
                 <div class="key-item" data-key-id="${key.id}">
                     <div class="key-info">
-                        <div class="key-name">${key.name}</div>
+                        <div class="key-topline">
+                            <div class="key-name">${key.name}</div>
+                            <span class="key-type">${key.type}</span>
+                        </div>
                         <code class="key-value">${key.key}</code>
                         <div class="key-meta">
-                            <span>Created: ${created}</span>
-                            <span>Last used: ${lastUsed}</span>
+                            <span>Created ${created}</span>
+                            <span>Last used ${lastUsed}</span>
                         </div>
                     </div>
                     <div class="key-actions">
@@ -251,11 +408,16 @@ function updateActivity() {
         return;
     }
 
+    if (!dashboardData.activity.length) {
+        activityList.innerHTML = '<p class="empty-state">No recent workspace activity yet.</p>';
+        return;
+    }
+
     activityList.innerHTML = dashboardData.activity
         .map((activity) => {
             const isSuccess = activity.status >= 200 && activity.status < 300;
             const iconClass = isSuccess ? 'success' : 'error';
-            const icon = isSuccess ? 'OK' : 'ERR';
+            const icon = isSuccess ? 'OK' : 'ER';
             const timeAgo = getRelativeTime(new Date(activity.timestamp));
 
             return `
@@ -342,9 +504,9 @@ function createUsageChart() {
                 {
                     label: 'API Calls',
                     data: dashboardData.usage?.values || [],
-                    borderColor: '#6366f1',
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    tension: 0.4,
+                    borderColor: '#00d9ff',
+                    backgroundColor: 'rgba(0, 217, 255, 0.12)',
+                    tension: 0.35,
                     fill: true
                 }
             ]
@@ -358,13 +520,19 @@ function createUsageChart() {
                 }
             },
             scales: {
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255,255,255,0.06)' }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {
+                        color: '#94a3b8',
                         callback(value) {
                             return value.toLocaleString();
                         }
-                    }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.06)' }
                 }
             }
         }
@@ -389,9 +557,9 @@ function createResponseChart() {
                 {
                     label: 'Response Time (ms)',
                     data: dashboardData.responseTimes?.values || [],
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.4,
+                    borderColor: '#1de9b6',
+                    backgroundColor: 'rgba(29, 233, 182, 0.12)',
+                    tension: 0.35,
                     fill: true
                 }
             ]
@@ -405,13 +573,19 @@ function createResponseChart() {
                 }
             },
             scales: {
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255,255,255,0.06)' }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {
+                        color: '#94a3b8',
                         callback(value) {
                             return `${value}ms`;
                         }
-                    }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.06)' }
                 }
             }
         }
@@ -435,7 +609,8 @@ function createStatusChart() {
             datasets: [
                 {
                     data: dashboardData.statusCodes?.values || [],
-                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#94a3b8']
+                    backgroundColor: ['#1de9b6', '#00d9ff', '#ffaa00', '#ff3366', '#64748b'],
+                    borderWidth: 0
                 }
             ]
         },
@@ -444,7 +619,11 @@ function createStatusChart() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        color: '#94a3b8',
+                        padding: 16
+                    }
                 }
             }
         }
@@ -489,12 +668,14 @@ function copyKey(button) {
         .writeText(keyValue)
         .then(() => {
             const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            button.style.background = '#10b981';
+            button.textContent = 'Copied';
+            button.style.background = '#1de9b6';
+            button.style.color = '#0a0e27';
 
             setTimeout(() => {
                 button.textContent = originalText;
                 button.style.background = '';
+                button.style.color = '';
             }, 2000);
         })
         .catch(() => {
@@ -531,8 +712,8 @@ async function createAPIKey(name, type) {
         });
 
         dashboardData.stats = stats;
-        updateAPIKeys();
         updateStats();
+        updateAPIKeys();
         showNotification('API key created successfully', 'success');
     } catch (error) {
         console.error('Error creating API key:', error);
@@ -551,13 +732,9 @@ async function revokeKey(keyId, button) {
             headers: getAuthHeaders()
         });
 
-        const keyItem = button.closest('.key-item');
-        keyItem.style.opacity = '0';
-        setTimeout(() => keyItem.remove(), 300);
-
         dashboardData.apiKeys = dashboardData.apiKeys.filter((key) => key.id !== keyId);
-        dashboardData.stats.activeKeys = dashboardData.apiKeys.length;
         updateStats();
+        updateAPIKeys();
         showNotification('API key revoked successfully', 'success');
     } catch (error) {
         console.error('Error revoking API key:', error);
@@ -589,19 +766,19 @@ function getRelativeTime(date) {
 
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
     notification.textContent = message;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
         padding: 15px 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#6366f1'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background: ${type === 'success' ? '#1de9b6' : type === 'error' ? '#ff3366' : '#00d9ff'};
+        color: ${type === 'success' || type === 'info' ? '#0a0e27' : '#ffffff'};
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
+        font-weight: 700;
     `;
 
     document.body.appendChild(notification);

@@ -9,10 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
-            <a href="index.html" class="logo">
+            <a href="/" class="logo">
                 <span class="logo-icon">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
@@ -21,273 +20,215 @@
                                 <stop offset="100%" style="stop-color:#1de9b6;stop-opacity:1" />
                             </linearGradient>
                         </defs>
-                        <path d="M8 4 L8 28 M8 4 L18 4 C22 4 24 6 24 10 C24 14 22 16 18 16 L8 16" 
-                              stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="8" cy="4" r="2" fill="#00d9ff"/>
-                        <circle cx="18" cy="4" r="2" fill="#00d9ff"/>
-                        <circle cx="24" cy="10" r="2" fill="#1de9b6"/>
-                        <circle cx="18" cy="16" r="2" fill="#1de9b6"/>
-                        <circle cx="8" cy="16" r="2" fill="#00ff88"/>
-                        <circle cx="8" cy="28" r="2" fill="#00ff88"/>
-                        <line x1="8" y1="22" x2="14" y2="22" stroke="#00d9ff" stroke-width="1.5" opacity="0.6"/>
-                        <circle cx="14" cy="22" r="1.5" fill="#00d9ff" opacity="0.8"/>
+                        <path d="M8 4 L8 28 M8 4 L18 4 C22 4 24 6 24 10 C24 14 22 16 18 16 L8 16"
+                              stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="8" cy="4" r="2" fill="#00d9ff" />
+                        <circle cx="18" cy="4" r="2" fill="#00d9ff" />
+                        <circle cx="24" cy="10" r="2" fill="#1de9b6" />
+                        <circle cx="18" cy="16" r="2" fill="#1de9b6" />
+                        <circle cx="8" cy="16" r="2" fill="#00ff88" />
+                        <circle cx="8" cy="28" r="2" fill="#00ff88" />
+                        <line x1="8" y1="22" x2="14" y2="22" stroke="#00d9ff" stroke-width="1.5" opacity="0.6" />
+                        <circle cx="14" cy="22" r="1.5" fill="#00d9ff" opacity="0.8" />
                     </svg>
                 </span>
                 ParseForge
             </a>
-            <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
+            <button class="mobile-menu-btn" onclick="toggleMenu()">Menu</button>
             <ul class="nav-links">
                 <li><a href="docs.html">Documentation</a></li>
                 <li><a href="sdks.html">SDKs & APIs</a></li>
                 <li><a href="marketplace.html">Marketplace</a></li>
                 <li><a href="pricing.html">Pricing</a></li>
                 <li><a href="dashboard.html" class="active">Dashboard</a></li>
-                <li><a href="login.html" class="btn-primary" id="logoutLink" data-logout-link>Logout</a></li>
+                <li><a href="login.html" class="btn-primary" data-logout-link>Logout</a></li>
             </ul>
         </div>
     </nav>
 
     <div class="dashboard-layout">
-        <!-- Sidebar -->
         <aside class="dashboard-sidebar">
             <div class="sidebar-menu">
                 <a href="#overview" class="menu-item active">
-                    <span>📊</span> Overview
+                    <span>OV</span> Overview
+                </a>
+                <a href="#purchases" class="menu-item">
+                    <span>BY</span> Purchases
                 </a>
                 <a href="#api-keys" class="menu-item">
-                    <span>🔑</span> API Keys
-                </a>
-                <a href="#projects" class="menu-item">
-                    <span>📁</span> Projects
+                    <span>KY</span> API Keys
                 </a>
                 <a href="#analytics" class="menu-item">
-                    <span>📈</span> Analytics
+                    <span>AN</span> Analytics
+                </a>
+                <a href="#projects" class="menu-item">
+                    <span>PR</span> Projects
                 </a>
                 <a href="settings.html" class="menu-item">
-                    <span>⚙️</span> Settings
+                    <span>ST</span> Settings
                 </a>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="dashboard-content">
-            <!-- Overview Section -->
             <section id="overview">
                 <div class="dashboard-header">
-                    <h1 id="dashboardWelcome">Welcome back, Developer!</h1>
-                    <p>Manage your API keys, monitor usage, and configure your projects.</p>
+                    <div class="dashboard-header-copy">
+                        <span class="dashboard-kicker">Buyer Workspace</span>
+                        <h1 id="dashboardWelcome">Welcome back.</h1>
+                        <p id="dashboardSubtitle">Your ParseForge purchases, subscriptions, and keys live here.</p>
+                    </div>
+                    <div class="dashboard-header-actions">
+                        <a href="marketplace.html" class="btn-primary">Browse Marketplace</a>
+                        <button class="btn-secondary" type="button" onclick="showCreateKeyModal()">Create API Key</button>
+                    </div>
                 </div>
 
-                <!-- Stats Grid -->
+                <div class="buyer-summary-banner" id="buyerSummaryBanner">
+                    <div class="summary-banner-item">
+                        <span class="summary-label">Workspace access</span>
+                        <strong id="summaryAccessLine">Loading your buyer profile...</strong>
+                    </div>
+                    <div class="summary-banner-item">
+                        <span class="summary-label">Recent order</span>
+                        <strong id="summaryOrderLine">Checking purchases...</strong>
+                    </div>
+                    <div class="summary-banner-item">
+                        <span class="summary-label">Next move</span>
+                        <strong id="summaryNextLine">Create a key or buy your first product.</strong>
+                    </div>
+                </div>
+
                 <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">📡</div>
-                    <div class="stat-info">
-                        <h3>API Calls</h3>
-                        <p class="stat-value">24,547</p>
-                        <span class="stat-change positive">+12% from last month</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🔑</div>
-                    <div class="stat-info">
-                        <h3>Active Keys</h3>
-                        <p class="stat-value">3</p>
-                        <span class="stat-change">2 production, 1 test</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⚡</div>
-                    <div class="stat-info">
-                        <h3>Avg Response</h3>
-                        <p class="stat-value">87ms</p>
-                        <span class="stat-change positive">-5ms improvement</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <h3>Success Rate</h3>
-                        <p class="stat-value">99.8%</p>
-                        <span class="stat-change positive">All systems operational</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts Section -->
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>API Usage (Last 7 Days)</h3>
-                        <select id="usagePeriod" class="chart-select">
-                            <option value="7">Last 7 Days</option>
-                            <option value="30">Last 30 Days</option>
-                            <option value="90">Last 90 Days</option>
-                        </select>
-                    </div>
-                    <canvas id="usageChart" style="max-height: 300px;"></canvas>
-                </div>
-
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>Response Time</h3>
-                        <span class="chart-badge">Real-time</span>
-                    </div>
-                    <canvas id="responseChart" style="max-height: 300px;"></canvas>
-                </div>
-            </div>
-
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>Status Code Distribution</h3>
-                    </div>
-                    <canvas id="statusChart" style="max-height: 280px;"></canvas>
-                </div>
-
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>Top Endpoints</h3>
-                        <a href="#" class="view-all">View All →</a>
-                    </div>
-                    <div class="endpoints-list" id="topEndpointsList">
-                        <div class="endpoint-item">
-                            <div class="endpoint-info">
-                                <span class="endpoint-method get">GET</span>
-                                <span class="endpoint-path">/api/users</span>
-                            </div>
-                            <div class="endpoint-stat">
-                                <span class="endpoint-count">8,432</span>
-                                <div class="endpoint-bar" style="width: 90%;"></div>
-                            </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">BY</div>
+                        <div class="stat-info">
+                            <h3>Owned Products</h3>
+                            <p class="stat-value" id="ownedProductsValue">0</p>
+                            <span class="stat-change" id="ownedProductsMeta">No active purchases yet</span>
                         </div>
-                        <div class="endpoint-item">
-                            <div class="endpoint-info">
-                                <span class="endpoint-method post">POST</span>
-                                <span class="endpoint-path">/api/data</span>
-                            </div>
-                            <div class="endpoint-stat">
-                                <span class="endpoint-count">5,234</span>
-                                <div class="endpoint-bar" style="width: 55%;"></div>
-                            </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">SB</div>
+                        <div class="stat-info">
+                            <h3>Subscriptions</h3>
+                            <p class="stat-value" id="subscriptionsValue">0</p>
+                            <span class="stat-change" id="subscriptionsMeta">Monthly or yearly plans</span>
                         </div>
-                        <div class="endpoint-item">
-                            <div class="endpoint-info">
-                                <span class="endpoint-method get">GET</span>
-                                <span class="endpoint-path">/api/status</span>
-                            </div>
-                            <div class="endpoint-stat">
-                                <span class="endpoint-count">3,891</span>
-                                <div class="endpoint-bar" style="width: 41%;"></div>
-                            </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">KY</div>
+                        <div class="stat-info">
+                            <h3>Active Keys</h3>
+                            <p class="stat-value" id="activeKeysValue">0</p>
+                            <span class="stat-change" id="activeKeysMeta">Create and manage credentials</span>
                         </div>
-                        <div class="endpoint-item">
-                            <div class="endpoint-info">
-                                <span class="endpoint-method put">PUT</span>
-                                <span class="endpoint-path">/api/users/:id</span>
-                            </div>
-                            <div class="endpoint-stat">
-                                <span class="endpoint-count">1,843</span>
-                                <div class="endpoint-bar" style="width: 20%;"></div>
-                            </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">AP</div>
+                        <div class="stat-info">
+                            <h3>API Calls</h3>
+                            <p class="stat-value" id="apiCallsValue">0</p>
+                            <span class="stat-change positive" id="apiCallsMeta">Usage across your workspace</span>
                         </div>
                     </div>
                 </div>
-            </div>
             </section>
-            <!-- End Overview Section -->
 
-            <!-- API Keys Section -->
+            <section id="purchases" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Purchases & Access</h2>
+                    <a href="marketplace.html" class="view-all">Shop more products</a>
+                </div>
+                <div class="purchases-grid" id="purchasesList">
+                    <p class="empty-state">Your purchased products and subscriptions will appear here.</p>
+                </div>
+            </section>
+
             <section id="api-keys" class="dashboard-section">
                 <div class="section-header">
-                    <h2>🔑 API Keys</h2>
-                    <button class="btn-primary" onclick="showCreateKeyModal()">+ Create New Key</button>
+                    <h2>API Keys</h2>
+                    <button class="btn-primary" type="button" onclick="showCreateKeyModal()">Create New Key</button>
                 </div>
-
                 <div class="keys-list" id="keysList">
-                    <div class="key-item">
-                        <div class="key-info">
-                            <div class="key-name">Production Key</div>
-                            <code class="key-value">pk_live_••••••••••••••••4f2a</code>
-                            <div class="key-meta">
-                                <span>Created: Feb 15, 2026</span>
-                                <span>Last used: 2 hours ago</span>
-                            </div>
-                        </div>
-                        <div class="key-actions">
-                            <button class="btn-secondary btn-sm" onclick="copyKey(this)">Copy</button>
-                            <button class="btn-danger btn-sm">Revoke</button>
-                        </div>
-                    </div>
-
-                    <div class="key-item">
-                        <div class="key-info">
-                            <div class="key-name">Development Key</div>
-                            <code class="key-value">pk_test_••••••••••••••••8c9b</code>
-                            <div class="key-meta">
-                                <span>Created: Feb 01, 2026</span>
-                                <span>Last used: 5 minutes ago</span>
-                            </div>
-                        </div>
-                        <div class="key-actions">
-                            <button class="btn-secondary btn-sm" onclick="copyKey(this)">Copy</button>
-                            <button class="btn-danger btn-sm">Revoke</button>
-                        </div>
-                    </div>
+                    <p class="empty-state">No API keys yet. Create your first key to start integrating.</p>
                 </div>
             </section>
-            <!-- End API Keys Section -->
 
-            <!-- Analytics Section -->
             <section id="analytics" class="dashboard-section">
                 <div class="section-header">
-                    <h2>📈 Analytics</h2>
+                    <h2>Usage & Performance</h2>
+                    <a href="docs.html" class="view-all">Read docs</a>
                 </div>
-                <div class="activity-list" style="text-align: center; padding: 40px;">
-                    <p style="color: #64748b;">Detailed analytics data will appear here. This includes trends, insights, and performance metrics.</p>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>API Usage</h3>
+                            <select id="usagePeriod" class="chart-select">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30">Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                            </select>
+                        </div>
+                        <canvas id="usageChart" style="max-height: 300px;"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Response Time</h3>
+                            <span class="chart-badge">Live Trend</span>
+                        </div>
+                        <canvas id="responseChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-grid charts-grid-bottom">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Status Code Distribution</h3>
+                        </div>
+                        <canvas id="statusChart" style="max-height: 280px;"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Top Endpoints</h3>
+                            <span class="chart-badge muted">Workspace snapshot</span>
+                        </div>
+                        <div class="endpoints-list" id="topEndpointsList"></div>
+                    </div>
                 </div>
             </section>
 
-            <!-- Recent Activity -->
             <section class="dashboard-section">
                 <div class="section-header">
-                    <h2>📊 Recent Activity</h2>
-                    <a href="#" class="view-all">View All →</a>
+                    <h2>Recent Activity</h2>
                 </div>
-
-                <div class="activity-list" id="recentActivityList">
-                    <div class="activity-item">
-                        <div class="activity-icon success">✓</div>
-                        <div class="activity-info">
-                            <div class="activity-title">GET /api/users/123</div>
-                            <div class="activity-meta">2 minutes ago · 200 OK · 45ms</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-icon success">✓</div>
-                        <div class="activity-info">
-                            <div class="activity-title">POST /api/data</div>
-                            <div class="activity-meta">5 minutes ago · 201 Created · 67ms</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-icon error">✗</div>
-                        <div class="activity-info">
-                            <div class="activity-title">GET /api/users/999</div>
-                            <div class="activity-meta">10 minutes ago · 404 Not Found · 32ms</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="activity-list" id="recentActivityList"></div>
             </section>
 
-            <!-- Projects Section -->
             <section id="projects" class="dashboard-section">
                 <div class="section-header">
-                    <h2>📁 Projects</h2>
-                    <button class="btn-primary" onclick="alert('Create project functionality coming soon!')">+ New Project</button>
+                    <h2>Launch Checklist</h2>
+                    <a href="marketplace.html" class="view-all">Return to marketplace</a>
                 </div>
-                <div style="text-align: center; padding: 40px;">
-                    <p style="color: #64748b;">Your projects will appear here. Create a new project to get started!</p>
+                <div class="projects-grid">
+                    <article class="project-card">
+                        <span class="project-chip">Step 1</span>
+                        <h3>Confirm what your team owns</h3>
+                        <p>Use the purchases section to verify which SDK licenses and API subscriptions are active in this workspace.</p>
+                    </article>
+                    <article class="project-card">
+                        <span class="project-chip">Step 2</span>
+                        <h3>Create environment-ready keys</h3>
+                        <p>Generate test and production keys for the products your team is integrating right now.</p>
+                    </article>
+                    <article class="project-card">
+                        <span class="project-chip">Step 3</span>
+                        <h3>Ship from docs to deployment</h3>
+                        <p>Jump back to documentation or the marketplace when you need another SDK or a managed API dependency.</p>
+                    </article>
                 </div>
             </section>
         </main>
