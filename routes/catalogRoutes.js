@@ -35,6 +35,71 @@ function normalizePaymentMethodType(value) {
     return value === 'stripe_card' ? 'stripe_card' : 'stripe_checkout';
 }
 
+function sanitizeText(value, maxLength = 120) {
+    return String(value || '').trim().slice(0, maxLength);
+}
+
+function sanitizeEmail(value) {
+    return sanitizeText(value, 160).toLowerCase();
+}
+
+function sanitizeLast4(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.slice(-4);
+}
+
+function sanitizeMonth(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 2);
+    if (!digits) {
+        return '';
+    }
+
+    const month = Number.parseInt(digits, 10);
+    return month >= 1 && month <= 12 ? String(month).padStart(2, '0') : '';
+}
+
+function sanitizeYear(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+
+    if (digits.length >= 4) {
+        return digits.slice(0, 4);
+    }
+
+    if (digits.length === 2) {
+        return `20${digits}`;
+    }
+
+    return '';
+}
+
+function buildPaymentDetailsSnapshot(source = {}, paymentMethodType = 'stripe_checkout') {
+    return {
+        billingName: sanitizeText(source.billingName, 120),
+        billingEmail: sanitizeEmail(source.billingEmail),
+        companyName: sanitizeText(source.companyName, 120),
+        country: sanitizeText(source.country, 64),
+        region: sanitizeText(source.region, 64),
+        postalCode: sanitizeText(source.postalCode, 24),
+        cardholderName: sanitizeText(source.cardholderName, 120),
+        cardBrand: sanitizeText(source.cardBrand, 32),
+        cardLast4: paymentMethodType === 'stripe_card' ? sanitizeLast4(source.cardLast4) : '',
+        expiryMonth: paymentMethodType === 'stripe_card' ? sanitizeMonth(source.expiryMonth) : '',
+        expiryYear: paymentMethodType === 'stripe_card' ? sanitizeYear(source.expiryYear) : '',
+        collectionMode: paymentMethodType === 'stripe_card' ? 'direct_card' : 'hosted_checkout'
+    };
+}
+
+function ensureWritablePurchaseSession(req, res) {
+    if (req.supportSession?.active) {
+        res.status(403).json({
+            error: 'Support sessions are read-only. Exit support mode before completing checkout.'
+        });
+        return false;
+    }
+
+    return true;
+}
+
 async function buildCheckoutSelection(items, ApiCatalogItem) {
     const productIds = [...new Set(items.map((item) => String(item.productId || '')).filter(Boolean))];
     const products = await ApiCatalogItem.find({ _id: { $in: productIds } });
@@ -190,6 +255,10 @@ function createCatalogRoutes({
 
     router.post('/checkout/session', authMiddleware, async (req, res) => {
         try {
+            if (!ensureWritablePurchaseSession(req, res)) {
+                return;
+            }
+
             const items = Array.isArray(req.body.items) ? req.body.items : [];
             const paymentMethodType = normalizePaymentMethodType(req.body.paymentMethodType);
 
@@ -234,6 +303,10 @@ function createCatalogRoutes({
 
     router.post('/checkout', authMiddleware, async (req, res) => {
         try {
+            if (!ensureWritablePurchaseSession(req, res)) {
+                return;
+            }
+
             const items = Array.isArray(req.body.items) ? req.body.items : [];
             const paymentProvider = String(req.body.paymentProvider || 'stripe_simulated');
             const paymentMethodType = normalizePaymentMethodType(req.body.paymentMethodType);
@@ -253,6 +326,10 @@ function createCatalogRoutes({
                 req.body.paymentIntentId || createStripePaymentIntentId(),
             );
             const providerChargeId = createStripeChargeId();
+            const paymentDetails = buildPaymentDetailsSnapshot(
+                req.body.paymentDetails,
+                paymentMethodType,
+            );
 
             for (const item of checkoutItems) {
                 const { product, purchaseType, purchaseOption } = item;
@@ -294,6 +371,7 @@ function createCatalogRoutes({
                         activeSubscription.providerSessionId = providerSessionId;
                         activeSubscription.providerPaymentIntentId = providerPaymentIntentId;
                         activeSubscription.providerChargeId = providerChargeId;
+                        activeSubscription.paymentDetails = paymentDetails;
                         await activeSubscription.save();
                         processedPurchases.push(activeSubscription);
                         continue;
@@ -311,6 +389,7 @@ function createCatalogRoutes({
                     providerSessionId,
                     providerPaymentIntentId,
                     providerChargeId,
+                    paymentDetails,
                     renewsAt: renewalDate,
                     orderReference: createOrderReference()
                 });

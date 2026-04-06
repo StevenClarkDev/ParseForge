@@ -71,6 +71,18 @@
         </aside>
 
         <main class="dashboard-content">
+            <section class="support-session-banner" id="supportSessionBanner" hidden>
+                <div class="support-session-copy">
+                    <span class="dashboard-kicker">Support Session</span>
+                    <h2 id="supportSessionTitle">Read-only customer view active</h2>
+                    <p id="supportSessionMessage">You are viewing this workspace for support. Purchases and key changes are disabled.</p>
+                </div>
+                <div class="support-session-actions">
+                    <a href="admin.html" class="btn-secondary" id="supportReturnLink">Return to Admin</a>
+                    <button class="btn-primary" type="button" id="endSupportSessionButton">Exit Support Session</button>
+                </div>
+            </section>
+
             <section id="overview">
                 <div class="dashboard-header">
                     <div class="dashboard-header-copy">
@@ -80,7 +92,7 @@
                     </div>
                     <div class="dashboard-header-actions">
                         <a href="marketplace.html" class="btn-primary">Browse Marketplace</a>
-                        <button class="btn-secondary" type="button" onclick="showCreateKeyModal()">Create API Key</button>
+                        <button class="btn-secondary" type="button" onclick="showCreateKeyModal()" data-key-action>Create API Key</button>
                     </div>
                 </div>
 
@@ -148,7 +160,7 @@
             <section id="api-keys" class="dashboard-section">
                 <div class="section-header">
                     <h2>API Keys</h2>
-                    <button class="btn-primary" type="button" onclick="showCreateKeyModal()">Create New Key</button>
+                    <button class="btn-primary" type="button" onclick="showCreateKeyModal()" data-key-action>Create New Key</button>
                 </div>
                 <div class="keys-list" id="keysList">
                     <p class="empty-state">No API keys yet. Create your first key to start integrating.</p>

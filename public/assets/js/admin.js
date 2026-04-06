@@ -1,8 +1,16 @@
 const API_BASE = `${window.location.origin}/api/admin`;
 const AUTH_TOKEN_KEY = 'parseforge_auth_token';
+const SUPPORT_ADMIN_TOKEN_KEY = 'parseforge_support_admin_token';
+const SUPPORT_CONTEXT_KEY = 'parseforge_support_context';
 const ADMIN_PATH = '/admin.html';
 const LOGIN_REDIRECT_URL = `/admin-login.html?next=${encodeURIComponent(ADMIN_PATH)}`;
 const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
+
+let currentUsersPage = 1;
+let currentUsersSearch = '';
+let currentPaymentsUserId = '';
+let currentPaymentsUserName = '';
+let currentPaymentMethods = [];
 
 if (!authToken) {
     window.location.replace(LOGIN_REDIRECT_URL);
@@ -52,6 +60,12 @@ function renderEmptyState(message) {
 
 function renderTableEmptyState(columnCount, message) {
     return `<tr><td class="table-empty" colspan="${columnCount}">${message}</td></tr>`;
+}
+
+function formatPurchaseType(purchaseType) {
+    if (purchaseType === 'monthly') return 'Monthly subscription';
+    if (purchaseType === 'yearly') return 'Yearly subscription';
+    return 'One-time purchase';
 }
 
 function getActivityCode(action) {
@@ -666,6 +680,9 @@ document.getElementById('logoForm')?.addEventListener('submit', async (event) =>
 
 async function loadUsers(page = 1, search = '') {
     try {
+        currentUsersPage = page;
+        currentUsersSearch = search;
+
         const data = await fetchJson(`${API_BASE}/users?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
             headers: getHeaders()
         });
@@ -685,6 +702,11 @@ async function loadUsers(page = 1, search = '') {
                         <td>${formatDate(user.joined)}</td>
                         <td>
                             <div class="action-buttons">
+                                <button class="action-btn support" onclick="startSupportSession('${user.id}')">Support View</button>
+                                <button class="action-btn neutral" onclick="openPaymentsModal('${user.id}', '${user.name.replace(/'/g, "\\'")}')">
+                                    <span class="icon-eye">E</span>
+                                    Payments
+                                </button>
                                 <button class="action-btn" onclick="editUser('${user.id}')">Edit</button>
                                 <button class="action-btn delete" onclick="deleteUser('${user.id}')">Delete</button>
                             </div>
@@ -721,6 +743,168 @@ function renderPagination(currentPage, totalPages, search = '') {
     }
 
     pagination.innerHTML = html;
+}
+
+function buildPaymentMethodCard(paymentMethod) {
+    const details = paymentMethod.protectedDetails || {};
+    const renewalCopy = paymentMethod.renewsAt
+        ? `Renews ${formatDate(paymentMethod.renewsAt)}`
+        : 'No renewal date';
+
+    return `
+        <article class="payment-method-card">
+            <div class="payment-method-top">
+                <div>
+                    <h3>${paymentMethod.productName}</h3>
+                    <p class="payment-method-subtitle">${paymentMethod.paymentMethodLabel}</p>
+                </div>
+                <span class="status-badge ${paymentMethod.status}">${paymentMethod.status}</span>
+            </div>
+            <div class="payment-method-meta">
+                <span>${formatPurchaseType(paymentMethod.purchaseType)}</span>
+                <span>${formatCurrency(paymentMethod.amount)} ${paymentMethod.currency}</span>
+                <span>${formatDate(paymentMethod.purchasedAt)}</span>
+                <span>${renewalCopy}</span>
+            </div>
+            <div class="payment-method-grid">
+                <div class="payment-method-field">
+                    <span>Billing Name</span>
+                    <strong>${details.billingName}</strong>
+                </div>
+                <div class="payment-method-field">
+                    <span>Billing Email</span>
+                    <strong>${details.billingEmail}</strong>
+                </div>
+                <div class="payment-method-field">
+                    <span>Cardholder</span>
+                    <strong>${details.cardholderName}</strong>
+                </div>
+                <div class="payment-method-field">
+                    <span>Card Brand</span>
+                    <strong>${details.cardBrand}</strong>
+                </div>
+                <div class="payment-method-field">
+                    <span>Card Number</span>
+                    <strong>${details.cardNumber}</strong>
+                </div>
+                <div class="payment-method-field">
+                    <span>Expiry</span>
+                    <strong>${details.expiry}</strong>
+                </div>
+                <div class="payment-method-field">
+                    <span>Country</span>
+                    <strong>${details.country}</strong>
+                </div>
+                <div class="payment-method-field">
+                    <span>Postal Code</span>
+                    <strong>${details.postalCode}</strong>
+                </div>
+            </div>
+            <div class="payment-method-actions">
+                <span class="support-session-copy">${paymentMethod.complianceNote}</span>
+                ${
+                    paymentMethod.canReveal
+                        ? `<button class="action-btn neutral" onclick="revealPaymentMethod('${paymentMethod.id}')">
+                            <span class="icon-eye">E</span>
+                            ${paymentMethod.revealed ? 'Re-verify' : 'Reveal'}
+                           </button>`
+                        : ''
+                }
+            </div>
+        </article>
+    `;
+}
+
+async function openPaymentsModal(userId, userName) {
+    currentPaymentsUserId = userId;
+    currentPaymentsUserName = userName;
+
+    try {
+        const payload = await fetchJson(`${API_BASE}/users/${userId}/payment-methods`, {
+            headers: getHeaders()
+        });
+        currentPaymentMethods = payload.paymentMethods || [];
+
+        const modal = document.getElementById('paymentsModal');
+        const title = document.getElementById('paymentsModalTitle');
+        const content = document.getElementById('paymentMethodsContent');
+
+        if (title) {
+            title.textContent = `${payload.user.name} Payment Methods`;
+        }
+
+        if (content) {
+            content.innerHTML = currentPaymentMethods.length
+                ? currentPaymentMethods.map((paymentMethod) => buildPaymentMethodCard(paymentMethod)).join('')
+                : renderEmptyState('No payment methods or purchase records were found for this customer.');
+        }
+
+        modal?.classList.add('active');
+    } catch (error) {
+        console.error('Error loading payment methods:', error);
+        showNotification(error.message || 'Failed to load payment methods', 'error');
+    }
+}
+
+function closePaymentsModal() {
+    currentPaymentMethods = [];
+    document.getElementById('paymentsModal')?.classList.remove('active');
+}
+
+async function revealPaymentMethod(purchaseId) {
+    const password = window.prompt('Enter your admin password to reveal this payment snapshot:');
+
+    if (!password) {
+        return;
+    }
+
+    try {
+        const payload = await fetchJson(`${API_BASE}/users/${currentPaymentsUserId}/payment-methods/${purchaseId}/reveal`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ password })
+        });
+
+        currentPaymentMethods = currentPaymentMethods.map((paymentMethod) =>
+            paymentMethod.id === purchaseId ? payload.paymentMethod : paymentMethod
+        );
+
+        const content = document.getElementById('paymentMethodsContent');
+        if (content) {
+            content.innerHTML = currentPaymentMethods.map((paymentMethod) => buildPaymentMethodCard(paymentMethod)).join('');
+        }
+
+        showNotification('Payment details revealed for this support review.', 'success');
+    } catch (error) {
+        console.error('Error revealing payment method:', error);
+        showNotification(error.message || 'Failed to reveal payment method', 'error');
+    }
+}
+
+async function startSupportSession(userId) {
+    if (!confirm('Start a read-only support session in this customer dashboard? Payments and key changes will stay disabled.')) {
+        return;
+    }
+
+    try {
+        const payload = await fetchJson(`${API_BASE}/users/${userId}/support-session`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+
+        const currentToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
+
+        if (currentToken) {
+            window.localStorage.setItem(SUPPORT_ADMIN_TOKEN_KEY, currentToken);
+        }
+
+        window.localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
+        window.localStorage.setItem(SUPPORT_CONTEXT_KEY, JSON.stringify(payload.supportSession));
+        window.location.href = payload.supportSession.dashboardUrl || '/dashboard.html';
+    } catch (error) {
+        console.error('Error starting support session:', error);
+        showNotification(error.message || 'Failed to start support session', 'error');
+    }
 }
 
 async function openUserModal(userId = null) {

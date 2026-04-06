@@ -33,15 +33,29 @@ function createApiKeyValue(type) {
     };
 }
 
-function createToken(user, jwtSecret) {
+function createToken(user, jwtSecret, options = {}) {
+    const payload = {
+        sub: user._id.toString(),
+        email: user.email,
+        role: user.role
+    };
+
+    if (options.supportSession) {
+        payload.supportSession = {
+            active: true,
+            adminUserId: options.supportSession.adminUserId,
+            adminEmail: options.supportSession.adminEmail,
+            adminName: options.supportSession.adminName || '',
+            customerUserId: user._id.toString(),
+            permissions: options.supportSession.permissions || ['read_only'],
+            startedAt: options.supportSession.startedAt || new Date().toISOString()
+        };
+    }
+
     return jwt.sign(
-        {
-            sub: user._id.toString(),
-            email: user.email,
-            role: user.role
-        },
+        payload,
         jwtSecret,
-        { expiresIn: '7d' }
+        { expiresIn: options.expiresIn || '7d' }
     );
 }
 

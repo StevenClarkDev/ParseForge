@@ -320,7 +320,7 @@
                     <div>
                         <span class="admin-section-kicker">Users</span>
                         <h1>Users & Subscriptions</h1>
-                        <p>Review accounts, plans, and subscription status across the platform.</p>
+                        <p>Review accounts, inspect masked payment records, and enter read-only support sessions.</p>
                     </div>
                     <div class="header-actions">
                         <input type="search" id="userSearch" placeholder="Search users..." class="search-input">
@@ -561,6 +561,22 @@
                     <button type="submit" class="btn-primary">Save User</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="paymentsModal" class="modal">
+        <div class="modal-content support-modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="paymentsModalTitle">Customer Payment Methods</h2>
+                    <p class="modal-copy">Sensitive fields stay hidden until the admin password is confirmed.</p>
+                </div>
+                <button class="modal-close" onclick="closePaymentsModal()">&times;</button>
+            </div>
+            <div class="support-note">
+                ParseForge never stores full card numbers or CVV. Admins can reveal only masked payment snapshots for troubleshooting.
+            </div>
+            <div class="payment-methods-list" id="paymentMethodsContent"></div>
         </div>
     </div>
 

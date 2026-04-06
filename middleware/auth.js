@@ -12,6 +12,32 @@ function createAuthMiddleware(jwtSecret) {
             }
 
             const payload = verifyToken(token, jwtSecret);
+            if (payload.supportSession?.active) {
+                const [adminUser, impersonatedUser] = await Promise.all([
+                    User.findById(payload.supportSession.adminUserId),
+                    User.findById(payload.sub)
+                ]);
+
+                if (!adminUser || adminUser.role !== 'admin' || !impersonatedUser) {
+                    return res.status(401).json({ error: 'Invalid support session' });
+                }
+
+                req.user = impersonatedUser;
+                req.actor = adminUser;
+                req.supportSession = {
+                    active: true,
+                    adminUserId: adminUser._id.toString(),
+                    adminEmail: adminUser.email,
+                    adminName: `${adminUser.firstName} ${adminUser.lastName}`.trim(),
+                    customerUserId: impersonatedUser._id.toString(),
+                    permissions: payload.supportSession.permissions || ['read_only'],
+                    startedAt: payload.supportSession.startedAt || null,
+                    endsAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : null
+                };
+
+                return next();
+            }
+
             const user = await User.findById(payload.sub);
 
             if (!user) {
@@ -19,6 +45,8 @@ function createAuthMiddleware(jwtSecret) {
             }
 
             req.user = user;
+            req.actor = user;
+            req.supportSession = null;
             return next();
         } catch (error) {
             return res.status(401).json({ error: 'Invalid or expired token' });

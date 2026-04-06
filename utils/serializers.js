@@ -1,5 +1,5 @@
-function sanitizeUser(user) {
-    return {
+function sanitizeUser(user, options = {}) {
+    const serialized = {
         id: user._id.toString(),
         firstName: user.firstName,
         lastName: user.lastName,
@@ -15,6 +15,12 @@ function sanitizeUser(user) {
         updatedAt: user.updatedAt,
         lastLoginAt: user.lastLoginAt
     };
+
+    if (options.supportSession?.active) {
+        serialized.supportSession = options.supportSession;
+    }
+
+    return serialized;
 }
 
 const CATALOG_DEFAULTS = {

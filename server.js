@@ -6,7 +6,14 @@ const http = require('http');
 const connectDb = require('./configDb');
 const { port, jwtSecret, publicDir } = require('./config/appConfig');
 const { usageStats, initializeRuntimeData, logActivity, getRecentActivity } = require('./data/runtimeStore');
-const { createPasswordHash, createApiKeyValue, hashApiKey, maskKeyFromParts } = require('./utils/auth');
+const {
+    createPasswordHash,
+    verifyPassword,
+    createToken,
+    createApiKeyValue,
+    hashApiKey,
+    maskKeyFromParts
+} = require('./utils/auth');
 const { sanitizeUser } = require('./utils/serializers');
 const { createAuthMiddleware, createOptionalAuthMiddleware, requireAdmin } = require('./middleware/auth');
 const { seedAdminData } = require('./seeds/adminSeed');
@@ -62,7 +69,10 @@ app.use('/api/admin', createAdminRoutes({
     CatalogPurchase,
     ContentPage,
     BrandingSettings,
-    createPasswordHash
+    createPasswordHash,
+    verifyPassword,
+    createToken,
+    jwtSecret
 }));
 app.use('/', createSiteRoutes({ publicDir, logActivity }));
 

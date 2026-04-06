@@ -3,6 +3,16 @@ const express = require('express');
 function createKeyRoutes({ authMiddleware, ApiKey, createApiKeyValue, hashApiKey, maskKeyFromParts }) {
     const router = express.Router();
 
+    function ensureWritableSupportSession(req, res) {
+        if (req.supportSession?.active) {
+            return res.status(403).json({
+                error: 'Support sessions are read-only. Exit support mode before changing API keys.'
+            });
+        }
+
+        return null;
+    }
+
     router.get('/', authMiddleware, async (req, res) => {
         const keys = await ApiKey.find({ userId: req.user._id }).sort({ createdAt: -1 });
 
@@ -19,6 +29,11 @@ function createKeyRoutes({ authMiddleware, ApiKey, createApiKeyValue, hashApiKey
     });
 
     router.post('/', authMiddleware, async (req, res) => {
+        const supportError = ensureWritableSupportSession(req, res);
+        if (supportError) {
+            return supportError;
+        }
+
         const { name, type = 'test' } = req.body;
 
         if (!name) {
@@ -49,6 +64,11 @@ function createKeyRoutes({ authMiddleware, ApiKey, createApiKeyValue, hashApiKey
     });
 
     router.delete('/:id', authMiddleware, async (req, res) => {
+        const supportError = ensureWritableSupportSession(req, res);
+        if (supportError) {
+            return supportError;
+        }
+
         const deletedKey = await ApiKey.findOneAndDelete({
             _id: req.params.id,
             userId: req.user._id

@@ -62,6 +62,68 @@ const catalogPurchaseSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+        paymentDetails: {
+            billingName: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            billingEmail: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            companyName: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            country: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            region: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            postalCode: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            cardholderName: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            cardBrand: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            cardLast4: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            expiryMonth: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            expiryYear: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            collectionMode: {
+                type: String,
+                enum: ['hosted_checkout', 'direct_card'],
+                default: 'hosted_checkout'
+            }
+        },
         renewsAt: {
             type: Date,
             default: null

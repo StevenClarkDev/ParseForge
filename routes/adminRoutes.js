@@ -37,6 +37,120 @@ function createValidationError(message) {
     return error;
 }
 
+function maskEmail(value) {
+    const email = String(value || '').trim();
+    const atIndex = email.indexOf('@');
+
+    if (atIndex <= 1) {
+        return email ? 'Hidden until verified' : 'Not provided';
+    }
+
+    return `${email.slice(0, 1)}***${email.slice(atIndex)}`;
+}
+
+function formatMaskedCardNumber(last4) {
+    const digits = String(last4 || '').replace(/\D/g, '').slice(-4);
+    return digits ? `**** **** **** ${digits}` : 'Not captured';
+}
+
+function formatExpiry(month, year) {
+    if (!month || !year) {
+        return 'Not captured';
+    }
+
+    const normalizedYear = String(year).slice(-2);
+    return `${String(month).padStart(2, '0')}/${normalizedYear}`;
+}
+
+function buildPaymentMethodLabel(paymentMethodType) {
+    return paymentMethodType === 'stripe_card'
+        ? 'Simulated Stripe Card Entry'
+        : 'Simulated Stripe Checkout';
+}
+
+function buildPaymentDetailsSummary(purchase, product, revealSensitive = false) {
+    const details = purchase.paymentDetails || {};
+    const hasProtectedDetails = Boolean(
+        details.billingName ||
+        details.billingEmail ||
+        details.companyName ||
+        details.country ||
+        details.region ||
+        details.postalCode ||
+        details.cardholderName ||
+        details.cardBrand ||
+        details.cardLast4 ||
+        details.expiryMonth ||
+        details.expiryYear,
+    );
+
+    return {
+        id: purchase._id.toString(),
+        orderReference: purchase.orderReference,
+        productName: product?.name || 'Archived product',
+        purchaseType: purchase.purchaseType,
+        status: purchase.status,
+        amount: purchase.unitPrice,
+        currency: purchase.currency,
+        paymentProvider: purchase.paymentProvider,
+        paymentMethodType: purchase.paymentMethodType,
+        paymentMethodLabel: buildPaymentMethodLabel(purchase.paymentMethodType),
+        purchasedAt: purchase.createdAt,
+        renewsAt: purchase.renewsAt,
+        canReveal: hasProtectedDetails,
+        revealed: revealSensitive,
+        protectedDetails: {
+            billingName: revealSensitive
+                ? details.billingName || 'Not provided'
+                : details.billingName
+                  ? 'Hidden until verified'
+                  : 'Not provided',
+            billingEmail: revealSensitive
+                ? details.billingEmail || 'Not provided'
+                : details.billingEmail
+                  ? maskEmail(details.billingEmail)
+                  : 'Not provided',
+            companyName: revealSensitive
+                ? details.companyName || 'Not provided'
+                : details.companyName
+                  ? 'Hidden until verified'
+                  : 'Not provided',
+            country: revealSensitive
+                ? details.country || 'Not provided'
+                : details.country
+                  ? 'Hidden until verified'
+                  : 'Not provided',
+            region: revealSensitive
+                ? details.region || 'Not provided'
+                : details.region
+                  ? 'Hidden until verified'
+                  : 'Not provided',
+            postalCode: revealSensitive
+                ? details.postalCode || 'Not provided'
+                : details.postalCode
+                  ? 'Hidden until verified'
+                  : 'Not provided',
+            cardholderName: revealSensitive
+                ? details.cardholderName || 'Not captured'
+                : details.cardholderName
+                  ? 'Hidden until verified'
+                  : 'Not captured',
+            cardBrand: revealSensitive
+                ? details.cardBrand || 'Not captured'
+                : details.cardBrand
+                  ? 'Hidden until verified'
+                  : 'Not captured',
+            cardNumber: formatMaskedCardNumber(details.cardLast4),
+            expiry: revealSensitive
+                ? formatExpiry(details.expiryMonth, details.expiryYear)
+                : details.expiryMonth && details.expiryYear
+                  ? 'Hidden until verified'
+                  : 'Not captured'
+        },
+        complianceNote: 'Full card numbers and CVV are never stored or shown by ParseForge.'
+    };
+}
+
 function buildCatalogItemPayload(body) {
     const billingModel = normalizeBillingModel(body.billingModel);
     const oneTimePrice = normalizePositiveNumber(body.oneTimePrice);
@@ -115,7 +229,10 @@ function createAdminRoutes({
     CatalogPurchase,
     ContentPage,
     BrandingSettings,
-    createPasswordHash
+    createPasswordHash,
+    verifyPassword,
+    createToken,
+    jwtSecret
 }) {
     const router = express.Router();
 
@@ -363,6 +480,106 @@ function createAdminRoutes({
             total,
             page: pageNumber,
             totalPages: Math.ceil(total / pageSize)
+        });
+    });
+
+    router.get('/users/:id/payment-methods', async (req, res) => {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const purchases = await CatalogPurchase.find({ userId: user._id }).sort({ createdAt: -1 });
+        const products = await ApiCatalogItem.find({
+            _id: { $in: purchases.map((purchase) => purchase.catalogItemId) }
+        });
+        const productMap = new Map(products.map((product) => [product._id.toString(), product]));
+
+        return res.json({
+            user: {
+                id: user._id.toString(),
+                name: `${user.firstName} ${user.lastName}`.trim(),
+                email: user.email,
+                plan: user.plan,
+                status: user.status,
+                joined: user.createdAt
+            },
+            paymentMethods: purchases.map((purchase) =>
+                buildPaymentDetailsSummary(
+                    purchase,
+                    productMap.get(purchase.catalogItemId.toString()),
+                    false,
+                ),
+            )
+        });
+    });
+
+    router.post('/users/:id/support-session', async (req, res) => {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const token = createToken(user, jwtSecret, {
+            expiresIn: '30m',
+            supportSession: {
+                adminUserId: req.user._id.toString(),
+                adminEmail: req.user.email,
+                adminName: `${req.user.firstName} ${req.user.lastName}`.trim(),
+                permissions: ['read_only']
+            }
+        });
+
+        return res.json({
+            success: true,
+            token,
+            supportSession: {
+                active: true,
+                adminUserId: req.user._id.toString(),
+                adminName: `${req.user.firstName} ${req.user.lastName}`.trim(),
+                customerUserId: user._id.toString(),
+                customerName: `${user.firstName} ${user.lastName}`.trim(),
+                customerEmail: user.email,
+                permissions: ['read_only'],
+                dashboardUrl: '/dashboard.html',
+                expiresInMinutes: 30
+            }
+        });
+    });
+
+    router.post('/users/:id/payment-methods/:purchaseId/reveal', async (req, res) => {
+        const password = String(req.body.password || '');
+
+        if (!password) {
+            return res.status(400).json({ error: 'Admin password is required' });
+        }
+
+        if (!verifyPassword(password, req.user.passwordHash)) {
+            return res.status(403).json({ error: 'Password confirmation failed' });
+        }
+
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const purchase = await CatalogPurchase.findOne({
+            _id: req.params.purchaseId,
+            userId: user._id
+        });
+
+        if (!purchase) {
+            return res.status(404).json({ error: 'Payment record not found' });
+        }
+
+        const product = await ApiCatalogItem.findById(purchase.catalogItemId);
+
+        return res.json({
+            success: true,
+            paymentMethod: buildPaymentDetailsSummary(purchase, product, true)
         });
     });
 

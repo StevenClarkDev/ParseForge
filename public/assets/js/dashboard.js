@@ -18,7 +18,8 @@ let dashboardData = {
     activity: [],
     endpoints: [],
     profile: null,
-    purchases: []
+    purchases: [],
+    supportSession: null
 };
 
 function toggleMenu() {
@@ -52,6 +53,11 @@ function getAuthHeaders() {
 
 function handleAuthFailure(response) {
     if (response.status === 401) {
+        if (window.ParseForgeSession?.isSupportSessionActive()) {
+            window.ParseForgeSession.restoreAdminSession('/admin.html');
+            return true;
+        }
+
         window.localStorage.removeItem(AUTH_TOKEN_KEY);
         window.location.replace('/login.html?next=/dashboard.html');
         return true;
@@ -156,6 +162,7 @@ async function loadDashboardData() {
 
         dashboardData = {
             profile: profile.user,
+            supportSession: profile.user.supportSession || null,
             stats,
             usage,
             responseTimes,
@@ -183,6 +190,7 @@ async function refreshDashboardData() {
 }
 
 function updateUI() {
+    renderSupportSessionBanner();
     updateHeader();
     updateStats();
     updatePurchaseSummary();
@@ -223,20 +231,78 @@ function formatShortDate(value) {
     });
 }
 
+function isSupportSession() {
+    return Boolean(dashboardData.supportSession?.active);
+}
+
+function renderSupportSessionBanner() {
+    const banner = document.getElementById('supportSessionBanner');
+    const title = document.getElementById('supportSessionTitle');
+    const message = document.getElementById('supportSessionMessage');
+    const returnLink = document.getElementById('supportReturnLink');
+
+    if (!banner) {
+        return;
+    }
+
+    if (!isSupportSession()) {
+        banner.hidden = true;
+        document.querySelectorAll('[data-key-action]').forEach((button) => {
+            button.disabled = false;
+            if (button.dataset.originalLabel) {
+                button.textContent = button.dataset.originalLabel;
+            }
+        });
+        return;
+    }
+
+    banner.hidden = false;
+
+    if (title) {
+        title.textContent = `Supporting ${dashboardData.profile?.name || 'customer workspace'}`;
+    }
+
+    if (message) {
+        const adminName = dashboardData.supportSession.adminName || 'An admin';
+        message.textContent =
+            `${adminName} is in a read-only support session. Checkout and API key changes are disabled in this view.`;
+    }
+
+    if (returnLink) {
+        returnLink.setAttribute('href', '/admin.html');
+    }
+
+    document.querySelectorAll('[data-key-action]').forEach((button) => {
+        if (!button.dataset.originalLabel) {
+            button.dataset.originalLabel = button.textContent;
+        }
+
+        button.disabled = true;
+        button.textContent = 'Support mode only';
+    });
+}
+
 function updateHeader() {
     const title = document.getElementById('dashboardWelcome');
     const subtitle = document.getElementById('dashboardSubtitle');
     const { total } = getPurchaseCounts();
 
     if (title && dashboardData.profile) {
-        title.textContent = `Welcome back, ${dashboardData.profile.firstName}!`;
+        title.textContent = isSupportSession()
+            ? `Support view for ${dashboardData.profile.firstName}`
+            : `Welcome back, ${dashboardData.profile.firstName}!`;
     }
 
     if (subtitle) {
-        subtitle.textContent =
-            total > 0
-                ? 'Your buyer workspace is ready with product access, subscriptions, and API credentials.'
-                : 'Start by purchasing your first SDK license or API subscription, then manage everything here.';
+        if (isSupportSession()) {
+            subtitle.textContent =
+                'You are troubleshooting this buyer workspace in read-only mode. Review purchases, access, and activity without changing billing.';
+        } else {
+            subtitle.textContent =
+                total > 0
+                    ? 'Your buyer workspace is ready with product access, subscriptions, and API credentials.'
+                    : 'Start by purchasing your first SDK license or API subscription, then manage everything here.';
+        }
     }
 }
 
@@ -287,12 +353,16 @@ function updatePurchaseSummary() {
     }
 
     if (nextLine) {
-        nextLine.textContent =
-            dashboardData.apiKeys.length > 0
-                ? 'You are ready to integrate from the dashboard.'
-                : counts.total > 0
-                  ? 'Create an API key for your next environment.'
-                  : 'Browse the marketplace and attach your first product to this account.';
+        if (isSupportSession()) {
+            nextLine.textContent = 'Use Return to Admin when you are done with customer support.';
+        } else {
+            nextLine.textContent =
+                dashboardData.apiKeys.length > 0
+                    ? 'You are ready to integrate from the dashboard.'
+                    : counts.total > 0
+                      ? 'Create an API key for your next environment.'
+                      : 'Browse the marketplace and attach your first product to this account.';
+        }
     }
 }
 
@@ -367,8 +437,12 @@ function updateAPIKeys() {
         keysList.innerHTML = `
             <div class="empty-state-card compact">
                 <h3>No API keys yet</h3>
-                <p>Create your first key to connect the products you own to your environments.</p>
-                <button class="btn-primary" type="button" onclick="showCreateKeyModal()">Create API Key</button>
+                <p>${
+                    isSupportSession()
+                        ? 'Support sessions can review keys but cannot create new ones.'
+                        : 'Create your first key to connect the products you own to your environments.'
+                }</p>
+                <button class="btn-primary" type="button" onclick="showCreateKeyModal()" ${isSupportSession() ? 'disabled' : ''}>${isSupportSession() ? 'Support mode only' : 'Create API Key'}</button>
             </div>
         `;
         return;
@@ -462,6 +536,8 @@ function updateEndpoints() {
 
 function initializeEventListeners() {
     const usagePeriod = document.getElementById('usagePeriod');
+    const endSupportSessionButton = document.getElementById('endSupportSessionButton');
+    const supportReturnLink = document.getElementById('supportReturnLink');
 
     if (usagePeriod) {
         usagePeriod.addEventListener('change', async (event) => {
@@ -473,6 +549,16 @@ function initializeEventListeners() {
             }
         });
     }
+
+    endSupportSessionButton?.addEventListener('click', exitSupportSession);
+    supportReturnLink?.addEventListener('click', (event) => {
+        if (!isSupportSession()) {
+            return;
+        }
+
+        event.preventDefault();
+        exitSupportSession();
+    });
 }
 
 function initializeCharts() {
@@ -684,6 +770,11 @@ function copyKey(button) {
 }
 
 function showCreateKeyModal() {
+    if (isSupportSession()) {
+        showNotification('Support sessions are read-only. Exit support mode before creating keys.', 'error');
+        return;
+    }
+
     const name = prompt('Enter API key name:');
     if (!name) {
         return;
@@ -722,6 +813,11 @@ async function createAPIKey(name, type) {
 }
 
 async function revokeKey(keyId, button) {
+    if (isSupportSession()) {
+        showNotification('Support sessions are read-only. Exit support mode before revoking keys.', 'error');
+        return;
+    }
+
     if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
         return;
     }
@@ -813,3 +909,12 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+function exitSupportSession() {
+    if (window.ParseForgeSession?.restoreAdminSession) {
+        window.ParseForgeSession.restoreAdminSession('/admin.html');
+        return;
+    }
+
+    window.location.href = '/admin.html';
+}

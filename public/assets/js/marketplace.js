@@ -69,6 +69,51 @@ function getSelectedPaymentMethod() {
     return document.querySelector('input[name="payment"]:checked')?.value || 'stripe_checkout';
 }
 
+function getCardBrand(cardNumber) {
+    const digits = String(cardNumber || '').replace(/\D/g, '');
+
+    if (digits.startsWith('4')) return 'Visa';
+    if (/^5[1-5]/.test(digits)) return 'Mastercard';
+    if (/^3[47]/.test(digits)) return 'American Express';
+    if (/^6(?:011|5)/.test(digits)) return 'Discover';
+    return 'Card';
+}
+
+function buildPaymentDetailsPayload(form, paymentMethodType) {
+    const fullName = form.elements.fullName?.value.trim() || '';
+    const email = form.elements.email?.value.trim() || '';
+    const company = form.elements.company?.value.trim() || '';
+    const country = form.elements.country?.value || '';
+    const region = form.elements.state?.value || '';
+    const postalCode = form.elements.zipCode?.value.trim() || '';
+    const paymentDetails = {
+        billingName: fullName,
+        billingEmail: email,
+        companyName: company,
+        country,
+        region,
+        postalCode,
+        cardholderName: fullName,
+        cardBrand: '',
+        cardLast4: '',
+        expiryMonth: '',
+        expiryYear: ''
+    };
+
+    if (paymentMethodType === 'stripe_card') {
+        const cardNumber = form.elements.cardNumber?.value.trim() || '';
+        const expiry = form.elements.expiry?.value.trim() || '';
+        const [month = '', year = ''] = expiry.split('/');
+
+        paymentDetails.cardBrand = getCardBrand(cardNumber);
+        paymentDetails.cardLast4 = cardNumber.replace(/\D/g, '').slice(-4);
+        paymentDetails.expiryMonth = month;
+        paymentDetails.expiryYear = year;
+    }
+
+    return paymentDetails;
+}
+
 async function fetchCatalog() {
     const response = await fetch(`${API_BASE}/api/catalog`, {
         headers: getAuthHeaders()
@@ -849,6 +894,7 @@ async function handleCheckout(event) {
     const submitButton = event.currentTarget.querySelector('button[type="submit"]');
     const paymentMethodType = getSelectedPaymentMethod();
     const items = getCheckoutItemsPayload();
+    const paymentDetails = buildPaymentDetailsPayload(event.currentTarget, paymentMethodType);
 
     if (submitButton) {
         submitButton.disabled = true;
@@ -893,7 +939,8 @@ async function handleCheckout(event) {
                 paymentProvider: 'stripe_simulated',
                 paymentMethodType,
                 sessionId: sessionPayload.session?.id,
-                paymentIntentId: sessionPayload.session?.paymentIntentId
+                paymentIntentId: sessionPayload.session?.paymentIntentId,
+                paymentDetails
             })
         });
 

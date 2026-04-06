@@ -706,6 +706,10 @@ select.form-control {
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(26, 31, 58, 0.96));
 }
 
+.support-modal-content {
+    max-width: 860px;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -717,6 +721,11 @@ select.form-control {
 .modal-header h2 {
     color: var(--text-primary);
     font-size: 1.4rem;
+}
+
+.modal-copy {
+    color: var(--text-secondary);
+    margin-top: 0.35rem;
 }
 
 .modal-close {
@@ -743,6 +752,110 @@ select.form-control {
     justify-content: flex-end;
     padding-top: 1rem;
     border-top: 1px solid var(--border-glass);
+}
+
+.support-note {
+    margin: 1.25rem 1.75rem 0;
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 217, 255, 0.18);
+    background: rgba(0, 217, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.payment-methods-list {
+    padding: 1.75rem;
+    display: grid;
+    gap: 1rem;
+}
+
+.payment-method-card {
+    padding: 1.2rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.03);
+    display: grid;
+    gap: 0.95rem;
+}
+
+.payment-method-top,
+.payment-method-meta,
+.payment-method-row,
+.payment-method-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.payment-method-card h3 {
+    color: var(--text-primary);
+}
+
+.payment-method-subtitle,
+.payment-method-meta span,
+.payment-method-grid strong,
+.support-session-copy {
+    color: var(--text-secondary);
+}
+
+.payment-method-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.payment-method-field {
+    padding: 0.85rem 0.95rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.payment-method-field span {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.payment-method-field strong {
+    line-height: 1.5;
+}
+
+.action-btn.neutral {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.action-btn.neutral:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.action-btn.support {
+    color: var(--cyber-green);
+    border-color: rgba(29, 233, 182, 0.28);
+    background: rgba(29, 233, 182, 0.08);
+}
+
+.action-btn.support:hover {
+    background: rgba(29, 233, 182, 0.14);
+}
+
+.icon-eye {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    font-size: 0.6rem;
+    font-weight: 800;
 }
 
 .pagination {
@@ -863,7 +976,8 @@ select.form-control {
     .stats-overview,
     .form-row,
     .option-grid,
-    .option-grid-two {
+    .option-grid-two,
+    .payment-method-grid {
         grid-template-columns: 1fr;
     }
 

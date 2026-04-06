@@ -109,7 +109,10 @@ function createAuthRoutes({ jwtSecret, authMiddleware }) {
         }
     });
 
-    router.get('/me', authMiddleware, async (req, res) => res.json({ user: sanitizeUser(req.user) }));
+    router.get('/me', authMiddleware, async (req, res) =>
+        res.json({
+            user: sanitizeUser(req.user, { supportSession: req.supportSession || null })
+        }));
 
     return router;
 }
