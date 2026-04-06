@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body class="admin-body">
-    <!-- Admin Navigation -->
     <nav class="admin-navbar">
         <div class="admin-nav-container">
             <a href="index.html" class="admin-logo">
@@ -19,94 +18,104 @@
                             <stop offset="100%" style="stop-color:#1de9b6;stop-opacity:1" />
                         </linearGradient>
                     </defs>
-                    <!-- Circuit board P -->
-                    <path d="M8 4 L8 28 M8 4 L18 4 C22 4 24 6 24 10 C24 14 22 16 18 16 L8 16" 
-                          stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <!-- Circuit nodes -->
-                    <circle cx="8" cy="4" r="2" fill="#00d9ff"/>
-                    <circle cx="18" cy="4" r="2" fill="#00d9ff"/>
-                    <circle cx="24" cy="10" r="2" fill="#1de9b6"/>
-                    <circle cx="18" cy="16" r="2" fill="#1de9b6"/>
-                    <circle cx="8" cy="16" r="2" fill="#00ff88"/>
-                    <circle cx="8" cy="28" r="2" fill="#00ff88"/>
-                    <!-- Connecting lines -->
-                    <line x1="8" y1="22" x2="14" y2="22" stroke="#00d9ff" stroke-width="1.5" opacity="0.6"/>
-                    <circle cx="14" cy="22" r="1.5" fill="#00d9ff" opacity="0.8"/>
+                    <path d="M8 4 L8 28 M8 4 L18 4 C22 4 24 6 24 10 C24 14 22 16 18 16 L8 16"
+                          stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="8" cy="4" r="2" fill="#00d9ff" />
+                    <circle cx="18" cy="4" r="2" fill="#00d9ff" />
+                    <circle cx="24" cy="10" r="2" fill="#1de9b6" />
+                    <circle cx="18" cy="16" r="2" fill="#1de9b6" />
+                    <circle cx="8" cy="16" r="2" fill="#00ff88" />
+                    <circle cx="8" cy="28" r="2" fill="#00ff88" />
+                    <line x1="8" y1="22" x2="14" y2="22" stroke="#00d9ff" stroke-width="1.5" opacity="0.6" />
+                    <circle cx="14" cy="22" r="1.5" fill="#00d9ff" opacity="0.8" />
                 </svg>
                 <span>ParseForge Admin</span>
             </a>
             <div class="admin-user">
-                <span class="admin-username" id="adminUsername">Admin User</span>
+                <div class="admin-user-meta">
+                    <span class="admin-user-label">Operations Workspace</span>
+                    <span class="admin-username" id="adminUsername">Admin User</span>
+                </div>
                 <a href="index.html" class="btn-secondary btn-sm" id="exitAdminLink">Exit Admin</a>
             </div>
         </div>
     </nav>
 
-    <!-- Admin Layout -->
     <div class="admin-layout">
-        <!-- Sidebar -->
         <aside class="admin-sidebar">
+            <div class="admin-sidebar-intro">
+                <span class="admin-sidebar-kicker">Control Panel</span>
+                <h2>Manage catalog, pricing, users, and brand settings.</h2>
+            </div>
             <div class="admin-menu">
                 <button class="admin-menu-item active" data-section="overview">
-                    <span class="menu-icon">📊</span>
+                    <span class="menu-icon">OV</span>
                     <span>Overview</span>
                 </button>
                 <button class="admin-menu-item" data-section="pricing">
-                    <span class="menu-icon">💰</span>
+                    <span class="menu-icon">PR</span>
                     <span>Pricing Plans</span>
                 </button>
                 <button class="admin-menu-item" data-section="apis">
-                    <span class="menu-icon">🔌</span>
+                    <span class="menu-icon">AP</span>
                     <span>APIs & SDKs</span>
                 </button>
                 <button class="admin-menu-item" data-section="content">
-                    <span class="menu-icon">📝</span>
-                    <span>Content Management</span>
+                    <span class="menu-icon">CT</span>
+                    <span>Content</span>
                 </button>
                 <button class="admin-menu-item" data-section="branding">
-                    <span class="menu-icon">🎨</span>
-                    <span>Logo & Branding</span>
+                    <span class="menu-icon">BR</span>
+                    <span>Branding</span>
                 </button>
                 <button class="admin-menu-item" data-section="users">
-                    <span class="menu-icon">👥</span>
-                    <span>Users & Subscriptions</span>
+                    <span class="menu-icon">US</span>
+                    <span>Users</span>
                 </button>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="admin-content">
-            <!-- Overview Section -->
             <section id="overview" class="admin-section active">
-                <div class="admin-header">
-                    <h1>Admin Dashboard Overview</h1>
-                    <p>Manage your ParseForge platform</p>
+                <div class="admin-hero">
+                    <div class="admin-hero-copy">
+                        <span class="admin-hero-kicker">Operations Overview</span>
+                        <h1>Run ParseForge from a single control surface.</h1>
+                        <p>
+                            Monitor revenue, catalog health, user growth, and operational activity while keeping
+                            products and storefront content aligned.
+                        </p>
+                    </div>
+                    <div class="admin-hero-actions">
+                        <button class="btn-primary" type="button" onclick="openAPIModal()">Add Product</button>
+                        <button class="btn-secondary" type="button" onclick="openPricingModal()">Add Pricing Plan</button>
+                    </div>
                 </div>
 
                 <div class="stats-overview">
                     <div class="stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon">US</div>
                         <div class="stat-info">
                             <h3 id="totalUsers">0</h3>
                             <p>Total Users</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">💳</div>
+                        <div class="stat-icon">SB</div>
                         <div class="stat-info">
                             <h3 id="activeSubscriptions">0</h3>
                             <p>Active Subscriptions</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📡</div>
+                        <div class="stat-icon">CT</div>
                         <div class="stat-info">
                             <h3 id="totalAPIs">0</h3>
-                            <p>Available APIs</p>
+                            <p>Catalog Products</p>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">💰</div>
+                        <div class="stat-icon">MR</div>
                         <div class="stat-info">
                             <h3 id="monthlyRevenue">$0</h3>
                             <p>Monthly Revenue</p>
@@ -114,24 +123,44 @@
                     </div>
                 </div>
 
-                <div class="recent-activities">
-                    <h2>Recent Activities</h2>
-                    <div class="activity-list" id="recentActivities">
-                        <!-- Activities will be loaded here -->
-                    </div>
+                <div class="overview-grid">
+                    <article class="admin-panel-card">
+                        <h2>Recent Activities</h2>
+                        <p class="panel-copy">Track the latest platform updates, catalog changes, and customer activity.</p>
+                        <div class="activity-list" id="recentActivities"></div>
+                    </article>
+
+                    <article class="admin-panel-card">
+                        <h2>Operator Checklist</h2>
+                        <div class="admin-checklist">
+                            <div class="admin-check-item">
+                                <strong>Catalog</strong>
+                                <span>Review the APIs & SDKs section to keep billing models and merchandising current.</span>
+                            </div>
+                            <div class="admin-check-item">
+                                <strong>Pricing</strong>
+                                <span>Confirm that pricing plans still match the marketplace story and growth strategy.</span>
+                            </div>
+                            <div class="admin-check-item">
+                                <strong>Content</strong>
+                                <span>Use content and branding tools to keep the storefront message aligned with active products.</span>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </section>
 
-            <!-- Pricing Section -->
             <section id="pricing" class="admin-section">
                 <div class="admin-header">
-                    <h1>Manage Pricing Plans</h1>
-                    <button class="btn-primary" onclick="openPricingModal()">
-                        <span>➕</span> Add New Plan
-                    </button>
+                    <div>
+                        <span class="admin-section-kicker">Plans</span>
+                        <h1>Manage Pricing Plans</h1>
+                        <p>Create and adjust subscription tiers offered across ParseForge.</p>
+                    </div>
+                    <button class="btn-primary" onclick="openPricingModal()">Add New Plan</button>
                 </div>
 
-                <div class="pricing-table-container">
+                <div class="table-shell">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -143,54 +172,57 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="pricingTableBody">
-                            <!-- Pricing plans will be loaded here -->
-                        </tbody>
+                        <tbody id="pricingTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
-            <!-- APIs & SDKs Section -->
             <section id="apis" class="admin-section">
                 <div class="admin-header">
-                    <h1>Manage APIs & SDKs</h1>
-                    <button class="btn-primary" onclick="openAPIModal()">
-                        <span>➕</span> Add New API/SDK
-                    </button>
+                    <div>
+                        <span class="admin-section-kicker">Catalog</span>
+                        <h1>Manage APIs & SDKs</h1>
+                        <p>Control product content, billing model, pricing, publishing state, and marketplace readiness.</p>
+                    </div>
+                    <button class="btn-primary" onclick="openAPIModal()">Add New API/SDK</button>
                 </div>
 
-                <div class="api-grid" id="apiGrid">
-                    <!-- API cards will be loaded here -->
-                </div>
+                <div class="api-grid" id="apiGrid"></div>
             </section>
 
-            <!-- Content Management Section -->
             <section id="content" class="admin-section">
                 <div class="admin-header">
-                    <h1>Content Management</h1>
-                    <p>Manage documentation, about us, and other content</p>
+                    <div>
+                        <span class="admin-section-kicker">Content</span>
+                        <h1>Content Management</h1>
+                        <p>Adjust the storefront, docs, and narrative content used across the public site.</p>
+                    </div>
                 </div>
 
                 <div class="content-sections">
                     <div class="content-card">
                         <h3>About Us</h3>
+                        <p>Company story and platform positioning.</p>
                         <button class="btn-secondary" onclick="editContent('about')">Edit Content</button>
                     </div>
                     <div class="content-card">
                         <h3>Documentation</h3>
+                        <p>High-level content blocks and reference messaging.</p>
                         <button class="btn-secondary" onclick="editContent('docs')">Edit Content</button>
                     </div>
                     <div class="content-card">
-                        <h3>Resources & Blog</h3>
+                        <h3>Resources</h3>
+                        <p>Guides, tutorials, and educational copy.</p>
                         <button class="btn-secondary" onclick="editContent('resources')">Edit Content</button>
                     </div>
                     <div class="content-card">
                         <h3>Homepage Hero</h3>
+                        <p>Primary conversion message shown on the landing page.</p>
                         <button class="btn-secondary" onclick="editContent('hero')">Edit Content</button>
                     </div>
                 </div>
 
-                <div class="content-editor" id="contentEditor" style="display: none;">
+                <div class="content-editor is-hidden" id="contentEditor">
                     <h3 id="contentEditorTitle">Edit Content</h3>
                     <form id="contentForm">
                         <input type="hidden" id="contentType">
@@ -210,11 +242,13 @@
                 </div>
             </section>
 
-            <!-- Branding Section -->
             <section id="branding" class="admin-section">
                 <div class="admin-header">
-                    <h1>Logo & Branding</h1>
-                    <p>Manage your brand identity</p>
+                    <div>
+                        <span class="admin-section-kicker">Branding</span>
+                        <h1>Logo & Branding</h1>
+                        <p>Control the platform identity, logo system, and core color palette.</p>
+                    </div>
                 </div>
 
                 <div class="branding-container">
@@ -281,19 +315,20 @@
                 </div>
             </section>
 
-            <!-- Users & Subscriptions Section -->
             <section id="users" class="admin-section">
                 <div class="admin-header">
-                    <h1>Users & Subscriptions</h1>
+                    <div>
+                        <span class="admin-section-kicker">Users</span>
+                        <h1>Users & Subscriptions</h1>
+                        <p>Review accounts, plans, and subscription status across the platform.</p>
+                    </div>
                     <div class="header-actions">
                         <input type="search" id="userSearch" placeholder="Search users..." class="search-input">
-                        <button class="btn-primary" onclick="openUserModal()">
-                            <span>➕</span> Add User
-                        </button>
+                        <button class="btn-primary" onclick="openUserModal()">Add User</button>
                     </div>
                 </div>
 
-                <div class="users-table-container">
+                <div class="table-shell">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -306,20 +341,15 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody">
-                            <!-- Users will be loaded here -->
-                        </tbody>
+                        <tbody id="usersTableBody"></tbody>
                     </table>
                 </div>
 
-                <div class="pagination" id="usersPagination">
-                    <!-- Pagination will be generated here -->
-                </div>
+                <div class="pagination" id="usersPagination"></div>
             </section>
         </main>
     </div>
 
-    <!-- Pricing Modal -->
     <div id="pricingModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -361,7 +391,6 @@
         </div>
     </div>
 
-    <!-- API/SDK Modal -->
     <div id="apiModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -400,7 +429,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="apiIcon">Icon</label>
-                        <input type="text" id="apiIcon" class="form-control" placeholder="e.g. &lt;/&gt; or { }">
+                        <input type="text" id="apiIcon" class="form-control" placeholder="e.g. </> or { }">
                     </div>
                     <div class="form-group">
                         <label for="apiBadge">Badge</label>
@@ -495,7 +524,6 @@
         </div>
     </div>
 
-    <!-- User Modal -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">

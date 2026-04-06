@@ -41,6 +41,29 @@ function formatCurrency(value) {
     return `$${Number(value || 0).toFixed(2)}`;
 }
 
+function getAdminDisplayName(user) {
+    const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+    return fullName || user?.username || user?.email || 'Admin User';
+}
+
+function renderEmptyState(message) {
+    return `<div class="empty-state">${message}</div>`;
+}
+
+function renderTableEmptyState(columnCount, message) {
+    return `<tr><td class="table-empty" colspan="${columnCount}">${message}</td></tr>`;
+}
+
+function getActivityCode(action) {
+    const normalized = String(action || '').toLowerCase();
+
+    if (normalized.includes('user')) return 'USR';
+    if (normalized.includes('pricing') || normalized.includes('plan')) return 'PLN';
+    if (normalized.includes('subscription')) return 'SUB';
+    if (normalized.includes('api') || normalized.includes('sdk')) return 'CAT';
+    return 'LOG';
+}
+
 function buildBillingSummary(api) {
     const options = api.pricing?.purchaseOptions || [];
 
@@ -224,7 +247,7 @@ async function loadProfile() {
 
         const username = document.getElementById('adminUsername');
         if (username) {
-            username.textContent = `${payload.user.firstName} ${payload.user.lastName}`;
+            username.textContent = getAdminDisplayName(payload.user);
         }
     }
 
@@ -247,17 +270,19 @@ async function loadOverview() {
         });
 
         const activityList = document.getElementById('recentActivities');
-        activityList.innerHTML = activities
-            .map((activity) => `
-                <div class="activity-item">
-                    <span class="activity-icon">LOG</span>
-                    <div class="activity-info">
-                        <p>${activity.action}</p>
-                        <span class="activity-time">${formatTimeAgo(activity.time)}</span>
+        activityList.innerHTML = activities.length
+            ? activities
+                .map((activity) => `
+                    <div class="activity-item">
+                        <span class="activity-icon">${getActivityCode(activity.action)}</span>
+                        <div class="activity-info">
+                            <p>${activity.action}</p>
+                            <span class="activity-time">${formatTimeAgo(activity.time)}</span>
+                        </div>
                     </div>
-                </div>
-            `)
-            .join('');
+                `)
+                .join('')
+            : renderEmptyState('No platform activity has been recorded yet.');
     } catch (error) {
         console.error('Error loading overview:', error);
         showNotification(error.message || 'Failed to load overview data', 'error');
@@ -271,25 +296,27 @@ async function loadPricing() {
         });
 
         const tableBody = document.getElementById('pricingTableBody');
-        tableBody.innerHTML = plans
-            .map((plan) => `
-                <tr>
-                    <td><strong>${plan.name}</strong></td>
-                    <td>$${plan.monthlyPrice}</td>
-                    <td>$${plan.yearlyPrice}</td>
-                    <td>${plan.features.length} features</td>
-                    <td>
-                        <span class="status-badge ${plan.status}">${plan.status}</span>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="action-btn" onclick="editPricing('${plan.id}')">Edit</button>
-                            <button class="action-btn delete" onclick="deletePricing('${plan.id}')">Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `)
-            .join('');
+        tableBody.innerHTML = plans.length
+            ? plans
+                .map((plan) => `
+                    <tr>
+                        <td><strong>${plan.name}</strong></td>
+                        <td>$${plan.monthlyPrice}</td>
+                        <td>$${plan.yearlyPrice}</td>
+                        <td>${plan.features.length} features</td>
+                        <td>
+                            <span class="status-badge ${plan.status}">${plan.status}</span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick="editPricing('${plan.id}')">Edit</button>
+                                <button class="action-btn delete" onclick="deletePricing('${plan.id}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `)
+                .join('')
+            : renderTableEmptyState(6, 'No pricing plans yet. Add a plan to start packaging subscriptions.');
     } catch (error) {
         console.error('Error loading pricing:', error);
         showNotification(error.message || 'Failed to load pricing plans', 'error');
@@ -387,33 +414,35 @@ async function loadAPIs() {
         });
 
         const apiGrid = document.getElementById('apiGrid');
-        apiGrid.innerHTML = apis
-            .map((api) => `
-                <div class="api-card">
-                    <div class="api-card-header">
-                        <div>
-                            <h3>${api.name}</h3>
-                            <span class="api-version">${api.version}</span>
+        apiGrid.innerHTML = apis.length
+            ? apis
+                .map((api) => `
+                    <div class="api-card">
+                        <div class="api-card-header">
+                            <div>
+                                <h3>${api.name}</h3>
+                                <span class="api-version">${api.version}</span>
+                            </div>
+                            <span class="status-badge ${api.status}">${api.status}</span>
                         </div>
-                        <span class="status-badge ${api.status}">${api.status}</span>
-                    </div>
-                    <div class="api-meta">
-                        <span class="api-meta-chip">${api.type.toUpperCase()}</span>
-                        <span class="api-meta-chip">${api.language}</span>
-                        <span class="api-meta-chip">${api.isPublished ? 'Published' : 'Hidden'}</span>
-                    </div>
-                    <p>${api.description}</p>
-                    <div class="api-billing-summary">${buildBillingSummary(api)}</div>
-                    <div class="api-card-footer">
-                        <span class="api-feature-count">${api.features.length} features</span>
-                        <div class="action-buttons">
-                            <button class="action-btn" onclick="editAPI('${api.id}')">Edit</button>
-                            <button class="action-btn delete" onclick="deleteAPI('${api.id}')">Delete</button>
+                        <div class="api-meta">
+                            <span class="api-meta-chip">${api.type.toUpperCase()}</span>
+                            <span class="api-meta-chip">${api.language}</span>
+                            <span class="api-meta-chip">${api.isPublished ? 'Published' : 'Hidden'}</span>
+                        </div>
+                        <p>${api.description}</p>
+                        <div class="api-billing-summary">${buildBillingSummary(api)}</div>
+                        <div class="api-card-footer">
+                            <span class="api-feature-count">${api.features.length} features</span>
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick="editAPI('${api.id}')">Edit</button>
+                                <button class="action-btn delete" onclick="deleteAPI('${api.id}')">Delete</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `)
-            .join('');
+                `)
+                .join('')
+            : renderEmptyState('No APIs or SDKs are in the catalog yet. Add a product to start merchandising the marketplace.');
     } catch (error) {
         console.error('Error loading APIs:', error);
         showNotification(error.message || 'Failed to load APIs/SDKs', 'error');
@@ -538,7 +567,7 @@ async function editContent(contentType) {
         document.getElementById('contentTitle').value = content.title;
         document.getElementById('contentBody').value = content.body;
         title.textContent = `Edit ${contentType.charAt(0).toUpperCase() + contentType.slice(1)} Content`;
-        editor.style.display = 'block';
+        editor.classList.remove('is-hidden');
         editor.scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
         console.error('Error loading content:', error);
@@ -547,7 +576,7 @@ async function editContent(contentType) {
 }
 
 function closeContentEditor() {
-    document.getElementById('contentEditor').style.display = 'none';
+    document.getElementById('contentEditor').classList.add('is-hidden');
     document.getElementById('contentForm').reset();
 }
 
@@ -642,26 +671,30 @@ async function loadUsers(page = 1, search = '') {
         });
 
         const tableBody = document.getElementById('usersTableBody');
-        tableBody.innerHTML = data.users
-            .map((user) => `
-                <tr>
-                    <td><code style="color: var(--neon-green);">${user.id}</code></td>
-                    <td><strong>${user.name}</strong></td>
-                    <td>${user.email}</td>
-                    <td><span style="text-transform: capitalize;">${user.plan}</span></td>
-                    <td>
-                        <span class="status-badge ${user.status}">${user.status}</span>
-                    </td>
-                    <td>${formatDate(user.joined)}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="action-btn" onclick="editUser('${user.id}')">Edit</button>
-                            <button class="action-btn delete" onclick="deleteUser('${user.id}')">Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `)
-            .join('');
+        tableBody.innerHTML = data.users.length
+            ? data.users
+                .map((user) => `
+                    <tr>
+                        <td><code class="mono-inline">${user.id}</code></td>
+                        <td><strong>${user.name}</strong></td>
+                        <td>${user.email}</td>
+                        <td><span class="text-capitalize">${user.plan}</span></td>
+                        <td>
+                            <span class="status-badge ${user.status}">${user.status}</span>
+                        </td>
+                        <td>${formatDate(user.joined)}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick="editUser('${user.id}')">Edit</button>
+                                <button class="action-btn delete" onclick="deleteUser('${user.id}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `)
+                .join('')
+            : renderTableEmptyState(7, search
+                ? 'No users matched your search.'
+                : 'No users are available yet.');
 
         renderPagination(data.page, data.totalPages, search);
     } catch (error) {
@@ -818,59 +851,16 @@ function formatDate(timestamp) {
 
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        background: ${type === 'success' ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(29, 233, 182, 0.2))' :
-                     type === 'error' ? 'linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(255, 0, 85, 0.2))' :
-                     'rgba(0, 217, 255, 0.2)'};
-        border: 1px solid ${type === 'success' ? 'var(--success)' :
-                           type === 'error' ? 'var(--danger)' :
-                           'var(--neon-blue)'};
-        color: var(--text-primary);
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        backdrop-filter: blur(20px);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        z-index: 10000;
-        animation: slideInRight 0.3s ease;
-    `;
+    notification.className = `admin-toast ${type}`;
     notification.textContent = message;
 
     document.body.appendChild(notification);
 
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
+        notification.classList.add('is-leaving');
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
-
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
 
 document.addEventListener('DOMContentLoaded', async () => {
     resetAPIBillingDefaults();
