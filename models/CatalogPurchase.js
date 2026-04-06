@@ -124,6 +124,38 @@ const catalogPurchaseSchema = new mongoose.Schema(
                 default: 'hosted_checkout'
             }
         },
+        adminChargeContext: {
+            triggeredFrom: {
+                type: String,
+                enum: ['customer_checkout', 'admin_support'],
+                default: 'customer_checkout'
+            },
+            initiatedByAdminId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+                default: null
+            },
+            initiatedByAdminEmail: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            initiatedByAdminName: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            sourcePurchaseId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'CatalogPurchase',
+                default: null
+            },
+            notes: {
+                type: String,
+                default: '',
+                trim: true
+            }
+        },
         renewsAt: {
             type: Date,
             default: null

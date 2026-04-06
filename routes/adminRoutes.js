@@ -68,6 +68,102 @@ function buildPaymentMethodLabel(paymentMethodType) {
         : 'Simulated Stripe Checkout';
 }
 
+function addDays(date, dayCount) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + dayCount);
+    return result;
+}
+
+function createReference(prefix) {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function createOrderReference() {
+    return `PF-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
+function createStripeAdminSessionId() {
+    return createReference('cs_admin_sim');
+}
+
+function createStripeAdminPaymentIntentId() {
+    return createReference('pi_admin_sim');
+}
+
+function createStripeAdminChargeId() {
+    return createReference('ch_admin_sim');
+}
+
+function normalizePaymentMethodType(value) {
+    return value === 'stripe_card' ? 'stripe_card' : 'stripe_checkout';
+}
+
+function sanitizeText(value, maxLength = 120) {
+    return String(value || '').trim().slice(0, maxLength);
+}
+
+function sanitizeEmail(value) {
+    return sanitizeText(value, 160).toLowerCase();
+}
+
+function sanitizeLast4(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.slice(-4);
+}
+
+function sanitizeMonth(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 2);
+
+    if (!digits) {
+        return '';
+    }
+
+    const month = Number.parseInt(digits, 10);
+    return month >= 1 && month <= 12 ? String(month).padStart(2, '0') : '';
+}
+
+function sanitizeYear(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+
+    if (digits.length >= 4) {
+        return digits.slice(0, 4);
+    }
+
+    if (digits.length === 2) {
+        return `20${digits}`;
+    }
+
+    return '';
+}
+
+function buildPaymentDetailsSnapshot(source = {}, paymentMethodType = 'stripe_checkout') {
+    return {
+        billingName: sanitizeText(source.billingName, 120),
+        billingEmail: sanitizeEmail(source.billingEmail),
+        companyName: sanitizeText(source.companyName, 120),
+        country: sanitizeText(source.country, 64),
+        region: sanitizeText(source.region, 64),
+        postalCode: sanitizeText(source.postalCode, 24),
+        cardholderName: sanitizeText(source.cardholderName, 120),
+        cardBrand: sanitizeText(source.cardBrand, 32),
+        cardLast4: paymentMethodType === 'stripe_card' ? sanitizeLast4(source.cardLast4) : '',
+        expiryMonth: paymentMethodType === 'stripe_card' ? sanitizeMonth(source.expiryMonth) : '',
+        expiryYear: paymentMethodType === 'stripe_card' ? sanitizeYear(source.expiryYear) : '',
+        collectionMode: paymentMethodType === 'stripe_card' ? 'direct_card' : 'hosted_checkout'
+    };
+}
+
+function buildAdminChargeContext(adminUser, sourcePurchaseId, notes) {
+    return {
+        triggeredFrom: 'admin_support',
+        initiatedByAdminId: adminUser._id,
+        initiatedByAdminEmail: adminUser.email,
+        initiatedByAdminName: `${adminUser.firstName} ${adminUser.lastName}`.trim(),
+        sourcePurchaseId,
+        notes: sanitizeText(notes, 280)
+    };
+}
+
 function buildPaymentDetailsSummary(purchase, product, revealSensitive = false) {
     const details = purchase.paymentDetails || {};
     const hasProtectedDetails = Boolean(
@@ -98,6 +194,7 @@ function buildPaymentDetailsSummary(purchase, product, revealSensitive = false) 
         purchasedAt: purchase.createdAt,
         renewsAt: purchase.renewsAt,
         canReveal: hasProtectedDetails,
+        serviceEligible: purchase.paymentProvider === 'stripe_simulated',
         revealed: revealSensitive,
         protectedDetails: {
             billingName: revealSensitive
@@ -512,6 +609,191 @@ function createAdminRoutes({
                     false,
                 ),
             )
+        });
+    });
+
+    router.post('/users/:id/services', async (req, res) => {
+        const password = String(req.body.password || '');
+        const catalogItemId = String(req.body.catalogItemId || '').trim();
+        const purchaseType = String(req.body.purchaseType || '').trim();
+        const sourcePurchaseId = String(req.body.sourcePurchaseId || '').trim();
+        const notes = String(req.body.notes || '');
+
+        if (!password) {
+            return res.status(400).json({ error: 'Admin password is required' });
+        }
+
+        if (!verifyPassword(password, req.user.passwordHash)) {
+            return res.status(403).json({ error: 'Password confirmation failed' });
+        }
+
+        if (!catalogItemId) {
+            return res.status(400).json({ error: 'A catalog product is required' });
+        }
+
+        if (!purchaseType) {
+            return res.status(400).json({ error: 'A billing option is required' });
+        }
+
+        if (!sourcePurchaseId) {
+            return res.status(400).json({ error: 'A saved payment source is required' });
+        }
+
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const product = await ApiCatalogItem.findById(catalogItemId);
+
+        if (!product) {
+            return res.status(404).json({ error: 'Catalog product not found' });
+        }
+
+        const serializedProduct = serializeCatalogItem(product);
+        const purchaseOption = serializedProduct.pricing.purchaseOptions.find(
+            (option) => option.type === purchaseType
+        );
+
+        if (!purchaseOption) {
+            return res.status(400).json({
+                error: `The selected billing option is not available for ${product.name}`
+            });
+        }
+
+        const sourcePurchase = await CatalogPurchase.findOne({
+            _id: sourcePurchaseId,
+            userId: user._id
+        });
+
+        if (!sourcePurchase) {
+            return res.status(404).json({ error: 'Saved payment source not found' });
+        }
+
+        if (sourcePurchase.paymentProvider !== 'stripe_simulated') {
+            return res.status(400).json({
+                error: 'Only simulated Stripe payment sources can be reused right now'
+            });
+        }
+
+        const paymentMethodType = normalizePaymentMethodType(sourcePurchase.paymentMethodType);
+        const paymentDetails = buildPaymentDetailsSnapshot(
+            sourcePurchase.paymentDetails || {},
+            paymentMethodType,
+        );
+
+        if (!paymentDetails.billingEmail) {
+            paymentDetails.billingEmail = sanitizeEmail(user.email);
+        }
+
+        if (!paymentDetails.billingName) {
+            paymentDetails.billingName = sanitizeText(
+                `${user.firstName} ${user.lastName}`.trim(),
+                120,
+            );
+        }
+
+        const providerSessionId = createStripeAdminSessionId();
+        const providerPaymentIntentId = createStripeAdminPaymentIntentId();
+        const providerChargeId = createStripeAdminChargeId();
+        const renewalDate =
+            purchaseType === 'monthly'
+                ? addDays(new Date(), 30)
+                : purchaseType === 'yearly'
+                  ? addDays(new Date(), 365)
+                  : null;
+
+        const existingOneTime = await CatalogPurchase.findOne({
+            userId: user._id,
+            catalogItemId: product._id,
+            purchaseType: 'one_time',
+            status: 'active'
+        });
+
+        if (purchaseType === 'one_time' && existingOneTime) {
+            return res.status(409).json({
+                error: 'This customer already has active access to the selected one-time product'
+            });
+        }
+
+        const adminChargeContext = buildAdminChargeContext(req.user, sourcePurchase._id, notes);
+        let purchase = null;
+        let action = 'created';
+
+        if (purchaseType === 'monthly' || purchaseType === 'yearly') {
+            const activeSubscription = await CatalogPurchase.findOne({
+                userId: user._id,
+                catalogItemId: product._id,
+                purchaseType: { $in: ['monthly', 'yearly'] },
+                status: 'active'
+            });
+
+            if (activeSubscription) {
+                activeSubscription.purchaseType = purchaseType;
+                activeSubscription.unitPrice = purchaseOption.price;
+                activeSubscription.currency = 'USD';
+                activeSubscription.paymentProvider = 'stripe_simulated';
+                activeSubscription.paymentMethodType = paymentMethodType;
+                activeSubscription.providerSessionId = providerSessionId;
+                activeSubscription.providerPaymentIntentId = providerPaymentIntentId;
+                activeSubscription.providerChargeId = providerChargeId;
+                activeSubscription.orderReference = createOrderReference();
+                activeSubscription.paymentDetails = paymentDetails;
+                activeSubscription.renewsAt = renewalDate;
+                activeSubscription.adminChargeContext = adminChargeContext;
+                await activeSubscription.save();
+                purchase = activeSubscription;
+                action = 'updated';
+            }
+        }
+
+        if (!purchase) {
+            purchase = await CatalogPurchase.create({
+                userId: user._id,
+                catalogItemId: product._id,
+                purchaseType,
+                unitPrice: purchaseOption.price,
+                currency: 'USD',
+                paymentProvider: 'stripe_simulated',
+                paymentMethodType,
+                providerSessionId,
+                providerPaymentIntentId,
+                providerChargeId,
+                orderReference: createOrderReference(),
+                paymentDetails,
+                adminChargeContext,
+                renewsAt: renewalDate
+            });
+        }
+
+        return res.status(201).json({
+            success: true,
+            action,
+            customer: {
+                id: user._id.toString(),
+                name: `${user.firstName} ${user.lastName}`.trim(),
+                email: user.email
+            },
+            product: {
+                id: product._id.toString(),
+                name: product.name,
+                purchaseType,
+                unitPrice: purchase.unitPrice,
+                renewsAt: purchase.renewsAt,
+                orderReference: purchase.orderReference
+            },
+            payment: {
+                provider: 'stripe_simulated',
+                mode: 'admin_off_session',
+                sourcePurchaseId: sourcePurchase._id.toString(),
+                sourceOrderReference: sourcePurchase.orderReference,
+                paymentMethodType,
+                sessionId: providerSessionId,
+                paymentIntentId: providerPaymentIntentId,
+                chargeId: providerChargeId,
+                status: 'succeeded'
+            }
         });
     });
 

@@ -729,6 +729,12 @@ select.form-control {
     margin-top: 0.35rem;
 }
 
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
 .modal-close {
     background: none;
     border: none;
@@ -762,6 +768,33 @@ select.form-control {
     border: 1px solid rgba(0, 217, 255, 0.18);
     background: rgba(0, 217, 255, 0.06);
     color: var(--text-secondary);
+}
+
+.service-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.service-source-summary {
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.service-source-summary strong {
+    color: var(--text-primary);
+}
+
+.option-card-copy {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
 }
 
 .payment-methods-list {
@@ -845,6 +878,16 @@ select.form-control {
 
 .action-btn.support:hover {
     background: rgba(29, 233, 182, 0.14);
+}
+
+.action-btn.charge {
+    color: var(--electric-blue);
+    border-color: rgba(0, 217, 255, 0.28);
+    background: rgba(0, 217, 255, 0.09);
+}
+
+.action-btn.charge:hover {
+    background: rgba(0, 217, 255, 0.16);
 }
 
 .icon-eye {
@@ -978,7 +1021,8 @@ select.form-control {
     .form-row,
     .option-grid,
     .option-grid-two,
-    .payment-method-grid {
+    .payment-method-grid,
+    .service-modal-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1014,5 +1058,10 @@ select.form-control {
 
     .modal {
         padding: 1rem;
+    }
+
+    .modal-header-actions {
+        width: 100%;
+        justify-content: space-between;
     }
 }

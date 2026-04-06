@@ -11,6 +11,10 @@ let currentUsersSearch = '';
 let currentPaymentsUserId = '';
 let currentPaymentsUserName = '';
 let currentPaymentMethods = [];
+let currentServiceUserId = '';
+let currentServiceUserName = '';
+let currentServiceProducts = [];
+let currentServicePaymentMethods = [];
 
 if (!authToken) {
     window.location.replace(LOGIN_REDIRECT_URL);
@@ -27,14 +31,9 @@ async function fetchJson(url, options = {}) {
     const response = await fetch(url, options);
     const payload = await response.json().catch(() => ({}));
 
-    if (response.status === 401 || response.status === 403) {
-        if (response.status === 401) {
-            window.localStorage.removeItem(AUTH_TOKEN_KEY);
-            window.location.replace(LOGIN_REDIRECT_URL);
-            return null;
-        }
-
-        window.location.replace('/dashboard.html');
+    if (response.status === 401) {
+        window.localStorage.removeItem(AUTH_TOKEN_KEY);
+        window.location.replace(LOGIN_REDIRECT_URL);
         return null;
     }
 
@@ -47,6 +46,15 @@ async function fetchJson(url, options = {}) {
 
 function formatCurrency(value) {
     return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function getAdminDisplayName(user) {
@@ -88,6 +96,89 @@ function buildBillingSummary(api) {
     return options
         .map((option) => `${option.shortLabel} ${formatCurrency(option.price)}`)
         .join(' | ');
+}
+
+function getChargeablePaymentMethods(paymentMethods = []) {
+    return paymentMethods.filter((paymentMethod) => paymentMethod.serviceEligible);
+}
+
+function buildServicePaymentMethodLabel(paymentMethod) {
+    const details = paymentMethod.protectedDetails || {};
+    const number = details.cardNumber && details.cardNumber !== 'Not captured'
+        ? details.cardNumber
+        : paymentMethod.orderReference || 'Saved Stripe method';
+    const brand = details.cardBrand && details.cardBrand !== 'Not captured'
+        ? details.cardBrand
+        : paymentMethod.paymentMethodLabel;
+    const expiry = details.expiry && details.expiry !== 'Not captured'
+        ? ` | Expires ${details.expiry}`
+        : '';
+
+    return `${brand} | ${number}${expiry}`;
+}
+
+function getCurrentServiceProduct() {
+    const productId = document.getElementById('addServiceProduct')?.value || '';
+    return currentServiceProducts.find((product) => product.id === productId) || null;
+}
+
+function renderServicePurchaseOptions() {
+    const container = document.getElementById('addServicePurchaseOptions');
+
+    if (!container) {
+        return;
+    }
+
+    const product = getCurrentServiceProduct();
+    const options = product?.pricing?.purchaseOptions || [];
+    const previousSelection =
+        document.querySelector('input[name="servicePurchaseType"]:checked')?.value || options[0]?.type;
+
+    if (!options.length) {
+        container.innerHTML = renderEmptyState('This product does not have any billing options yet.');
+        return;
+    }
+
+    container.innerHTML = options
+        .map((option) => `
+            <label class="option-card">
+                <input
+                    type="radio"
+                    name="servicePurchaseType"
+                    value="${option.type}"
+                    ${option.type === previousSelection ? 'checked' : ''}
+                >
+                <span>
+                    <strong>${escapeHtml(option.label)}</strong>
+                    <small class="option-card-copy">
+                        ${escapeHtml(formatCurrency(option.price))} | ${escapeHtml(product.type.toUpperCase())}
+                    </small>
+                </span>
+            </label>
+        `)
+        .join('');
+}
+
+function renderSelectedServicePaymentSummary() {
+    const summary = document.getElementById('selectedServicePaymentSummary');
+
+    if (!summary) {
+        return;
+    }
+
+    const sourceId = document.getElementById('addServicePaymentMethod')?.value || '';
+    const paymentMethod = currentServicePaymentMethods.find((item) => item.id === sourceId);
+
+    if (!paymentMethod) {
+        summary.innerHTML = 'Select a reusable payment source to simulate a Stripe off-session charge.';
+        return;
+    }
+
+    summary.innerHTML = `
+        <strong>Charge Source:</strong> ${escapeHtml(buildServicePaymentMethodLabel(paymentMethod))}<br>
+        <strong>Original Order:</strong> ${escapeHtml(paymentMethod.orderReference || 'Not available')}<br>
+        <strong>Compliance:</strong> ParseForge reuses only masked simulated Stripe metadata. Full PAN and CVV are never stored.
+    `;
 }
 
 function getSelectedAPIBillingModel() {
@@ -702,6 +793,7 @@ async function loadUsers(page = 1, search = '') {
                         <td>${formatDate(user.joined)}</td>
                         <td>
                             <div class="action-buttons">
+                                <button class="action-btn charge" onclick="openAddServiceModal('${user.id}', '${user.name.replace(/'/g, "\\'")}')">Add Service</button>
                                 <button class="action-btn support" onclick="startSupportSession('${user.id}')">Support View</button>
                                 <button class="action-btn neutral" onclick="openPaymentsModal('${user.id}', '${user.name.replace(/'/g, "\\'")}')">
                                     <span class="icon-eye">E</span>
@@ -833,6 +925,8 @@ async function openPaymentsModal(userId, userName) {
             title.textContent = `${payload.user.name} Payment Methods`;
         }
 
+        currentPaymentsUserName = payload.user.name;
+
         if (content) {
             content.innerHTML = currentPaymentMethods.length
                 ? currentPaymentMethods.map((paymentMethod) => buildPaymentMethodCard(paymentMethod)).join('')
@@ -849,6 +943,103 @@ async function openPaymentsModal(userId, userName) {
 function closePaymentsModal() {
     currentPaymentMethods = [];
     document.getElementById('paymentsModal')?.classList.remove('active');
+}
+
+async function openAddServiceModal(userId, userName = '') {
+    const resolvedUserId = userId || currentPaymentsUserId;
+    const resolvedUserName = userName || currentPaymentsUserName || 'Customer';
+
+    if (!resolvedUserId) {
+        showNotification('Select a customer before adding a service.', 'error');
+        return;
+    }
+
+    currentServiceUserId = resolvedUserId;
+    currentServiceUserName = resolvedUserName;
+
+    try {
+        const [products, paymentPayload] = await Promise.all([
+            fetchJson(`${API_BASE}/apis`, {
+                headers: getHeaders()
+            }),
+            fetchJson(`${API_BASE}/users/${resolvedUserId}/payment-methods`, {
+                headers: getHeaders()
+            })
+        ]);
+
+        currentServiceProducts = (products || []).filter(
+            (product) => (product.pricing?.purchaseOptions || []).length
+        );
+        currentServicePaymentMethods = getChargeablePaymentMethods(paymentPayload?.paymentMethods || []);
+        currentServiceUserName = paymentPayload?.user?.name || currentServiceUserName;
+
+        const modal = document.getElementById('addServiceModal');
+        const title = document.getElementById('addServiceModalTitle');
+        const productSelect = document.getElementById('addServiceProduct');
+        const paymentSelect = document.getElementById('addServicePaymentMethod');
+        const passwordField = document.getElementById('addServicePassword');
+        const notesField = document.getElementById('addServiceNotes');
+        const submitButton = document.querySelector('#addServiceForm button[type="submit"]');
+
+        if (title) {
+            title.textContent = `Add Service for ${currentServiceUserName}`;
+        }
+
+        if (productSelect) {
+            productSelect.innerHTML = currentServiceProducts.length
+                ? currentServiceProducts
+                    .map((product) => `
+                        <option value="${product.id}">
+                            ${escapeHtml(product.name)} | ${escapeHtml(buildBillingSummary(product))}
+                        </option>
+                    `)
+                    .join('')
+                : '<option value="">No billable catalog products available</option>';
+            productSelect.disabled = !currentServiceProducts.length;
+        }
+
+        if (paymentSelect) {
+            paymentSelect.innerHTML = currentServicePaymentMethods.length
+                ? currentServicePaymentMethods
+                    .map((paymentMethod) => `
+                        <option value="${paymentMethod.id}">
+                            ${escapeHtml(buildServicePaymentMethodLabel(paymentMethod))}
+                        </option>
+                    `)
+                    .join('')
+                : '<option value="">No reusable simulated Stripe payment sources found</option>';
+            paymentSelect.disabled = !currentServicePaymentMethods.length;
+        }
+
+        if (notesField) {
+            notesField.value = '';
+        }
+
+        if (passwordField) {
+            passwordField.value = '';
+        }
+
+        renderServicePurchaseOptions();
+        renderSelectedServicePaymentSummary();
+
+        if (submitButton) {
+            submitButton.disabled = !currentServiceProducts.length || !currentServicePaymentMethods.length;
+        }
+
+        modal?.classList.add('active');
+    } catch (error) {
+        console.error('Error preparing add service flow:', error);
+        showNotification(error.message || 'Failed to prepare the service charge flow', 'error');
+    }
+}
+
+function closeAddServiceModal() {
+    currentServiceUserId = '';
+    currentServiceUserName = '';
+    currentServiceProducts = [];
+    currentServicePaymentMethods = [];
+    document.getElementById('addServiceForm')?.reset();
+    document.getElementById('addServiceModal')?.classList.remove('active');
 }
 
 async function revealPaymentMethod(purchaseId) {
@@ -989,9 +1180,75 @@ document.getElementById('userForm')?.addEventListener('submit', async (event) =>
     }
 });
 
+document.getElementById('addServiceForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const product = getCurrentServiceProduct();
+    const purchaseType =
+        document.querySelector('input[name="servicePurchaseType"]:checked')?.value || '';
+    const sourcePurchaseId = document.getElementById('addServicePaymentMethod')?.value || '';
+    const notes = document.getElementById('addServiceNotes')?.value || '';
+    const password = document.getElementById('addServicePassword')?.value || '';
+
+    if (!product) {
+        showNotification('Choose a catalog product first.', 'error');
+        return;
+    }
+
+    if (!purchaseType) {
+        showNotification('Choose a billing option first.', 'error');
+        return;
+    }
+
+    if (!sourcePurchaseId) {
+        showNotification('Choose a saved payment source first.', 'error');
+        return;
+    }
+
+    if (!password) {
+        showNotification('Confirm your admin password before charging.', 'error');
+        return;
+    }
+
+    try {
+        const payload = await fetchJson(`${API_BASE}/users/${currentServiceUserId}/services`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+                catalogItemId: product.id,
+                purchaseType,
+                sourcePurchaseId,
+                notes,
+                password
+            })
+        });
+
+        closeAddServiceModal();
+        showNotification(
+            `Simulated Stripe charge succeeded. ${payload.product.name} is now attached to ${payload.customer.name}.`,
+            'success',
+        );
+
+        await loadUsers(currentUsersPage, currentUsersSearch);
+
+        if (
+            currentPaymentsUserId === payload.customer.id &&
+            document.getElementById('paymentsModal')?.classList.contains('active')
+        ) {
+            await openPaymentsModal(currentPaymentsUserId, currentPaymentsUserName);
+        }
+    } catch (error) {
+        console.error('Error creating simulated service charge:', error);
+        showNotification(error.message || 'Failed to create simulated service charge', 'error');
+    }
+});
+
 document.getElementById('userSearch')?.addEventListener('input', (event) => {
     loadUsers(1, event.target.value);
 });
+
+document.getElementById('addServiceProduct')?.addEventListener('change', renderServicePurchaseOptions);
+document.getElementById('addServicePaymentMethod')?.addEventListener('change', renderSelectedServicePaymentSummary);
 
 document
     .querySelectorAll('input[name="apiBillingModel"]')

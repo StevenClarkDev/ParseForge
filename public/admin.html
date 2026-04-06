@@ -571,7 +571,12 @@
                     <h2 id="paymentsModalTitle">Customer Payment Methods</h2>
                     <p class="modal-copy">Sensitive fields stay hidden until the admin password is confirmed.</p>
                 </div>
-                <button class="modal-close" onclick="closePaymentsModal()">&times;</button>
+                <div class="modal-header-actions">
+                    <button class="btn-secondary btn-sm" type="button" onclick="openAddServiceModal()">
+                        Add Service
+                    </button>
+                    <button class="modal-close" onclick="closePaymentsModal()">&times;</button>
+                </div>
             </div>
             <div class="support-note">
                 ParseForge never stores full card numbers or CVV. Admins can reveal only masked payment snapshots for troubleshooting.
@@ -580,6 +585,61 @@
         </div>
     </div>
 
-    <script src="assets/js/admin.js?v=20260406b"></script>
+    <div id="addServiceModal" class="modal">
+        <div class="modal-content support-modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="addServiceModalTitle">Add Service for Customer</h2>
+                    <p class="modal-copy">Simulate a Stripe off-session charge using a previously saved payment source.</p>
+                </div>
+                <button class="modal-close" onclick="closeAddServiceModal()">&times;</button>
+            </div>
+            <div class="support-note">
+                This creates a simulated Stripe payment and entitlement so support can help a customer complete a purchase flow before real Stripe is connected.
+            </div>
+            <form id="addServiceForm">
+                <div class="service-modal-grid">
+                    <div class="form-group">
+                        <label for="addServiceProduct">Catalog Product</label>
+                        <select id="addServiceProduct" class="form-control" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="addServicePaymentMethod">Saved Payment Source</label>
+                        <select id="addServicePaymentMethod" class="form-control" required></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Billing Option</label>
+                    <div id="addServicePurchaseOptions" class="option-grid option-grid-two"></div>
+                </div>
+                <div class="service-source-summary" id="selectedServicePaymentSummary"></div>
+                <div class="form-group">
+                    <label for="addServiceNotes">Support Note</label>
+                    <textarea
+                        id="addServiceNotes"
+                        class="form-control"
+                        rows="4"
+                        placeholder="Optional internal note about why support created this simulated Stripe charge."
+                    ></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="addServicePassword">Confirm Admin Password</label>
+                    <input
+                        type="password"
+                        id="addServicePassword"
+                        class="form-control"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeAddServiceModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Simulated Stripe Charge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/js/admin.js?v=20260406d"></script>
 </body>
 </html>
