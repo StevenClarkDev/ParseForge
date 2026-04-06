@@ -74,15 +74,16 @@
 
 .admin-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    min-height: calc(100vh - 80px);
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: start;
 }
 
 .admin-sidebar {
     background: linear-gradient(180deg, rgba(15, 19, 50, 0.88) 0%, rgba(10, 14, 39, 0.95) 100%);
     border-right: 1px solid var(--border-glass);
     padding: 1.5rem 1rem;
-    height: calc(100vh - 80px);
+    align-self: start;
+    max-height: calc(100vh - 96px);
     position: sticky;
     top: 80px;
     overflow-y: auto;
@@ -171,9 +172,9 @@
 }
 
 .admin-content {
+    min-width: 0;
     padding: 3rem;
-    overflow-y: auto;
-    height: calc(100vh - 80px);
+    overflow: visible;
 }
 
 .admin-section {

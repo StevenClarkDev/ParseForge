@@ -4,8 +4,8 @@
 
 .dashboard-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    min-height: calc(100vh - 80px);
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: start;
     position: relative;
 }
 
@@ -16,7 +16,8 @@
     padding: 2rem 1rem;
     position: sticky;
     top: 80px;
-    height: calc(100vh - 80px);
+    align-self: start;
+    max-height: calc(100vh - 96px);
     overflow-y: auto;
 }
 
@@ -73,12 +74,13 @@
 }
 
 .dashboard-content {
+    min-width: 0;
     padding: 3rem;
     background: var(--bg-primary);
     background-image:
         radial-gradient(circle at 80% 20%, rgba(0, 217, 255, 0.05) 0%, transparent 50%),
         radial-gradient(circle at 20% 80%, rgba(29, 233, 182, 0.05) 0%, transparent 50%);
-    overflow-y: auto;
+    overflow: visible;
     scroll-behavior: smooth;
     scroll-padding-top: 2rem;
 }
