@@ -1,5 +1,7 @@
 const API_BASE = window.location.origin;
 const AUTH_TOKEN_KEY = 'parseforge_auth_token';
+const SUPPORT_ADMIN_TOKEN_KEY = 'parseforge_support_admin_token';
+const SUPPORT_CONTEXT_KEY = 'parseforge_support_context';
 const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
 
 if (!authToken) {
@@ -53,8 +55,13 @@ function getAuthHeaders() {
 
 function handleAuthFailure(response) {
     if (response.status === 401) {
-        if (window.ParseForgeSession?.isSupportSessionActive()) {
-            window.ParseForgeSession.restoreAdminSession('/admin.html');
+        if (window.ParseForgeSession?.isSupportSessionActive?.()) {
+            window.ParseForgeSession.restoreAdminSession?.('/admin.html');
+            return true;
+        }
+
+        if (window.localStorage.getItem(SUPPORT_ADMIN_TOKEN_KEY)) {
+            restoreAdminSessionDirect('/admin.html');
             return true;
         }
 
@@ -910,11 +917,28 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+function restoreAdminSessionDirect(target = '/admin.html') {
+    const adminToken = window.localStorage.getItem(SUPPORT_ADMIN_TOKEN_KEY);
+
+    if (!adminToken) {
+        window.localStorage.removeItem(AUTH_TOKEN_KEY);
+        window.localStorage.removeItem(SUPPORT_CONTEXT_KEY);
+        window.location.href = '/admin-login.html';
+        return false;
+    }
+
+    window.localStorage.setItem(AUTH_TOKEN_KEY, adminToken);
+    window.localStorage.removeItem(SUPPORT_ADMIN_TOKEN_KEY);
+    window.localStorage.removeItem(SUPPORT_CONTEXT_KEY);
+    window.location.href = target;
+    return true;
+}
+
 function exitSupportSession() {
     if (window.ParseForgeSession?.restoreAdminSession) {
         window.ParseForgeSession.restoreAdminSession('/admin.html');
         return;
     }
 
-    window.location.href = '/admin.html';
+    restoreAdminSessionDirect('/admin.html');
 }
