@@ -3,25 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ParseForge - Developer Platform</title>
+    <title>ParseForge - APIs and SDKs for Teams Shipping Faster</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <!-- Header Include -->
     <div id="header-placeholder"></div>
 
-    <!-- Hero Section -->
-    <section class="hero">
+    <section class="hero home-hero">
         <div class="container">
             <div class="hero-content">
-                <h1>Build Powerful Applications with ParseForge</h1>
-                <p>A complete developer platform with robust APIs, comprehensive documentation, and powerful tools to accelerate your development.</p>
+                <span class="eyebrow">Commercial API and SDK marketplace for production teams</span>
+                <h1>Buy the SDKs you can own. Subscribe to the APIs you want managed.</h1>
+                <p class="hero-description">
+                    ParseForge is where product teams discover production-ready APIs and SDKs, compare billing
+                    models, and move from checkout to integration without vendor friction.
+                </p>
                 <div class="hero-buttons">
-                    <a href="docs.html" class="btn-primary">View Documentation</a>
-                    <a href="#features" class="btn-secondary">Learn More</a>
+                    <a href="/marketplace" class="btn-primary">Explore Marketplace</a>
+                    <a href="/sdks" class="btn-secondary">Browse APIs & SDKs</a>
+                </div>
+                <div class="hero-proof-list">
+                    <div class="hero-proof-item">
+                        <strong id="heroProductsCount">8</strong>
+                        <span>Curated products</span>
+                    </div>
+                    <div class="hero-proof-item">
+                        <strong id="heroSubscriptionCount">4</strong>
+                        <span>Subscription APIs</span>
+                    </div>
+                    <div class="hero-proof-item">
+                        <strong id="heroOneTimeCount">4</strong>
+                        <span>One-time SDK licenses</span>
+                    </div>
+                    <div class="hero-proof-item">
+                        <strong id="heroRatingValue">4.8</strong>
+                        <span>Average buyer rating</span>
+                    </div>
                 </div>
             </div>
-            <div class="hero-code">
+
+            <div class="hero-showcase">
+                <div class="hero-panel hero-panel-main">
+                    <span class="signal-pill">Designed for teams that buy to ship</span>
+                    <h3>Every product page is built to answer the commercial questions first.</h3>
+                    <ul class="hero-checklist">
+                        <li>Clear billing model: one-time license or recurring subscription</li>
+                        <li>Immediate access to docs, integration notes, and ownership status</li>
+                        <li>Operational context around support, updates, and rollout fit</li>
+                    </ul>
+                </div>
+
                 <div class="code-window">
                     <div class="code-header">
                         <div class="code-dots">
@@ -29,91 +60,211 @@
                             <span></span>
                             <span></span>
                         </div>
-                        <span class="code-title">quick_start.js</span>
+                        <span class="code-title">checkout_and_integrate.js</span>
                     </div>
-                    <pre><code><span class="comment">// Initialize ParseForge SDK</span>
-<span class="keyword">const</span> parseforge = <span class="keyword">require</span>(<span class="string">'parseforge-sdk'</span>);
+                    <pre><code><span class="comment">// Subscribe to the API your product depends on</span>
+<span class="keyword">const</span> catalog = <span class="keyword">await</span> parseforge.<span class="function">marketplace</span>.<span class="function">browse</span>();
+<span class="keyword">const</span> identity = catalog.<span class="function">find</span>(<span class="string">'identity-verification-api'</span>);
 
-<span class="keyword">const</span> <span class="function">client</span> = parseforge.<span class="function">init</span>({
-  apiKey: <span class="string">'pk_live_••••••••'</span>
-});
+<span class="comment">// Buy a one-time SDK license for your app team</span>
+<span class="keyword">const</span> sdk = catalog.<span class="function">find</span>(<span class="string">'nextjs-auth-sdk'</span>);
 
-<span class="comment">// Make your first API call</span>
-<span class="keyword">const</span> response = <span class="keyword">await</span> client.users.<span class="function">get</span>(<span class="string">'123'</span>);
-console.<span class="function">log</span>(response);</code></pre>
+<span class="keyword">await</span> workspace.<span class="function">checkout</span>([
+  { product: identity, plan: <span class="string">'yearly'</span> },
+  { product: sdk, plan: <span class="string">'one_time'</span> }
+]);</code></pre>
+                </div>
+
+                <div class="hero-floating-stat">
+                    <span>Buyer confidence</span>
+                    <strong>Docs, pricing, ownership, and fulfillment in one flow</strong>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="features">
+    <section class="trust-ribbon">
         <div class="container">
-            <h2>Everything You Need to Build Amazing Applications</h2>
-            <div class="features-grid">
+            <div class="trust-track">
+                <span class="trust-chip">Instant access after purchase</span>
+                <span class="trust-chip">Subscription APIs with yearly or monthly billing</span>
+                <span class="trust-chip">One-time SDK licenses for product teams</span>
+                <span class="trust-chip">Simulated checkout for safe demo buying</span>
+                <span class="trust-chip">Dashboard access to owned products</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="marketplace-preview">
+        <div class="container">
+            <div class="section-intro">
+                <span class="section-kicker">Featured Catalog</span>
+                <h2>Merchandised for buyers, not just developers.</h2>
+                <p>
+                    Explore the products that convert fastest: high-signal APIs with recurring value and SDKs
+                    that teams can purchase once and deploy repeatedly.
+                </p>
+            </div>
+
+            <div class="showcase-grid" id="homeFeaturedGrid">
+                <article class="showcase-card">
+                    <div class="showcase-card-top">
+                        <span class="showcase-chip">Featured</span>
+                        <span class="showcase-type">API</span>
+                    </div>
+                    <h3 class="showcase-title">Identity Verification API</h3>
+                    <p class="showcase-copy">KYC onboarding, document validation, and risk scoring with subscription delivery.</p>
+                    <div class="showcase-meta">
+                        <span>REST</span>
+                        <span>4.9 rating</span>
+                        <span>184 reviews</span>
+                    </div>
+                    <div class="showcase-footer">
+                        <div class="showcase-pricing">
+                            <strong>$79/mo</strong>
+                            <span>or $790 yearly</span>
+                        </div>
+                        <a href="/marketplace" class="showcase-link">View product</a>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="solution-lanes">
+        <div class="container">
+            <div class="section-intro">
+                <span class="section-kicker">Buyer Paths</span>
+                <h2>Built for the two motions that matter.</h2>
+            </div>
+
+            <div class="lane-grid">
+                <article class="lane-card">
+                    <span class="lane-label">Subscription APIs</span>
+                    <h3>Choose recurring access for products that depend on managed uptime.</h3>
+                    <p>
+                        Ideal for identity, geocoding, OCR, and other services where infrastructure, updates,
+                        and reliability are part of the value you are buying.
+                    </p>
+                    <ul>
+                        <li>Monthly and yearly billing support</li>
+                        <li>Operational delivery and ongoing access</li>
+                        <li>Best fit for production traffic and external dependencies</li>
+                    </ul>
+                </article>
+
+                <article class="lane-card">
+                    <span class="lane-label">One-Time SDKs</span>
+                    <h3>License implementation accelerators once and deploy them across your product roadmap.</h3>
+                    <p>
+                        Perfect for app teams that want reusable integration kits, UI helpers, or internal
+                        developer tooling without recurring spend.
+                    </p>
+                    <ul>
+                        <li>Single purchase for long-term team use</li>
+                        <li>Fast rollout for web, mobile, and backend products</li>
+                        <li>Easy fit for budget-conscious engineering teams</li>
+                    </ul>
+                </article>
+
+                <article class="lane-card">
+                    <span class="lane-label">Launch Workflow</span>
+                    <h3>Move from discovery to owned access without leaving the platform.</h3>
+                    <p>
+                        ParseForge connects merchandising, checkout, login, and dashboard access so buyers can
+                        evaluate, purchase, and operationalize in one session.
+                    </p>
+                    <ul>
+                        <li>Marketplace filtering and plan selection</li>
+                        <li>Secure account flow before purchase completion</li>
+                        <li>Dashboard visibility for owned licenses and subscriptions</li>
+                    </ul>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <div class="section-intro">
+                <span class="section-kicker">Why ParseForge</span>
+                <h2>The storefront is built to reduce integration risk.</h2>
+            </div>
+
+            <div class="advantage-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">📚</div>
-                    <h3>Comprehensive Docs</h3>
-                    <p>Detailed API reference with examples in multiple programming languages and interactive code samples.</p>
+                    <div class="feature-icon">DOC</div>
+                    <h3>Commercial Clarity</h3>
+                    <p>Each listing explains whether you are buying a one-time license or ongoing managed access before you hit checkout.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🔑</div>
-                    <h3>Easy Authentication</h3>
-                    <p>Secure API key management with support for multiple environments and granular permissions.</p>
+                    <div class="feature-icon">OPS</div>
+                    <h3>Operational Context</h3>
+                    <p>Buyers can see ratings, reviews, downloads, versioning, and product status so technical decisions feel grounded.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Lightning Fast</h3>
-                    <p>High-performance APIs with global CDN and average response times under 100ms.</p>
+                    <div class="feature-icon">ACC</div>
+                    <h3>Account-Linked Ownership</h3>
+                    <p>Purchases connect to the user dashboard, making it easy to understand what your team owns and what is actively subscribed.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🛠️</div>
-                    <h3>Developer Tools</h3>
-                    <p>Interactive API explorer, SDKs for popular languages, and debugging tools built-in.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Real-time Analytics</h3>
-                    <p>Monitor API usage, track performance metrics, and get insights on your application's behavior.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔒</div>
-                    <h3>Enterprise Security</h3>
-                    <p>Bank-level encryption, SOC 2 compliance, and advanced security features to protect your data.</p>
+                    <div class="feature-icon">FST</div>
+                    <h3>Fast Buyer Journey</h3>
+                    <p>From landing page to checkout to dashboard, the site is organized around getting teams live quickly with fewer dead ends.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Quick Start Section -->
     <section class="quick-start">
         <div class="container">
-            <h2>Get Started in Minutes</h2>
+            <div class="section-intro">
+                <span class="section-kicker">From Purchase to Production</span>
+                <h2>Three steps from storefront to shipped integration.</h2>
+            </div>
+
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h3>Create Account</h3>
-                    <p>Sign up for free and get instant access to all APIs</p>
+                    <h3>Compare Billing Models</h3>
+                    <p>Browse the marketplace and decide whether your use case needs a recurring API subscription or a permanent SDK license.</p>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3>Get API Key</h3>
-                    <p>Generate your API credentials from the dashboard</p>
+                    <h3>Sign In and Checkout</h3>
+                    <p>Create an account, complete the simulated checkout flow, and attach the purchase to your dashboard workspace.</p>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h3>Start Building</h3>
-                    <p>Make your first API call and start building</p>
+                    <h3>Activate and Ship</h3>
+                    <p>Use your dashboard to manage keys, confirm entitlements, and move straight into documentation and implementation.</p>
                 </div>
             </div>
-            <a href="login.html?next=/dashboard.html" class="btn-cta">Start Building Now →</a>
+            <a href="/login?next=/dashboard.html" class="btn-cta">Sign In to Start Buying</a>
         </div>
     </section>
 
-    <!-- Footer Include -->
+    <section class="closing-cta">
+        <div class="container">
+            <div class="closing-cta-card">
+                <span class="section-kicker">Ready to Build</span>
+                <h2>Make ParseForge feel like the easiest place on the internet to buy developer tooling.</h2>
+                <p>
+                    Discover the marketplace, compare the right products, and give your team a dashboard that
+                    reflects everything you already own.
+                </p>
+                <div class="hero-buttons">
+                    <a href="/marketplace" class="btn-primary">Shop Marketplace</a>
+                    <a href="/register?next=/dashboard.html" class="btn-secondary">Create Buyer Account</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <div id="footer-placeholder"></div>
 
     <script src="assets/js/includes.js"></script>
     <script src="assets/js/app.js"></script>
+    <script src="assets/js/home.js"></script>
 </body>
 </html>

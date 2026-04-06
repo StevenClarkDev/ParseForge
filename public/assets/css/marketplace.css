@@ -1407,8 +1407,311 @@ button[type="submit"].btn-primary:active {
     box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
 }
 
+/* ========================================
+   MARKETPLACE UPGRADE - BUYER EXPERIENCE
+   ======================================== */
+.marketplace-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    gap: 2rem;
+    align-items: center;
+}
+
+.marketplace-hero-copy {
+    text-align: left;
+}
+
+.marketplace-hero-copy h1 {
+    margin: 1rem 0 1.25rem;
+}
+
+.marketplace-hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 2rem 0 1.5rem;
+}
+
+.hero-bullets {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.hero-bullet {
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+}
+
+.marketplace-hero-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.hero-signal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.hero-signal-card,
+.hero-spotlight,
+.collection-card,
+.product-fact-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    border-radius: 18px;
+    padding: 1.2rem;
+    backdrop-filter: blur(20px);
+}
+
+.hero-signal-card span,
+.product-fact-card span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hero-signal-card strong,
+.product-fact-card strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 1.65rem;
+    margin-top: 0.4rem;
+}
+
+.hero-spotlight h3,
+.collection-card h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.8rem;
+}
+
+.hero-spotlight ul {
+    list-style: none;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.hero-spotlight li,
+.collection-card p {
+    color: var(--text-secondary);
+}
+
+.hero-spotlight li::before,
+.product-features li::before,
+.product-detail-features li::before {
+    content: '+';
+}
+
+.marketplace-signal-bar {
+    padding: 0 0 2rem;
+}
+
+.signal-bar-track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+}
+
+.signal-bar-item {
+    padding: 0.85rem 1rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+}
+
+.collections-section {
+    padding: 1rem 0 4rem;
+}
+
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+
+.collection-card {
+    display: grid;
+    gap: 1rem;
+}
+
+.collection-topline,
+.results-toolbar,
+.product-topline,
+.product-category-row,
+.product-stats,
+.product-cta-row,
+.collection-featured-product,
+.product-modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.collection-product-type,
+.purchase-status,
+.ownership-badge,
+.product-stat,
+.filter-chip {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-glass);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.results-toolbar {
+    margin-bottom: 1.5rem;
+}
+
+.results-copy {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.results-copy strong {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+}
+
+.results-copy span {
+    color: var(--text-secondary);
+}
+
+.results-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: flex-end;
+}
+
+.filter-chip-clear {
+    cursor: pointer;
+    color: var(--neon-blue);
+}
+
+.product-topline {
+    min-height: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.product-category-row {
+    margin-bottom: 0.75rem;
+}
+
+.product-stats {
+    margin-bottom: 1rem;
+}
+
+.product-stat {
+    color: var(--text-muted);
+}
+
+.product-price {
+    font-size: 1.55rem;
+}
+
+.product-cta-row {
+    margin-top: 1.25rem;
+}
+
+.docs-link {
+    color: var(--neon-blue);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.empty-results {
+    padding: 3rem 1.5rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.empty-results h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.8rem;
+}
+
+.empty-results p,
+.empty-cart-label,
+.checkout-note {
+    color: var(--text-secondary);
+}
+
+.product-fact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.product-modal-actions {
+    margin-bottom: 1rem;
+}
+
+.purchase-option-btn {
+    display: grid;
+    text-align: left;
+    gap: 0.35rem;
+}
+
+.purchase-option-title,
+.purchase-option-price,
+.purchase-option-action {
+    display: block;
+}
+
+.purchase-option-title {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.purchase-option-price {
+    color: var(--neon-blue);
+    font-weight: 700;
+}
+
+.purchase-option-copy {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+}
+
+.purchase-option-action {
+    color: var(--cyber-green);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.purchase-option-btn.added .purchase-option-action {
+    color: var(--text-primary);
+}
+
+.checkout-note {
+    text-align: center;
+    font-size: 0.86rem;
+    margin-top: 1rem;
+    line-height: 1.7;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
+    .marketplace-hero-grid,
+    .collection-grid {
+        grid-template-columns: 1fr;
+    }
+
     .search-filter {
         flex-wrap: wrap;
     }
@@ -1421,6 +1724,10 @@ button[type="submit"].btn-primary:active {
 @media (max-width: 968px) {
     .marketplace-hero h1 {
         font-size: 2.5rem;
+    }
+
+    .marketplace-hero-copy {
+        text-align: center;
     }
     
     .hero-stats {
@@ -1449,6 +1756,11 @@ button[type="submit"].btn-primary:active {
     .products-grid {
         grid-template-columns: 1fr;
     }
+
+    .results-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
     
     .cart-sidebar {
         width: 100%;
@@ -1469,6 +1781,10 @@ button[type="submit"].btn-primary:active {
     }
     
     .checkout-content {
+        grid-template-columns: 1fr;
+    }
+
+    .product-fact-grid {
         grid-template-columns: 1fr;
     }
     

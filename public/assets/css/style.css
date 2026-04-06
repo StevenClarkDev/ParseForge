@@ -639,6 +639,301 @@ body::after {
 }
 
 /* ========================================
+   HOME EXPERIENCE - CONVERSION FOCUSED
+   ======================================== */
+.eyebrow,
+.section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 217, 255, 0.25);
+    background: rgba(0, 217, 255, 0.08);
+    color: var(--neon-blue);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.hero-description {
+    max-width: 640px;
+}
+
+.home-hero {
+    padding-top: 7rem;
+}
+
+.hero-proof-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 2.5rem;
+}
+
+.hero-proof-item,
+.hero-floating-stat {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    backdrop-filter: blur(20px);
+}
+
+.hero-proof-item strong {
+    display: block;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.hero-proof-item span,
+.hero-floating-stat span {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.hero-showcase {
+    display: grid;
+    gap: 1.25rem;
+    position: relative;
+}
+
+.hero-panel {
+    background: linear-gradient(135deg, rgba(10, 14, 39, 0.92), rgba(21, 25, 50, 0.88));
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 1.5rem;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.hero-panel-main h3 {
+    font-size: 1.55rem;
+    margin: 1rem 0;
+    color: var(--text-primary);
+}
+
+.signal-pill {
+    display: inline-flex;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(29, 233, 182, 0.12);
+    border: 1px solid rgba(29, 233, 182, 0.25);
+    color: var(--cyber-green);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.hero-checklist {
+    list-style: none;
+    display: grid;
+    gap: 0.85rem;
+}
+
+.hero-checklist li {
+    position: relative;
+    padding-left: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.hero-checklist li::before {
+    content: '+';
+    position: absolute;
+    left: 0;
+    color: var(--cyber-green);
+    font-weight: 700;
+}
+
+.hero-floating-stat {
+    display: grid;
+    gap: 0.35rem;
+    justify-items: start;
+}
+
+.hero-floating-stat strong {
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.trust-ribbon {
+    padding: 0 0 2rem;
+}
+
+.trust-track {
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.trust-chip {
+    padding: 0.85rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+}
+
+.section-intro {
+    display: grid;
+    gap: 0.9rem;
+    justify-items: center;
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto 3rem;
+}
+
+.section-intro p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+.marketplace-preview,
+.solution-lanes {
+    padding: 2rem 0 6rem;
+}
+
+.showcase-grid,
+.lane-grid,
+.advantage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.showcase-card,
+.lane-card,
+.closing-cta-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 1.6rem;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.showcase-card {
+    display: grid;
+    gap: 1rem;
+}
+
+.showcase-card-top,
+.showcase-meta,
+.showcase-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.showcase-chip,
+.showcase-type,
+.lane-label {
+    display: inline-flex;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.showcase-chip {
+    background: rgba(0, 217, 255, 0.12);
+    border: 1px solid rgba(0, 217, 255, 0.25);
+    color: var(--neon-blue);
+}
+
+.showcase-type,
+.lane-label {
+    background: rgba(29, 233, 182, 0.12);
+    border: 1px solid rgba(29, 233, 182, 0.25);
+    color: var(--cyber-green);
+}
+
+.showcase-title,
+.lane-card h3,
+.closing-cta-card h2 {
+    font-size: 1.45rem;
+    color: var(--text-primary);
+}
+
+.showcase-copy,
+.lane-card p,
+.closing-cta-card p {
+    color: var(--text-secondary);
+}
+
+.showcase-meta span {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.showcase-pricing strong {
+    display: block;
+    font-size: 1.35rem;
+    color: var(--text-primary);
+}
+
+.showcase-pricing span {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.showcase-link {
+    color: var(--neon-blue);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.lane-card {
+    display: grid;
+    gap: 1rem;
+}
+
+.lane-card ul {
+    list-style: none;
+    display: grid;
+    gap: 0.7rem;
+}
+
+.lane-card li {
+    position: relative;
+    padding-left: 1rem;
+    color: var(--text-secondary);
+}
+
+.lane-card li::before {
+    content: '+';
+    position: absolute;
+    left: 0;
+    color: var(--neon-blue);
+    font-weight: 700;
+}
+
+.advantage-grid {
+    margin-top: 1rem;
+}
+
+.advantage-grid .feature-card {
+    min-height: 100%;
+}
+
+.closing-cta {
+    padding: 0 0 6rem;
+}
+
+.closing-cta-card {
+    display: grid;
+    gap: 1rem;
+    text-align: left;
+}
+
+/* ========================================
    FOOTER - Dark Cyber Style
    ======================================== */
 .footer {
@@ -707,6 +1002,10 @@ body::after {
 @media (max-width: 968px) {
     .hero .container {
         grid-template-columns: 1fr;
+    }
+
+    .hero-proof-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     
     .hero-content h1 {
@@ -777,6 +1076,10 @@ body::after {
 @media (max-width: 640px) {
     .hero-content h1 {
         font-size: 2rem;
+    }
+
+    .hero-proof-list {
+        grid-template-columns: 1fr;
     }
     
     .hero-buttons {

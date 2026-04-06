@@ -3,46 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketplace - Buy SDKs & APIs | ParseForge</title>
+    <title>Marketplace - Buy SDKs & Subscribe APIs | ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/marketplace.css?v=2.4">
+    <link rel="stylesheet" href="assets/css/marketplace.css?v=3.0">
 </head>
 <body>
-    <!--Header Include -->
     <div id="header-placeholder"></div>
 
-    <!-- Hero Section -->
     <section class="marketplace-hero">
-        <div class="container">
-            <h1>API & SDK Marketplace</h1>
-            <p>Buy APIs and SDKs once for lifetime access, or subscribe for continuous updates and managed delivery.</p>
-            <div class="hero-stats">
-                <div class="stat">
-                    <strong id="totalProducts">24</strong>
-                    <span>Products</span>
+        <div class="container marketplace-hero-grid">
+            <div class="marketplace-hero-copy">
+                <span class="eyebrow">Production marketplace for buyer-ready developer tooling</span>
+                <h1>Purchase the right SDKs. Subscribe to the APIs your product will depend on.</h1>
+                <p>
+                    ParseForge turns technical evaluation into a confident buying flow with transparent billing,
+                    product proof, and instant handoff into the buyer dashboard.
+                </p>
+                <div class="marketplace-hero-actions">
+                    <a href="#catalog" class="btn-primary">Browse Catalog</a>
+                    <a href="/login?next=/dashboard.html" class="btn-secondary">Open Buyer Dashboard</a>
                 </div>
-                <div class="stat">
-                    <strong>100K+</strong>
-                    <span>Downloads</span>
+                <div class="hero-bullets">
+                    <div class="hero-bullet">One-time SDK licenses for app teams</div>
+                    <div class="hero-bullet">Monthly and yearly API subscriptions</div>
+                    <div class="hero-bullet">Instant ownership and entitlement visibility</div>
                 </div>
-                <div class="stat">
-                    <strong>4.8/5</strong>
-                    <span>Avg Rating</span>
+            </div>
+
+            <div class="marketplace-hero-panel">
+                <div class="hero-signal-grid">
+                    <div class="hero-signal-card">
+                        <span>APIs</span>
+                        <strong id="heroApiCount">0</strong>
+                    </div>
+                    <div class="hero-signal-card">
+                        <span>SDKs</span>
+                        <strong id="heroSdkCount">0</strong>
+                    </div>
+                    <div class="hero-signal-card">
+                        <span>Subscriptions</span>
+                        <strong id="heroSubscriptionProducts">0</strong>
+                    </div>
+                    <div class="hero-signal-card">
+                        <span>One-time licenses</span>
+                        <strong id="heroOneTimeProducts">0</strong>
+                    </div>
+                </div>
+
+                <div class="hero-spotlight">
+                    <h3>What buyers unlock inside ParseForge</h3>
+                    <ul>
+                        <li>Ratings, download volume, and product status in every listing</li>
+                        <li>Merchandised plan choices instead of generic technical cards</li>
+                        <li>Checkout tied directly to account ownership and future access</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Filters & Search -->
-    <section class="marketplace-section">
+    <section class="marketplace-signal-bar">
+        <div class="container">
+            <div class="signal-bar-track">
+                <span class="signal-bar-item">Built for product, platform, and growth teams</span>
+                <span class="signal-bar-item">Discover APIs and SDKs side by side</span>
+                <span class="signal-bar-item">Compare recurring access against permanent licenses</span>
+                <span class="signal-bar-item">Use the dashboard to confirm what your team owns</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="collections-section">
+        <div class="container">
+            <div class="section-intro">
+                <span class="section-kicker">Curated Collections</span>
+                <h2>Jump straight into the products buyers evaluate most often.</h2>
+                <p>
+                    We surface the most commercially relevant categories first so teams can compare fit,
+                    pricing model, and rollout path without digging.
+                </p>
+            </div>
+            <div class="collection-grid" id="collectionGrid"></div>
+        </div>
+    </section>
+
+    <section class="marketplace-section" id="catalog">
         <div class="container">
             <div class="marketplace-header">
                 <div class="search-filter">
-                    <input type="search" id="searchProducts" class="search-input" placeholder="Search APIs, SDKs...">
+                    <input type="search" id="searchProducts" class="search-input" placeholder="Search APIs, SDKs, use cases, languages">
                     <select id="categoryFilter" class="filter-select">
                         <option value="all">All Categories</option>
                         <option value="api">APIs</option>
                         <option value="sdk">SDKs</option>
+                    </select>
+                    <select id="billingFilter" class="filter-select">
+                        <option value="all">All Billing</option>
+                        <option value="subscription">Subscription</option>
+                        <option value="one_time">One-time</option>
                     </select>
                     <select id="priceFilter" class="filter-select">
                         <option value="all">All Prices</option>
@@ -53,43 +111,50 @@
                     </select>
                     <select id="sortBy" class="filter-select">
                         <option value="featured">Featured</option>
+                        <option value="popular">Most Popular</option>
+                        <option value="top-rated">Top Rated</option>
                         <option value="price-low">Price: Low to High</option>
                         <option value="price-high">Price: High to Low</option>
-                        <option value="popular">Most Popular</option>
                         <option value="newest">Newest</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Products Grid -->
-            <div class="products-grid" id="productsGrid">
-                <!-- Products will be loaded here by JavaScript -->
+            <div class="results-toolbar">
+                <div class="results-copy">
+                    <strong id="resultsCount">0</strong>
+                    <span id="resultsSummary">products ready to ship</span>
+                </div>
+                <div class="results-chips" id="activeFilters"></div>
             </div>
 
-            <!-- Pagination -->
-            <div class="pagination" id="pagination">
-                <!-- Pagination will be generated here -->
+            <div class="products-grid" id="productsGrid"></div>
+
+            <div class="empty-results" id="emptyResults" hidden>
+                <h3>No products match those filters yet.</h3>
+                <p>Try clearing a filter or switching between subscription APIs and one-time SDK licenses.</p>
+                <button class="btn-secondary" type="button" onclick="clearFilters()">Clear Filters</button>
             </div>
+
+            <div class="pagination" id="pagination"></div>
         </div>
     </section>
 
-    <!-- Cart Backdrop Overlay -->
     <div class="cart-backdrop" id="cartBackdrop" onclick="toggleCart()"></div>
 
-    <!-- Shopping Cart Sidebar -->
     <div class="cart-sidebar" id="cartSidebar">
         <div class="cart-header">
             <h3>Shopping Cart</h3>
             <button class="close-cart" onclick="toggleCart()">&times;</button>
         </div>
-        
+
         <div class="cart-items" id="cartItems">
             <div class="empty-cart">
                 <p>Your cart is empty</p>
-                <span style="font-size: 3rem;">🛒</span>
+                <span class="empty-cart-label">Add a license or subscription to get started</span>
             </div>
         </div>
-        
+
         <div class="cart-footer">
             <div class="cart-total">
                 <span>Total:</span>
@@ -101,17 +166,13 @@
         </div>
     </div>
 
-    <!-- Product Modal -->
     <div class="modal" id="productModal">
         <div class="modal-content product-modal-content">
             <button class="modal-close" onclick="closeProductModal()">&times;</button>
-            <div id="productDetails">
-                <!-- Product details will be loaded here -->
-            </div>
+            <div id="productDetails"></div>
         </div>
     </div>
 
-    <!-- Checkout Modal -->
     <div class="modal" id="checkoutModal">
         <div class="modal-content checkout-modal-content">
             <div class="modal-header">
@@ -138,36 +199,36 @@
                             <label class="required">Country</label>
                             <select name="country" id="countrySelect" required>
                                 <option value="">Select your country</option>
-                                <option value="US">🇺🇸 United States</option>
-                                <option value="UK">🇬🇧 United Kingdom</option>
-                                <option value="CA">🇨🇦 Canada</option>
-                                <option value="AU">🇦🇺 Australia</option>
-                                <option value="DE">🇩🇪 Germany</option>
-                                <option value="FR">🇫🇷 France</option>
-                                <option value="JP">🇯🇵 Japan</option>
-                                <option value="IN">🇮🇳 India</option>
-                                <option value="BR">🇧🇷 Brazil</option>
-                                <option value="MX">🇲🇽 Mexico</option>
-                                <option value="NL">🇳🇱 Netherlands</option>
-                                <option value="SE">🇸🇪 Sweden</option>
-                                <option value="SG">🇸🇬 Singapore</option>
-                                <option value="AE">🇦🇪 UAE</option>
-                                <option value="OTHER">🌍 Other</option>
+                                <option value="US">United States</option>
+                                <option value="UK">United Kingdom</option>
+                                <option value="CA">Canada</option>
+                                <option value="AU">Australia</option>
+                                <option value="DE">Germany</option>
+                                <option value="FR">France</option>
+                                <option value="JP">Japan</option>
+                                <option value="IN">India</option>
+                                <option value="BR">Brazil</option>
+                                <option value="MX">Mexico</option>
+                                <option value="NL">Netherlands</option>
+                                <option value="SE">Sweden</option>
+                                <option value="SG">Singapore</option>
+                                <option value="AE">UAE</option>
+                                <option value="OTHER">Other</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group" id="stateGroup" style="display: none;">
                             <label class="required" id="stateLabel">State</label>
                             <select name="state" id="stateSelect">
                                 <option value="">Select state</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group" id="zipGroup" style="display: none;">
                             <label class="required" id="zipLabel">ZIP Code</label>
                             <input type="text" name="zipCode" id="zipCode" placeholder="Enter ZIP code">
                         </div>
-                        
+
                         <h3 style="margin-top: 2rem;">Payment Method</h3>
                         <div class="payment-methods">
                             <label class="payment-option">
@@ -179,7 +240,7 @@
                                 <span>Stripe Card Entry (Simulated)</span>
                             </label>
                         </div>
-                        <p class="payment-note">Payments are simulated in this environment. No real Stripe charge will be created.</p>
+                        <p class="payment-note">This environment uses simulated Stripe flows. No real card charge is processed.</p>
 
                         <div class="card-details" id="cardDetails" style="display: none;">
                             <div class="form-group">
@@ -204,9 +265,7 @@
 
                 <div class="checkout-right">
                     <h3>Order Summary</h3>
-                    <div class="order-items" id="orderItems">
-                        <!-- Order items will be shown here -->
-                    </div>
+                    <div class="order-items" id="orderItems"></div>
                     <div class="order-totals">
                         <div class="order-row">
                             <span>Subtotal:</span>
@@ -221,24 +280,23 @@
                             <strong id="orderTotal">$0.00</strong>
                         </div>
                     </div>
-                    
-                    <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 1rem; padding: 0 1rem;">
-                        💡 Tax will be calculated based on your state/province
+
+                    <p class="checkout-note">
+                        Taxes are hidden in this demo flow. After payment, your purchase is attached directly to your ParseForge dashboard.
                     </p>
-                    
+
                     <div class="security-badges">
                         <p>Simulated Stripe Checkout</p>
-                        <p style="font-size: 0.875rem; color: var(--text-muted);">No real card charge is processed in this demo flow</p>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Fast demo-safe checkout with no live charge created.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer Include -->
     <div id="footer-placeholder"></div>
 
     <script src="assets/js/includes.js"></script>
-    <script src="assets/js/marketplace.js?v=1.9"></script>
+    <script src="assets/js/marketplace.js?v=3.0"></script>
 </body>
 </html>

@@ -1,13 +1,14 @@
 const API_BASE = window.location.origin;
 const AUTH_TOKEN_KEY = 'parseforge_auth_token';
 const CART_KEY = 'parseforge_cart_v2';
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 9;
 
 let catalogItems = [];
 let cart = loadCart();
 let currentPage = 1;
 let currentFilters = {
     category: 'all',
+    billing: 'all',
     priceRange: 'all',
     search: '',
     sortBy: 'featured'
@@ -33,6 +34,13 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+function formatCompactNumber(value) {
+    return new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 1
+    }).format(Number(value || 0));
 }
 
 function getAuthHeaders(includeJson = false) {
@@ -112,20 +120,56 @@ function buildPriceLabel(option) {
     return `$${option.price.toFixed(2)}/yr`;
 }
 
-function buildHeroCopy(product) {
-    const options = getPurchaseOptions(product);
-    const hasOneTime = options.some((option) => option.type === 'one_time');
-    const hasSubscription = options.some((option) => option.type === 'monthly' || option.type === 'yearly');
+function buildStartingPriceLabel(product) {
+    const defaultOption = getDefaultPurchaseOption(product);
 
-    if (hasOneTime && hasSubscription) {
-        return 'Buy once or subscribe';
+    if (!defaultOption) {
+        return 'Unavailable';
     }
 
-    if (hasSubscription) {
-        return 'Subscription access';
+    if (defaultOption.type === 'one_time') {
+        return `$${defaultOption.price.toFixed(2)} once`;
     }
 
-    return 'One-time purchase';
+    if (defaultOption.type === 'monthly') {
+        return `From $${defaultOption.price.toFixed(2)}/mo`;
+    }
+
+    return `From $${defaultOption.price.toFixed(2)}/yr`;
+}
+
+function getBillingSummary(product) {
+    return product?.pricing?.billingModel === 'subscription'
+        ? 'Subscription'
+        : 'One-time license';
+}
+
+function hasOwnership(product) {
+    return Boolean(product?.ownership?.hasOneTimeAccess || product?.ownership?.hasSubscription);
+}
+
+function getOwnershipLabel(product) {
+    if (product?.ownership?.hasOneTimeAccess) {
+        return 'Owned';
+    }
+
+    if (product?.ownership?.hasSubscription) {
+        return 'Subscribed';
+    }
+
+    return '';
+}
+
+function isOwnedForPurchase(product, purchaseType) {
+    if (!product?.ownership) {
+        return false;
+    }
+
+    if (purchaseType === 'one_time') {
+        return product.ownership.hasOneTimeAccess;
+    }
+
+    return product.ownership.hasSubscription;
 }
 
 function normalizeCart() {
@@ -134,7 +178,7 @@ function normalizeCart() {
             const product = getProductById(entry.productId);
             const option = product ? getPurchaseOption(product, entry.purchaseType) : null;
 
-            if (!product || !option) {
+            if (!product || !option || isOwnedForPurchase(product, option.type)) {
                 return null;
             }
 
@@ -160,6 +204,10 @@ function filterProducts() {
             return false;
         }
 
+        if (currentFilters.billing !== 'all' && product.pricing?.billingModel !== currentFilters.billing) {
+            return false;
+        }
+
         const effectivePrice = Number(product.pricing?.minPrice || 0);
         if (currentFilters.priceRange !== 'all') {
             if (currentFilters.priceRange === '200+' && effectivePrice < 200) {
@@ -180,6 +228,7 @@ function filterProducts() {
                 product.name,
                 product.description,
                 product.language,
+                product.version,
                 ...(product.features || [])
             ].map((value) => String(value || '').toLowerCase());
 
@@ -202,6 +251,10 @@ function sortProducts(products) {
             return sorted.sort((a, b) => (b.pricing?.minPrice || 0) - (a.pricing?.minPrice || 0));
         case 'popular':
             return sorted.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
+        case 'top-rated':
+            return sorted.sort(
+                (a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviews || 0) - (a.reviews || 0)
+            );
         case 'newest':
             return sorted.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
         default:
@@ -212,37 +265,201 @@ function sortProducts(products) {
     }
 }
 
+function updateHeroStats() {
+    const statMap = {
+        heroApiCount: catalogItems.filter((item) => item.type === 'api').length,
+        heroSdkCount: catalogItems.filter((item) => item.type === 'sdk').length,
+        heroSubscriptionProducts: catalogItems.filter(
+            (item) => item.pricing?.billingModel === 'subscription'
+        ).length,
+        heroOneTimeProducts: catalogItems.filter((item) => item.pricing?.billingModel === 'one_time')
+            .length
+    };
+
+    Object.entries(statMap).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = String(value);
+        }
+    });
+}
+
+function renderCollections() {
+    const grid = document.getElementById('collectionGrid');
+    if (!grid) {
+        return;
+    }
+
+    const mostPopularApi = [...catalogItems]
+        .filter((item) => item.type === 'api')
+        .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))[0];
+    const bestSdk = [...catalogItems]
+        .filter((item) => item.type === 'sdk')
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))[0];
+    const topRated = [...catalogItems].sort(
+        (a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviews || 0) - (a.reviews || 0)
+    )[0];
+
+    const collections = [
+        {
+            title: 'Operational APIs',
+            description:
+                'Managed products for teams that need recurring value, uptime, and commercially clear subscription access.',
+            actionLabel: 'View subscription APIs',
+            action: `applyQuickFilter('api', 'subscription', 'popular')`,
+            product: mostPopularApi
+        },
+        {
+            title: 'Implementation SDKs',
+            description:
+                'One-time purchases for teams that want reusable integration kits and fast rollout without monthly overhead.',
+            actionLabel: 'View one-time SDKs',
+            action: `applyQuickFilter('sdk', 'one_time', 'top-rated')`,
+            product: bestSdk
+        },
+        {
+            title: 'High-Intent Picks',
+            description:
+                'The most persuasive products in the catalog for buyers comparing proof, adoption, and rollout speed.',
+            actionLabel: 'See top-rated products',
+            action: `applyQuickFilter('all', 'all', 'top-rated')`,
+            product: topRated
+        }
+    ];
+
+    grid.innerHTML = collections
+        .map((collection) => {
+            const product = collection.product;
+            return `
+                <article class="collection-card">
+                    <div class="collection-topline">
+                        <span class="showcase-chip">${escapeHtml(collection.title)}</span>
+                        <span class="collection-product-type">${escapeHtml(product?.type?.toUpperCase() || 'CATALOG')}</span>
+                    </div>
+                    <h3>${escapeHtml(collection.title)}</h3>
+                    <p>${escapeHtml(collection.description)}</p>
+                    ${
+                        product
+                            ? `
+                                <div class="collection-featured-product">
+                                    <strong>${escapeHtml(product.name)}</strong>
+                                    <span>${escapeHtml(buildStartingPriceLabel(product))}</span>
+                                </div>
+                              `
+                            : ''
+                    }
+                    <button type="button" class="btn-secondary" onclick="${collection.action}">
+                        ${escapeHtml(collection.actionLabel)}
+                    </button>
+                </article>
+            `;
+        })
+        .join('');
+}
+
+function renderActiveFilters() {
+    const container = document.getElementById('activeFilters');
+    if (!container) {
+        return;
+    }
+
+    const chips = [];
+
+    if (currentFilters.search) {
+        chips.push(`Search: ${currentFilters.search}`);
+    }
+
+    if (currentFilters.category !== 'all') {
+        chips.push(`Type: ${currentFilters.category.toUpperCase()}`);
+    }
+
+    if (currentFilters.billing !== 'all') {
+        chips.push(
+            `Billing: ${currentFilters.billing === 'one_time' ? 'ONE-TIME' : 'SUBSCRIPTION'}`
+        );
+    }
+
+    if (currentFilters.priceRange !== 'all') {
+        chips.push(`Price: ${currentFilters.priceRange}`);
+    }
+
+    if (currentFilters.sortBy !== 'featured') {
+        chips.push(`Sort: ${currentFilters.sortBy.replace('-', ' ')}`);
+    }
+
+    if (!chips.length) {
+        container.innerHTML = '<span class="filter-chip">No filters applied</span>';
+        return;
+    }
+
+    container.innerHTML = `
+        ${chips.map((chip) => `<span class="filter-chip">${escapeHtml(chip)}</span>`).join('')}
+        <button type="button" class="filter-chip filter-chip-clear" onclick="clearFilters()">Clear all</button>
+    `;
+}
+
+function updateResultsSummary(filteredProducts) {
+    const countElement = document.getElementById('resultsCount');
+    const summaryElement = document.getElementById('resultsSummary');
+
+    if (countElement) {
+        countElement.textContent = String(filteredProducts.length);
+    }
+
+    if (summaryElement) {
+        summaryElement.textContent =
+            filteredProducts.length === catalogItems.length
+                ? 'products ready to ship'
+                : 'products match your current filters';
+    }
+}
+
 function createProductCard(product) {
     const defaultOption = getDefaultPurchaseOption(product);
+    const options = getPurchaseOptions(product);
+    const ownershipLabel = getOwnershipLabel(product);
+    const isOwned = hasOwnership(product);
     const badgeHtml = product.badge
         ? `<div class="product-badge ${escapeHtml(product.badge)}">${escapeHtml(product.badge)}</div>`
         : '';
-    const options = getPurchaseOptions(product);
     const inCart = defaultOption
         ? cart.some((item) => item.key === getCartKey(product.id, defaultOption.type))
         : false;
     const buttonAction =
-        options.length > 1
+        options.length > 1 && !isOwned
             ? `event.stopPropagation(); openProductModal('${product.id}')`
-            : defaultOption
+            : defaultOption && !isOwned
               ? `event.stopPropagation(); ${inCart ? `removeFromCartByKey('${getCartKey(product.id, defaultOption.type)}')` : `addToCart('${product.id}', '${defaultOption.type}')`}`
               : 'event.stopPropagation();';
     const buttonLabel =
-        options.length > 1
-            ? 'Choose plan'
-            : inCart
-              ? 'Added'
-              : defaultOption
-                ? 'Add to cart'
-                : 'Unavailable';
+        isOwned
+            ? ownershipLabel
+            : options.length > 1
+              ? 'Choose plan'
+              : inCart
+                ? 'Added'
+                : defaultOption
+                  ? 'Add to cart'
+                  : 'Unavailable';
 
     return `
-        <div class="product-card" onclick="openProductModal('${product.id}')">
-            ${badgeHtml}
+        <article class="product-card" onclick="openProductModal('${product.id}')">
+            <div class="product-topline">
+                ${badgeHtml}
+                ${ownershipLabel ? `<div class="ownership-badge">${escapeHtml(ownershipLabel)}</div>` : ''}
+            </div>
             <div class="product-icon">${escapeHtml(product.icon || product.type.toUpperCase())}</div>
-            <div class="product-category">${escapeHtml(product.type)}</div>
+            <div class="product-category-row">
+                <div class="product-category">${escapeHtml(product.type)}</div>
+                <span class="purchase-status">${escapeHtml(getBillingSummary(product))}</span>
+            </div>
             <div class="product-name">${escapeHtml(product.name)}</div>
             <div class="product-description">${escapeHtml(product.description)}</div>
+            <div class="product-stats">
+                <span class="product-stat">${escapeHtml(`${Number(product.rating || 0).toFixed(1)} rating`)}</span>
+                <span class="product-stat">${escapeHtml(`${formatCompactNumber(product.downloads || 0)} downloads`)}</span>
+                <span class="product-stat">${escapeHtml(product.status || 'stable')}</span>
+            </div>
             <div class="billing-badges">
                 ${options
                     .map(
@@ -259,14 +476,17 @@ function createProductCard(product) {
             </ul>
             <div class="product-footer">
                 <div class="price-stack">
-                    <div class="product-price">${defaultOption ? `$${defaultOption.price.toFixed(2)}` : 'N/A'}</div>
-                    <span class="product-price-label">${escapeHtml(buildHeroCopy(product))}</span>
+                    <div class="product-price">${escapeHtml(buildStartingPriceLabel(product))}</div>
+                    <span class="product-price-label">${escapeHtml(product.language)} · ${escapeHtml(`${product.reviews || 0} reviews`)}</span>
                 </div>
-                <button class="add-to-cart-btn ${inCart ? 'added' : ''}" onclick="${buttonAction}">
+            </div>
+            <div class="product-cta-row">
+                <a class="docs-link" href="${escapeHtml(product.documentation || '#')}" onclick="event.stopPropagation()">Docs</a>
+                <button class="add-to-cart-btn ${inCart || isOwned ? 'added' : ''}" onclick="${buttonAction}">
                     ${escapeHtml(buttonLabel)}
                 </button>
             </div>
-        </div>
+        </article>
     `;
 }
 
@@ -302,6 +522,7 @@ function renderPagination(totalItems) {
 
 function renderProducts() {
     const grid = document.getElementById('productsGrid');
+    const emptyResults = document.getElementById('emptyResults');
     if (!grid) {
         return;
     }
@@ -310,9 +531,24 @@ function renderProducts() {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const visible = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
+    updateResultsSummary(filtered);
+    renderActiveFilters();
+
+    if (!filtered.length) {
+        grid.innerHTML = '';
+        if (emptyResults) {
+            emptyResults.hidden = false;
+        }
+        renderPagination(0);
+        return;
+    }
+
+    if (emptyResults) {
+        emptyResults.hidden = true;
+    }
+
     grid.innerHTML = visible.map((product) => createProductCard(product)).join('');
     renderPagination(filtered.length);
-    updateProductCount(catalogItems.length);
 }
 
 function changePage(page) {
@@ -321,19 +557,17 @@ function changePage(page) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function updateProductCount(count = catalogItems.length) {
-    const element = document.getElementById('totalProducts');
-    if (element) {
-        element.textContent = String(count);
-    }
-}
-
 function addToCart(productId, purchaseType) {
     const product = getProductById(productId);
     const option = getPurchaseOption(product, purchaseType);
 
     if (!product || !option) {
         showNotification('That billing option is not available.', 'error');
+        return;
+    }
+
+    if (isOwnedForPurchase(product, option.type)) {
+        showNotification('Your account already has access to this product.', 'info');
         return;
     }
 
@@ -383,7 +617,7 @@ function updateCartUI() {
             cartItems.innerHTML = `
                 <div class="empty-cart">
                     <p>Your cart is empty</p>
-                    <span style="font-size: 3rem;">Cart</span>
+                    <span class="empty-cart-label">Add a license or subscription to get started</span>
                 </div>
             `;
         } else {
@@ -425,42 +659,74 @@ function openProductModal(productId) {
     }
 
     const options = getPurchaseOptions(product);
+    const ownershipLabel = getOwnershipLabel(product);
     details.innerHTML = `
         <div class="product-detail">
             <div class="product-detail-left">
                 <div class="product-detail-icon">${escapeHtml(product.icon || product.type.toUpperCase())}</div>
-                <div class="product-screenshots">
-                    <div class="screenshot">${escapeHtml(product.type.toUpperCase())}</div>
-                    <div class="screenshot">${escapeHtml(product.language)}</div>
-                    <div class="screenshot">${escapeHtml(product.version)}</div>
-                    <div class="screenshot">${escapeHtml(product.status)}</div>
+                <div class="product-fact-grid">
+                    <div class="product-fact-card">
+                        <span>Billing</span>
+                        <strong>${escapeHtml(getBillingSummary(product))}</strong>
+                    </div>
+                    <div class="product-fact-card">
+                        <span>Version</span>
+                        <strong>${escapeHtml(product.version || 'v1')}</strong>
+                    </div>
+                    <div class="product-fact-card">
+                        <span>Downloads</span>
+                        <strong>${escapeHtml(formatCompactNumber(product.downloads || 0))}</strong>
+                    </div>
+                    <div class="product-fact-card">
+                        <span>Status</span>
+                        <strong>${escapeHtml(product.status || 'stable')}</strong>
+                    </div>
                 </div>
             </div>
             <div class="product-detail-right">
-                <div class="product-category">${escapeHtml(product.type)}</div>
+                <div class="product-category-row">
+                    <div class="product-category">${escapeHtml(product.type)}</div>
+                    ${ownershipLabel ? `<span class="ownership-badge">${escapeHtml(ownershipLabel)}</span>` : ''}
+                </div>
                 <h2>${escapeHtml(product.name)}</h2>
                 <div class="product-rating">
-                    <span class="rating-count">${escapeHtml(String(product.rating || 0))} (${escapeHtml(String(product.reviews || 0))} reviews)</span>
+                    <span class="rating-count">${escapeHtml(`${Number(product.rating || 0).toFixed(1)} rating · ${product.reviews || 0} reviews`)}</span>
                 </div>
                 <div class="product-detail-description">${escapeHtml(product.description)}</div>
                 <div class="product-detail-features">
-                    <h3>Included</h3>
+                    <h3>What the buyer gets</h3>
                     <ul>
                         ${(product.features || []).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}
                     </ul>
                 </div>
+                <div class="product-modal-actions">
+                    <a class="btn-secondary" href="${escapeHtml(product.documentation || '#')}">Open docs</a>
+                    <a class="btn-secondary" href="/login?next=/dashboard.html">Buyer dashboard</a>
+                </div>
                 <div class="purchase-options">
                     ${options
-                        .map(
-                            (option) => `
-                                <button class="purchase-option-btn" onclick="addToCart('${product.id}', '${option.type}'); closeProductModal();">
-                                    ${escapeHtml(option.label)} - ${escapeHtml(buildPriceLabel(option))}
+                        .map((option) => {
+                            const optionOwned = isOwnedForPurchase(product, option.type);
+                            const optionInCart = cart.some(
+                                (item) => item.key === getCartKey(product.id, option.type)
+                            );
+                            const buttonLabel = optionOwned
+                                ? ownershipLabel
+                                : optionInCart
+                                  ? 'Added to cart'
+                                  : 'Add to cart';
+
+                            return `
+                                <button class="purchase-option-btn ${optionOwned || optionInCart ? 'added' : ''}" onclick="${optionOwned ? '' : `addToCart('${product.id}', '${option.type}'); closeProductModal();`}">
+                                    <span class="purchase-option-title">${escapeHtml(option.label)}</span>
+                                    <span class="purchase-option-price">${escapeHtml(buildPriceLabel(option))}</span>
+                                    <span class="purchase-option-copy">${escapeHtml(optionOwned ? 'Your account already has access to this product.' : 'Attach this plan to your buyer workspace after checkout.')}</span>
+                                    <span class="purchase-option-action">${escapeHtml(buttonLabel)}</span>
                                 </button>
-                            `,
-                        )
+                            `;
+                        })
                         .join('')}
                 </div>
-                <p class="product-price-label" style="margin-top: 1rem;">Documentation: <a href="${escapeHtml(product.documentation || '#')}" style="color: var(--neon-blue);">Open docs</a></p>
             </div>
         </div>
     `;
@@ -575,7 +841,7 @@ async function handleCheckout(event) {
     if (!authToken) {
         showNotification('Please sign in to complete your order.', 'error');
         window.setTimeout(() => {
-            window.location.href = '/login.html';
+            window.location.href = '/login.html?next=/marketplace.html';
         }, 900);
         return;
     }
@@ -607,7 +873,7 @@ async function handleCheckout(event) {
 
         if (sessionResponse.status === 401) {
             window.localStorage.removeItem(AUTH_TOKEN_KEY);
-            window.location.href = '/login.html';
+            window.location.href = '/login.html?next=/marketplace.html';
             return;
         }
 
@@ -635,7 +901,7 @@ async function handleCheckout(event) {
 
         if (response.status === 401) {
             window.localStorage.removeItem(AUTH_TOKEN_KEY);
-            window.location.href = '/login.html';
+            window.location.href = '/login.html?next=/marketplace.html';
             return;
         }
 
@@ -645,6 +911,10 @@ async function handleCheckout(event) {
 
         cart = [];
         saveCart();
+        await fetchCatalog();
+        normalizeCart();
+        updateHeroStats();
+        renderCollections();
         updateCartUI();
         renderProducts();
         closeCheckoutModal();
@@ -675,6 +945,12 @@ function setupEventListeners() {
         renderProducts();
     });
 
+    document.getElementById('billingFilter')?.addEventListener('change', (event) => {
+        currentFilters.billing = event.target.value;
+        currentPage = 1;
+        renderProducts();
+    });
+
     document.getElementById('priceFilter')?.addEventListener('change', (event) => {
         currentFilters.priceRange = event.target.value;
         currentPage = 1;
@@ -691,6 +967,39 @@ function setupEventListeners() {
     document
         .querySelectorAll('input[name="payment"]')
         .forEach((input) => input.addEventListener('change', handlePaymentChange));
+}
+
+function applyQuickFilter(category = 'all', billing = 'all', sortBy = 'featured') {
+    currentFilters.category = category;
+    currentFilters.billing = billing;
+    currentFilters.sortBy = sortBy;
+    currentPage = 1;
+
+    document.getElementById('categoryFilter').value = category;
+    document.getElementById('billingFilter').value = billing;
+    document.getElementById('sortBy').value = sortBy;
+
+    renderProducts();
+    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function clearFilters() {
+    currentFilters = {
+        category: 'all',
+        billing: 'all',
+        priceRange: 'all',
+        search: '',
+        sortBy: 'featured'
+    };
+    currentPage = 1;
+
+    document.getElementById('searchProducts').value = '';
+    document.getElementById('categoryFilter').value = 'all';
+    document.getElementById('billingFilter').value = 'all';
+    document.getElementById('priceFilter').value = 'all';
+    document.getElementById('sortBy').value = 'featured';
+
+    renderProducts();
 }
 
 function showNotification(message, type = 'info') {
@@ -733,6 +1042,8 @@ async function initializeMarketplace() {
         normalizeCart();
         setupEventListeners();
         handlePaymentChange({ target: { value: getSelectedPaymentMethod() } });
+        updateHeroStats();
+        renderCollections();
         renderProducts();
         updateCartUI();
         window.setTimeout(updateCartUI, 500);
@@ -745,5 +1056,16 @@ window.marketplaceDebug = {
     getCatalog: () => catalogItems,
     getCart: () => cart
 };
+
+window.changePage = changePage;
+window.toggleCart = toggleCart;
+window.openProductModal = openProductModal;
+window.closeProductModal = closeProductModal;
+window.proceedToCheckout = proceedToCheckout;
+window.closeCheckoutModal = closeCheckoutModal;
+window.addToCart = addToCart;
+window.removeFromCartByKey = removeFromCartByKey;
+window.applyQuickFilter = applyQuickFilter;
+window.clearFilters = clearFilters;
 
 document.addEventListener('DOMContentLoaded', initializeMarketplace);
