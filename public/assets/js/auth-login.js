@@ -3,13 +3,14 @@ const loginForm = document.getElementById('loginForm');
 const authMessage = document.getElementById('authMessage');
 const submitButton = document.getElementById('loginSubmit');
 const nextParam = new URLSearchParams(window.location.search).get('next');
+const defaultNext = document.body?.dataset?.defaultNext || '/dashboard.html';
 
 function getRedirectTarget() {
     if (nextParam && nextParam.startsWith('/')) {
         return nextParam;
     }
 
-    return '/dashboard.html';
+    return defaultNext;
 }
 
 if (window.localStorage.getItem(AUTH_TOKEN_KEY)) {

@@ -1,7 +1,7 @@
 const API_BASE = `${window.location.origin}/api/admin`;
 const AUTH_TOKEN_KEY = 'parseforge_auth_token';
 const ADMIN_PATH = '/admin.html';
-const LOGIN_REDIRECT_URL = `/login.html?next=${encodeURIComponent(ADMIN_PATH)}`;
+const LOGIN_REDIRECT_URL = `/admin-login.html?next=${encodeURIComponent(ADMIN_PATH)}`;
 const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
 
 if (!authToken) {

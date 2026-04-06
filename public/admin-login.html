@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - ParseForge</title>
+    <title>Admin Login - ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/auth.css">
 </head>
-<body data-default-next="/dashboard.html">
+<body data-default-next="/admin.html">
     <div class="auth-container">
         <div class="auth-left">
             <div class="auth-left-content">
@@ -34,21 +34,21 @@
                     </span>
                     ParseForge
                 </a>
-                <h1>Build the Future</h1>
-                <p>Join thousands of developers building production integrations with ParseForge APIs and tools.</p>
+                <h1>Admin Console Access</h1>
+                <p>Use this entry point for ParseForge staff and administrators managing products, billing, and users.</p>
 
                 <div class="auth-stats-inline">
                     <div>
-                        <div style="font-size: 2rem; font-weight: 700;">10K+</div>
-                        <div>Developers</div>
+                        <div style="font-size: 2rem; font-weight: 700;">1</div>
+                        <div>Admin Portal</div>
                     </div>
                     <div>
-                        <div style="font-size: 2rem; font-weight: 700;">1M+</div>
-                        <div>API Calls/day</div>
+                        <div style="font-size: 2rem; font-weight: 700;">24/7</div>
+                        <div>Operations</div>
                     </div>
                     <div>
-                        <div style="font-size: 2rem; font-weight: 700;">99.9%</div>
-                        <div>Uptime</div>
+                        <div style="font-size: 2rem; font-weight: 700;">Secure</div>
+                        <div>Restricted Access</div>
                     </div>
                 </div>
             </div>
@@ -57,16 +57,16 @@
         <div class="auth-right">
             <div class="auth-form compact">
                 <div class="auth-header wide">
-                    <h2>Welcome Back</h2>
-                    <p>Sign in to your account to continue</p>
+                    <h2>Admin Sign In</h2>
+                    <p>Enter your administrator credentials to continue</p>
                 </div>
 
                 <div id="authMessage" class="auth-message"></div>
 
                 <form id="loginForm">
                     <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" placeholder="developer@example.com" required>
+                        <label for="email">Admin Email</label>
+                        <input type="email" id="email" placeholder="admin@parseforge.dev" required>
                     </div>
 
                     <div class="form-group">
@@ -74,19 +74,18 @@
                         <input type="password" id="password" placeholder="Enter your password" required>
                     </div>
 
-                    <button type="submit" class="btn-submit" id="loginSubmit">Sign In</button>
+                    <button type="submit" class="btn-submit" id="loginSubmit">Access Admin Panel</button>
                 </form>
 
                 <div class="auth-divider">or</div>
 
                 <div class="social-login">
-                    <button class="social-btn" type="button">GitHub login coming soon</button>
-                    <button class="social-btn" type="button">Google login coming soon</button>
+                    <button class="social-btn" type="button">SSO login coming soon</button>
+                    <button class="social-btn" type="button">Security key login coming soon</button>
                 </div>
 
                 <div class="auth-footer">
-                    Don't have an account? <a href="register.html">Create one now</a><br>
-                    Admin access? <a href="admin-login.html">Use admin login</a>
+                    Need the client portal instead? <a href="login.html">Go to user login</a>
                 </div>
             </div>
         </div>
