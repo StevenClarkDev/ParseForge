@@ -55,6 +55,14 @@ function getCatalogDefaults(type = 'api') {
 }
 
 function getBillingModel(item, defaults) {
+    if (item.type === 'api') {
+        return 'subscription';
+    }
+
+    if (item.type === 'sdk') {
+        return 'one_time';
+    }
+
     if (item.billingModel === 'subscription') {
         return 'subscription';
     }
@@ -105,6 +113,30 @@ function getPricingState(item, defaults) {
 
     const billingModel = getBillingModel(item, defaults);
 
+    if (item.type === 'api') {
+        return {
+            billingModel: 'subscription',
+            allowOneTimePurchase: false,
+            allowMonthlySubscription: true,
+            allowYearlySubscription: true,
+            oneTimePrice: 0,
+            monthlyPrice,
+            yearlyPrice
+        };
+    }
+
+    if (item.type === 'sdk') {
+        return {
+            billingModel: 'one_time',
+            allowOneTimePurchase: true,
+            allowMonthlySubscription: false,
+            allowYearlySubscription: false,
+            oneTimePrice,
+            monthlyPrice: 0,
+            yearlyPrice: 0
+        };
+    }
+
     return {
         billingModel,
         allowOneTimePurchase: billingModel === 'one_time',
@@ -151,7 +183,7 @@ function buildPurchaseOptions(pricingState) {
     return options;
 }
 
-function serializeCatalogItem(item, { ownership = [] } = {}) {
+function serializeCatalogItem(item, { ownership = [], exposeDocumentation = false } = {}) {
     const defaults = getCatalogDefaults(item.type);
     const pricingState = getPricingState(item, defaults);
     const purchaseOptions = buildPurchaseOptions(pricingState);
@@ -160,6 +192,7 @@ function serializeCatalogItem(item, { ownership = [] } = {}) {
         ? Math.min(...purchaseOptions.map((option) => option.price))
         : 0;
     const ownershipTypes = ownership.map((access) => access.purchaseType);
+    const hasDocumentationAccess = exposeDocumentation || ownershipTypes.length > 0;
 
     return {
         id: item._id.toString(),
@@ -174,7 +207,8 @@ function serializeCatalogItem(item, { ownership = [] } = {}) {
         language: item.language,
         version: item.version,
         description: item.description,
-        documentation: item.documentation,
+        documentation: hasDocumentationAccess ? item.documentation : '',
+        documentationLocked: !hasDocumentationAccess,
         features:
             Array.isArray(item.features) && item.features.length ? item.features : defaults.features,
         icon: item.icon || defaults.icon,

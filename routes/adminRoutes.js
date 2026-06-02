@@ -249,7 +249,8 @@ function buildPaymentDetailsSummary(purchase, product, revealSensitive = false) 
 }
 
 function buildCatalogItemPayload(body) {
-    const billingModel = normalizeBillingModel(body.billingModel);
+    const type = body.type === 'sdk' ? 'sdk' : 'api';
+    const billingModel = type === 'api' ? 'subscription' : 'one_time';
     const oneTimePrice = normalizePositiveNumber(body.oneTimePrice);
     const monthlyPrice = normalizePositiveNumber(body.monthlyPrice);
     const yearlyPrice = normalizePositiveNumber(body.yearlyPrice);
@@ -257,7 +258,7 @@ function buildCatalogItemPayload(body) {
     const payload = {
         name: body.name,
         slug: body.slug,
-        type: body.type,
+        type,
         language: body.language,
         version: body.version,
         description: body.description,
@@ -273,9 +274,9 @@ function buildCatalogItemPayload(body) {
         status: body.status || 'stable'
     };
 
-    if (billingModel === 'one_time') {
+    if (type === 'sdk') {
         if (!(oneTimePrice > 0)) {
-            throw createValidationError('One-time products must have a price greater than 0');
+            throw createValidationError('SDKs must have a one-time price greater than 0');
         }
 
         return {
@@ -289,31 +290,22 @@ function buildCatalogItemPayload(body) {
         };
     }
 
-    const allowMonthlySubscription = normalizeBooleanInput(body.allowMonthlySubscription, false);
-    const allowYearlySubscription = normalizeBooleanInput(body.allowYearlySubscription, false);
-
-    if (!allowMonthlySubscription && !allowYearlySubscription) {
-        throw createValidationError(
-            'Subscription products must include a monthly plan, yearly plan, or both'
-        );
+    if (!(monthlyPrice > 0)) {
+        throw createValidationError('APIs must have a monthly subscription price greater than 0');
     }
 
-    if (allowMonthlySubscription && !(monthlyPrice > 0)) {
-        throw createValidationError('Monthly subscriptions must have a price greater than 0');
-    }
-
-    if (allowYearlySubscription && !(yearlyPrice > 0)) {
-        throw createValidationError('Yearly subscriptions must have a price greater than 0');
+    if (!(yearlyPrice > 0)) {
+        throw createValidationError('APIs must have a yearly subscription price greater than 0');
     }
 
     return {
         ...payload,
         allowOneTimePurchase: false,
-        allowMonthlySubscription,
-        allowYearlySubscription,
+        allowMonthlySubscription: true,
+        allowYearlySubscription: true,
         oneTimePrice: 0,
-        monthlyPrice: allowMonthlySubscription ? monthlyPrice : 0,
-        yearlyPrice: allowYearlySubscription ? yearlyPrice : 0
+        monthlyPrice,
+        yearlyPrice
     };
 }
 
@@ -444,7 +436,7 @@ function createAdminRoutes({
 
     router.get('/apis', async (req, res) => {
         const apis = await ApiCatalogItem.find().sort({ createdAt: 1 });
-        return res.json(apis.map((api) => serializeCatalogItem(api)));
+        return res.json(apis.map((api) => serializeCatalogItem(api, { exposeDocumentation: true })));
     });
 
     router.post('/apis', async (req, res) => {

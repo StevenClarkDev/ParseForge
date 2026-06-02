@@ -113,6 +113,43 @@ async function seedAdminData() {
         { $set: { oneTimePrice: 149, monthlyPrice: 29, yearlyPrice: 290, icon: '{ }', badge: 'new', isPublished: true } }
     );
     await ApiCatalogItem.updateMany(
+        { type: 'api' },
+        {
+            $set: {
+                billingModel: 'subscription',
+                allowOneTimePurchase: false,
+                allowMonthlySubscription: true,
+                allowYearlySubscription: true,
+                oneTimePrice: 0
+            }
+        }
+    );
+    await ApiCatalogItem.updateMany(
+        { type: 'sdk' },
+        {
+            $set: {
+                billingModel: 'one_time',
+                allowOneTimePurchase: true,
+                allowMonthlySubscription: false,
+                allowYearlySubscription: false,
+                monthlyPrice: 0,
+                yearlyPrice: 0
+            }
+        }
+    );
+    await ApiCatalogItem.updateMany(
+        { type: 'api', $or: [{ monthlyPrice: { $exists: false } }, { monthlyPrice: { $lte: 0 } }] },
+        { $set: { monthlyPrice: 49 } }
+    );
+    await ApiCatalogItem.updateMany(
+        { type: 'api', $or: [{ yearlyPrice: { $exists: false } }, { yearlyPrice: { $lte: 0 } }] },
+        { $set: { yearlyPrice: 490 } }
+    );
+    await ApiCatalogItem.updateMany(
+        { type: 'sdk', $or: [{ oneTimePrice: { $exists: false } }, { oneTimePrice: { $lte: 0 } }] },
+        { $set: { oneTimePrice: 149 } }
+    );
+    await ApiCatalogItem.updateMany(
         { features: { $exists: false } },
         { $set: { features: [] } }
     );

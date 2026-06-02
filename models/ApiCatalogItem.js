@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 
 function inferBillingModel(doc) {
+    if (doc.type === 'api') {
+        return 'subscription';
+    }
+
+    if (doc.type === 'sdk') {
+        return 'one_time';
+    }
+
     if (doc.billingModel === 'subscription') {
         return 'subscription';
     }
@@ -134,7 +142,28 @@ apiCatalogItemSchema.pre('validate', function setSlug(next) {
 
     this.billingModel = inferBillingModel(this);
 
-    if (this.billingModel === 'one_time') {
+    if (this.type === 'api') {
+        this.billingModel = 'subscription';
+        this.allowOneTimePurchase = false;
+        this.allowMonthlySubscription = true;
+        this.allowYearlySubscription = true;
+        this.oneTimePrice = 0;
+
+        if (!(Number(this.monthlyPrice) > 0)) {
+            this.invalidate(
+                'monthlyPrice',
+                'APIs require a monthly subscription price greater than 0'
+            );
+        }
+
+        if (!(Number(this.yearlyPrice) > 0)) {
+            this.invalidate(
+                'yearlyPrice',
+                'APIs require a yearly subscription price greater than 0'
+            );
+        }
+    } else if (this.type === 'sdk') {
+        this.billingModel = 'one_time';
         this.allowOneTimePurchase = true;
         this.allowMonthlySubscription = false;
         this.allowYearlySubscription = false;
@@ -142,9 +171,9 @@ apiCatalogItemSchema.pre('validate', function setSlug(next) {
         this.yearlyPrice = 0;
 
         if (!(Number(this.oneTimePrice) > 0)) {
-            this.invalidate('oneTimePrice', 'One-time products must have a price greater than 0');
+            this.invalidate('oneTimePrice', 'SDKs require a one-time price greater than 0');
         }
-    } else {
+    } else if (this.billingModel === 'subscription') {
         this.allowOneTimePurchase = false;
         this.oneTimePrice = 0;
 
@@ -167,6 +196,16 @@ apiCatalogItemSchema.pre('validate', function setSlug(next) {
                 'yearlyPrice',
                 'Yearly subscriptions must have a price greater than 0'
             );
+        }
+    } else {
+        this.allowOneTimePurchase = true;
+        this.allowMonthlySubscription = false;
+        this.allowYearlySubscription = false;
+        this.monthlyPrice = 0;
+        this.yearlyPrice = 0;
+
+        if (!(Number(this.oneTimePrice) > 0)) {
+            this.invalidate('oneTimePrice', 'One-time products must have a price greater than 0');
         }
     }
 

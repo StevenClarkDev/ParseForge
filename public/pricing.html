@@ -1,370 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pricing - ParseForge</title>
+    <title>Product Pricing - ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css?v=1.1">
     <link rel="stylesheet" href="assets/css/pricing.css">
 </head>
-
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <a href="index.html" class="logo">
-                <span class="logo-icon">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#00d9ff;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#1de9b6;stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <!-- Circuit board P -->
-                        <path d="M8 4 L8 28 M8 4 L18 4 C22 4 24 6 24 10 C24 14 22 16 18 16 L8 16"
-                            stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                        <!-- Circuit nodes -->
-                        <circle cx="8" cy="4" r="2" fill="#00d9ff" />
-                        <circle cx="18" cy="4" r="2" fill="#00d9ff" />
-                        <circle cx="24" cy="10" r="2" fill="#1de9b6" />
-                        <circle cx="18" cy="16" r="2" fill="#1de9b6" />
-                        <circle cx="8" cy="16" r="2" fill="#00ff88" />
-                        <circle cx="8" cy="28" r="2" fill="#00ff88" />
-                        <!-- Connecting lines -->
-                        <line x1="8" y1="22" x2="14" y2="22" stroke="#00d9ff" stroke-width="1.5" opacity="0.6" />
-                        <circle cx="14" cy="22" r="1.5" fill="#00d9ff" opacity="0.8" />
-                    </svg>
-                </span>
-                ParseForge
-            </a>
-            <ul class="nav-links">
-                <li><a href="docs.html">Documentation</a></li>
-                <li><a href="sdks.html">SDKs & APIs</a></li>
-                <li><a href="marketplace.html">Marketplace</a></li>
-                <li><a href="pricing.html" class="active">Pricing</a></li>
-                <li><a href="login.html?next=/dashboard.html" class="btn-primary">Get Started</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div id="header-placeholder"></div>
 
-    <!-- Hero Section -->
     <section class="pricing-hero">
         <div class="container">
-            <h1>Simple, Transparent Pricing</h1>
-            <p>Choose the plan that fits your needs. Start free, upgrade as you grow.</p>
-
-            <div class="billing-toggle">
-                <span style="opacity: 0.9;">Monthly</span>
-                <div class="toggle-switch" onclick="toggleBilling(this)"></div>
-                <span>
-                    <strong>Yearly</strong>
-                    <span class="save-badge">Save 20%</span>
-                </span>
-            </div>
+            <h1>Pricing is set per product</h1>
+            <p>Subscribe to individual APIs monthly or yearly. Buy SDKs once and keep access to that package.</p>
         </div>
     </section>
 
-    <!-- Pricing Cards -->
     <section class="pricing-section">
         <div class="container">
             <div class="pricing-grid">
-                <!-- Starter Plan -->
                 <div class="pricing-card">
-                    <div class="plan-name">Starter</div>
-                    <div class="plan-description">Perfect for hobbyists and side projects</div>
-
+                    <div class="plan-name">APIs</div>
+                    <div class="plan-description">Product-specific subscriptions for hosted API access.</div>
                     <div class="plan-price">
-                        <span class="price-currency">$</span>
-                        <span class="price-amount" data-monthly="89" data-yearly="71">89</span>
+                        <span class="price-amount" style="font-size: 2rem;">Monthly or yearly</span>
                     </div>
-                    <div class="price-period">per month, billed <span class="billing-period-text">monthly</span></div>
-
-                    <button class="plan-cta secondary">Get Started</button>
-
+                    <div class="price-period">Each API has its own price and renewal cadence.</div>
+                    <a class="plan-cta primary" href="/marketplace?type=api">Browse APIs</a>
                     <ul class="features-list">
-                        <li><span class="icon">✓</span> 10,000 API calls/month</li>
-                        <li><span class="icon">✓</span> 1 GB storage</li>
-                        <li><span class="icon">✓</span> 2 team members</li>
-                        <li><span class="icon">✓</span> Community support</li>
-                        <li><span class="icon">✓</span> Basic analytics</li>
-                        <li><span class="icon unavailable">✗</span> Custom domains</li>
-                        <li><span class="icon unavailable">✗</span> Priority support</li>
-                        <li><span class="icon unavailable">✗</span> SLA guarantee</li>
+                        <li><span class="icon">OK</span> Monthly subscriptions per API</li>
+                        <li><span class="icon">OK</span> Yearly subscriptions per API</li>
+                        <li><span class="icon">OK</span> Documentation unlocks after purchase</li>
+                        <li><span class="icon">OK</span> Entitlements visible in the dashboard</li>
                     </ul>
                 </div>
 
-                <!-- Pro Plan -->
                 <div class="pricing-card featured">
-                    <div class="popular-badge">Most Popular</div>
-                    <div class="plan-name">Professional</div>
-                    <div class="plan-description">For growing teams and production apps</div>
-
+                    <div class="popular-badge">One-time</div>
+                    <div class="plan-name">SDKs</div>
+                    <div class="plan-description">Permanent access to purchased SDK packages.</div>
                     <div class="plan-price">
-                        <span class="price-currency">$</span>
-                        <span class="price-amount" data-monthly="149" data-yearly="119">149</span>
+                        <span class="price-amount" style="font-size: 2rem;">Buy once</span>
                     </div>
-                    <div class="price-period">per month, billed <span id="billing-period">monthly</span></div>
-
-                    <button class="plan-cta primary">Start Free Trial</button>
-
+                    <div class="price-period">Each SDK is priced as a one-time license.</div>
+                    <a class="plan-cta primary" href="/marketplace?type=sdk">Browse SDKs</a>
                     <ul class="features-list">
-                        <li><span class="icon">✓</span> 500,000 API calls/month</li>
-                        <li><span class="icon">✓</span> 50 GB storage</li>
-                        <li><span class="icon">✓</span> 10 team members</li>
-                        <li><span class="icon">✓</span> Priority email support</li>
-                        <li><span class="icon">✓</span> Advanced analytics</li>
-                        <li><span class="icon">✓</span> Custom domains</li>
-                        <li><span class="icon">✓</span> Webhooks</li>
-                        <li><span class="icon">✓</span> 99.9% uptime SLA</li>
-                    </ul>
-                </div>
-
-                <!-- Enterprise Plan -->
-                <div class="pricing-card">
-                    <div class="plan-name">Enterprise</div>
-                    <div class="plan-description">Custom solutions for large organizations</div>
-
-                    <div class="plan-price">
-                        <span class="price-amount" style="font-size: 2rem;">Custom</span>
-                    </div>
-                    <div class="price-period">Contact us for pricing</div>
-
-                    <button class="plan-cta secondary">Contact Sales</button>
-
-                    <ul class="features-list">
-                        <li><span class="icon">✓</span> Unlimited API calls</li>
-                        <li><span class="icon">✓</span> Unlimited storage</li>
-                        <li><span class="icon">✓</span> Unlimited team members</li>
-                        <li><span class="icon">✓</span> Dedicated support</li>
-                        <li><span class="icon">✓</span> Custom integrations</li>
-                        <li><span class="icon">✓</span> On-premise deployment</li>
-                        <li><span class="icon">✓</span> SSO & SAML</li>
-                        <li><span class="icon">✓</span> 99.99% uptime SLA</li>
+                        <li><span class="icon">OK</span> One-time SDK purchase</li>
+                        <li><span class="icon">OK</span> Package documentation after checkout</li>
+                        <li><span class="icon">OK</span> Version and feature details per SDK</li>
+                        <li><span class="icon">OK</span> No generic platform subscription required</li>
                     </ul>
                 </div>
             </div>
 
             <div style="text-align: center; margin-top: 3rem; color: var(--gray);">
-                <p>All plans include SSL, automatic backups, and access to all APIs</p>
+                <p>Documentation is private to active product owners. Buy the API or SDK to unlock its guide.</p>
             </div>
         </div>
     </section>
 
-    <!-- Feature Comparison -->
-    <section class="comparison-section">
-        <div class="container">
-            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">Compare All Features</h2>
-            <p style="text-align: center; color: var(--gray); font-size: 1.125rem; margin-bottom: 3rem;">
-                Detailed breakdown of everything included in each plan
-            </p>
-
-            <div class="comparison-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Feature</th>
-                            <th>Starter</th>
-                            <th>Professional</th>
-                            <th>Enterprise</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>API Calls per Month</strong></td>
-                            <td>10,000</td>
-                            <td>500,000</td>
-                            <td>Unlimited</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Storage</strong></td>
-                            <td>1 GB</td>
-                            <td>50 GB</td>
-                            <td>Unlimited</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Team Members</strong></td>
-                            <td>2</td>
-                            <td>10</td>
-                            <td>Unlimited</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Bandwidth</strong></td>
-                            <td>10 GB/month</td>
-                            <td>500 GB/month</td>
-                            <td>Unlimited</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Webhooks</strong></td>
-                            <td>—</td>
-                            <td><span class="check-icon">✓</span></td>
-                            <td><span class="check-icon">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Custom Domains</strong></td>
-                            <td>—</td>
-                            <td><span class="check-icon">✓</span></td>
-                            <td><span class="check-icon">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Advanced Analytics</strong></td>
-                            <td>—</td>
-                            <td><span class="check-icon">✓</span></td>
-                            <td><span class="check-icon">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Priority Support</strong></td>
-                            <td>—</td>
-                            <td>Email</td>
-                            <td>Phone & Dedicated</td>
-                        </tr>
-                        <tr>
-                            <td><strong>SLA</strong></td>
-                            <td>—</td>
-                            <td>99.9%</td>
-                            <td>99.99%</td>
-                        </tr>
-                        <tr>
-                            <td><strong>SSO & SAML</strong></td>
-                            <td>—</td>
-                            <td>—</td>
-                            <td><span class="check-icon">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>On-Premise Deployment</strong></td>
-                            <td>—</td>
-                            <td>—</td>
-                            <td><span class="check-icon">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Custom Integrations</strong></td>
-                            <td>—</td>
-                            <td>—</td>
-                            <td><span class="check-icon">✓</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-    <!-- FAQ Section -->
     <section class="faq-section">
         <div class="container">
-            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">Frequently Asked Questions</h2>
-            <p style="text-align: center; color: var(--gray); font-size: 1.125rem; margin-bottom: 3rem;">
-                Everything you need to know about our pricing
-            </p>
-
+            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">How Access Works</h2>
             <div class="faq-grid">
                 <div class="faq-item">
-                    <h3>Can I change plans later?</h3>
-                    <p>Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and
-                        we'll prorate any charges.</p>
+                    <h3>Does one plan unlock every API?</h3>
+                    <p>No. Every API is purchased separately with its own monthly or yearly subscription.</p>
                 </div>
-
                 <div class="faq-item">
-                    <h3>What happens if I exceed my limits?</h3>
-                    <p>We'll notify you when you approach your limit. You can either upgrade your plan or purchase
-                        additional resources as add-ons.</p>
+                    <h3>How are SDKs billed?</h3>
+                    <p>SDKs are sold as one-time purchases. After checkout, the SDK documentation appears in your docs workspace.</p>
                 </div>
-
                 <div class="faq-item">
-                    <h3>Do you offer refunds?</h3>
-                    <p>Yes, we offer a 30-day money-back guarantee on all paid plans. If you're not satisfied, contact
-                        us for a full refund.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h3>Is there a free trial?</h3>
-                    <p>Professional plans include a 14-day free trial with full access to all features. No credit card
-                        required to start.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h3>How does billing work?</h3>
-                    <p>We bill monthly or annually based on your preference. Annual plans save 20% and are billed once
-                        per year.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h3>Can I get a custom plan?</h3>
-                    <p>Yes! Enterprise customers can work with our team to create a custom plan that meets their
-                        specific needs.</p>
+                    <h3>Where do I access docs?</h3>
+                    <p>Open Documentation after signing in. Only products with active purchases are shown.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section
-        style="padding: 5rem 0; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); text-align: center; color: white;">
-        <div class="container">
-            <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Ready to Get Started?</h2>
-            <p style="font-size: 1.25rem; margin-bottom: 2rem; opacity: 0.95;">
-                Join thousands of developers building with ParseForge
-            </p>
-            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <a href="/register" class="btn-cta" style="background: white; color: #6366f1; font-weight: 600;">Get
-                    Started</a>
-                <a href="/docs" class="btn-cta"
-                    style="background: transparent; border: 2px solid white; color: white;">View Documentation</a>
-            </div>
-        </div>
-    </section>
+    <div id="footer-placeholder"></div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>ParseForge</h4>
-                    <p>Build powerful applications with our developer platform.</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Product</h4>
-                    <ul>
-                        <li><a href="docs.html">Documentation</a></li>
-                        <li><a href="sdks.html">SDKs & APIs</a></li>
-                        <li><a href="marketplace.html">Marketplace</a></li>
-                        <li><a href="pricing.html">Pricing</a></li>
-                        <li><a href="playground.html">API Playground</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="resources.html">Guides & Tutorials</a></li>
-                        <li><a href="contact.html">Support</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Account</h4>
-                    <ul>
-                        <li><a href="dashboard.html">Dashboard</a></li>
-                        <li><a href="settings.html">Settings</a></li>
-                        <li><a href="login.html">Login</a></li>
-                        <li><a href="register.html">Sign Up</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="contact.html">Contact</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">Terms of Service</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 ParseForge. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="assets/js/pricing.js"></script>
+    <script src="assets/js/includes.js"></script>
 </body>
-
 </html>

@@ -161,6 +161,42 @@ function createCatalogRoutes({
 }) {
     const router = express.Router();
 
+    router.get('/docs', authMiddleware, async (req, res) => {
+        const purchases = await CatalogPurchase.find({
+            userId: req.user._id,
+            status: 'active'
+        }).sort({ createdAt: -1 });
+
+        const products = await ApiCatalogItem.find({
+            _id: { $in: purchases.map((purchase) => purchase.catalogItemId) },
+            isPublished: { $ne: false }
+        }).sort({ type: 1, name: 1 });
+
+        const purchaseMap = purchases.reduce((map, purchase) => {
+            const key = purchase.catalogItemId.toString();
+            const current = map.get(key) || [];
+            current.push(purchase);
+            map.set(key, current);
+            return map;
+        }, new Map());
+
+        return res.json({
+            documents: products.map((product) => {
+                const ownership = purchaseMap.get(product._id.toString()) || [];
+                return {
+                    ...serializeCatalogItem(product, {
+                        ownership,
+                        exposeDocumentation: true
+                    }),
+                    access: {
+                        purchaseTypes: ownership.map((purchase) => purchase.purchaseType),
+                        renewsAt: ownership.find((purchase) => purchase.renewsAt)?.renewsAt || null
+                    }
+                };
+            })
+        });
+    });
+
     router.get('/', optionalAuth, async (req, res) => {
         const filters = { isPublished: { $ne: false } };
         const { type = '', search = '' } = req.query;

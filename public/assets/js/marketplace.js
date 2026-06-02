@@ -464,6 +464,8 @@ function createProductCard(product) {
     const options = getPurchaseOptions(product);
     const ownershipLabel = getOwnershipLabel(product);
     const isOwned = hasOwnership(product);
+    const docsHref = isOwned ? `/docs.html?product=${encodeURIComponent(product.slug || product.id)}` : '#';
+    const docsLabel = isOwned ? 'Open docs' : 'Docs locked';
     const badgeHtml = product.badge
         ? `<div class="product-badge ${escapeHtml(product.badge)}">${escapeHtml(product.badge)}</div>`
         : '';
@@ -526,7 +528,7 @@ function createProductCard(product) {
                 </div>
             </div>
             <div class="product-cta-row">
-                <a class="docs-link" href="${escapeHtml(product.documentation || '#')}" onclick="event.stopPropagation()">Docs</a>
+                <a class="docs-link ${isOwned ? '' : 'locked'}" href="${escapeHtml(docsHref)}" onclick="event.stopPropagation(); ${isOwned ? '' : "showNotification('Purchase this product to unlock its documentation.', 'info'); return false;"}">${escapeHtml(docsLabel)}</a>
                 <button class="add-to-cart-btn ${inCart || isOwned ? 'added' : ''}" onclick="${buttonAction}">
                     ${escapeHtml(buttonLabel)}
                 </button>
@@ -705,6 +707,8 @@ function openProductModal(productId) {
 
     const options = getPurchaseOptions(product);
     const ownershipLabel = getOwnershipLabel(product);
+    const isOwned = hasOwnership(product);
+    const docsHref = isOwned ? `/docs.html?product=${encodeURIComponent(product.slug || product.id)}` : '#';
     details.innerHTML = `
         <div class="product-detail">
             <div class="product-detail-left">
@@ -745,7 +749,7 @@ function openProductModal(productId) {
                     </ul>
                 </div>
                 <div class="product-modal-actions">
-                    <a class="btn-secondary" href="${escapeHtml(product.documentation || '#')}">Open docs</a>
+                    <a class="btn-secondary" href="${escapeHtml(docsHref)}" onclick="${isOwned ? '' : "showNotification('Purchase this product to unlock its documentation.', 'info'); return false;"}">${escapeHtml(isOwned ? 'Open docs' : 'Docs locked')}</a>
                     <a class="btn-secondary" href="/login?next=/dashboard.html">Buyer dashboard</a>
                 </div>
                 <div class="purchase-options">
@@ -1086,6 +1090,14 @@ function toggleMenu() {
 async function initializeMarketplace() {
     try {
         await fetchCatalog();
+        const requestedType = new URLSearchParams(window.location.search).get('type');
+        if (requestedType === 'api' || requestedType === 'sdk') {
+            currentFilters.category = requestedType;
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (categoryFilter) {
+                categoryFilter.value = requestedType;
+            }
+        }
         normalizeCart();
         setupEventListeners();
         handlePaymentChange({ target: { value: getSelectedPaymentMethod() } });

@@ -3,554 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDKs & APIs - ParseForge</title>
+    <title>APIs & SDKs - ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css?v=1.1">
     <link rel="stylesheet" href="assets/css/sdks.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <a href="index.html" class="logo">
-                <span class="logo-icon">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#00d9ff;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#1de9b6;stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <!-- Circuit board P -->
-                        <path d="M8 4 L8 28 M8 4 L18 4 C22 4 24 6 24 10 C24 14 22 16 18 16 L8 16" 
-                              stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <!-- Circuit nodes -->
-                        <circle cx="8" cy="4" r="2" fill="#00d9ff"/>
-                        <circle cx="18" cy="4" r="2" fill="#00d9ff"/>
-                        <circle cx="24" cy="10" r="2" fill="#1de9b6"/>
-                        <circle cx="18" cy="16" r="2" fill="#1de9b6"/>
-                        <circle cx="8" cy="16" r="2" fill="#00ff88"/>
-                        <circle cx="8" cy="28" r="2" fill="#00ff88"/>
-                        <!-- Connecting lines -->
-                        <line x1="8" y1="22" x2="14" y2="22" stroke="#00d9ff" stroke-width="1.5" opacity="0.6"/>
-                        <circle cx="14" cy="22" r="1.5" fill="#00d9ff" opacity="0.8"/>
-                    </svg>
-                </span>
-                ParseForge
-            </a>
-            <ul class="nav-links">
-                <li><a href="docs.html">Documentation</a></li>
-                <li><a href="sdks.html" class="active">SDKs & APIs</a></li>
-                <li><a href="marketplace.html">Marketplace</a></li>
-                <li><a href="pricing.html">Pricing</a></li>
-                <li><a href="login.html?next=/dashboard.html" class="btn-primary">Get Started</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div id="header-placeholder"></div>
 
-    <!-- Hero Section -->
     <section class="sdks-hero">
         <div class="container">
-            <h1>SDKs & APIs for Every Platform</h1>
-            <p>Build faster with our official libraries and comprehensive APIs. Choose your language and start integrating in minutes.</p>
-            <div class="status-badge">All Systems Operational</div>
+            <h1>APIs and SDKs sold product by product</h1>
+            <p>Browse the marketplace to compare product details, prices, and billing models before checkout.</p>
+            <div class="status-badge">Docs unlock after purchase</div>
         </div>
     </section>
 
-    <!-- SDK Tabs -->
-    <section style="padding: 3rem 0; background: var(--bg-primary);">
-        <div class="container">
-            <div class="sdk-tabs">
-                <button class="sdk-tab active" onclick="showSDK(this, 'nodejs')">
-                    📦 Node.js
-                </button>
-                <button class="sdk-tab" onclick="showSDK(this, 'python')">
-                    🐍 Python
-                </button>
-                <button class="sdk-tab" onclick="showSDK(this, 'ruby')">
-                    💎 Ruby
-                </button>
-                <button class="sdk-tab" onclick="showSDK(this, 'go')">
-                    🔷 Go
-                </button>
-                <button class="sdk-tab" onclick="showSDK(this, 'java')">
-                    ☕ Java
-                </button>
-                <button class="sdk-tab" onclick="showSDK(this, 'php')">
-                    🐘 PHP
-                </button>
-            </div>
-
-            <!-- Node.js SDK -->
-            <div id="sdk-nodejs" class="sdk-content active">
-                <div class="sdk-card">
-                    <div class="sdk-header">
-                        <div class="sdk-title">
-                            <span class="sdk-icon">📦</span>
-                            <div class="sdk-info">
-                                <h2>Node.js SDK</h2>
-                                <span class="sdk-version">v2.4.1 • Latest</span>
-                            </div>
-                        </div>
-                        <a href="#" class="btn-primary">View on GitHub</a>
-                    </div>
-
-                    <p style="color: var(--gray); margin-bottom: 2rem;">
-                        Official Node.js library for ParseForge API. Supports Node.js 14+ and includes TypeScript definitions.
-                    </p>
-
-                    <h3 style="margin-bottom: 1rem;">Installation</h3>
-                    <div class="install-box">
-                        <pre>npm install @parseforge/sdk</pre>
-                    </div>
-
-                    <h3 style="margin-bottom: 1rem;">Quick Start</h3>
-                    <div class="install-box">
-                        <pre>const ParseForge = require('@parseforge/sdk');
-
-const client = new ParseForge({
-  apiKey: 'your_api_key_here'
-});
-
-// Get user data
-const user = await client.users.get('123');
-console.log(user);
-
-// Create data
-const result = await client.data.create({
-  name: 'Example',
-  value: 'Sample data'
-});</pre>
-                    </div>
-
-                    <h3 style="margin: 2rem 0 1rem;">Features</h3>
-                    <div class="features-grid">
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>Promise-based API</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">Modern async/await support</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>TypeScript Support</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">Full type definitions included</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>Auto Retry</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">Built-in retry logic</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>Webhook Support</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">Easy webhook verification</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Python SDK -->
-            <div id="sdk-python" class="sdk-content">
-                <div class="sdk-card">
-                    <div class="sdk-header">
-                        <div class="sdk-title">
-                            <span class="sdk-icon">🐍</span>
-                            <div class="sdk-info">
-                                <h2>Python SDK</h2>
-                                <span class="sdk-version">v1.8.3 • Latest</span>
-                            </div>
-                        </div>
-                        <a href="#" class="btn-primary">View on GitHub</a>
-                    </div>
-
-                    <p style="color: var(--gray); margin-bottom: 2rem;">
-                        Official Python library for ParseForge API. Compatible with Python 3.7+.
-                    </p>
-
-                    <h3 style="margin-bottom: 1rem;">Installation</h3>
-                    <div class="install-box">
-                        <pre>pip install parseforge</pre>
-                    </div>
-
-                    <h3 style="margin-bottom: 1rem;">Quick Start</h3>
-                    <div class="install-box">
-                        <pre>import parseforge
-
-client = parseforge.Client(api_key='your_api_key_here')
-
-# Get user data
-user = client.users.get('123')
-print(user)
-
-# Create data
-result = client.data.create(
-    name='Example',
-    value='Sample data'
-)</pre>
-                    </div>
-
-                    <h3 style="margin: 2rem 0 1rem;">Features</h3>
-                    <div class="features-grid">
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>Pythonic API</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">Idiomatic Python code</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>Type Hints</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">Full mypy support</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>Async Support</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">asyncio compatible</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="icon">✓</span>
-                            <div>
-                                <strong>Django Integration</strong>
-                                <p style="color: var(--gray); font-size: 0.9rem;">Ready-to-use Django helpers</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ruby SDK -->
-            <div id="sdk-ruby" class="sdk-content">
-                <div class="sdk-card">
-                    <div class="sdk-header">
-                        <div class="sdk-title">
-                            <span class="sdk-icon">💎</span>
-                            <div class="sdk-info">
-                                <h2>Ruby SDK</h2>
-                                <span class="sdk-version">v3.1.0 • Latest</span>
-                            </div>
-                        </div>
-                        <a href="#" class="btn-primary">View on GitHub</a>
-                    </div>
-
-                    <p style="color: var(--gray); margin-bottom: 2rem;">
-                        Official Ruby gem for ParseForge API. Works with Ruby 2.7+ and Rails 6+.
-                    </p>
-
-                    <h3 style="margin-bottom: 1rem;">Installation</h3>
-                    <div class="install-box">
-                        <pre>gem install parseforge</pre>
-                    </div>
-
-                    <h3 style="margin-bottom: 1rem;">Quick Start</h3>
-                    <div class="install-box">
-                        <pre>require 'parseforge'
-
-ParseForge.api_key = 'your_api_key_here'
-
-# Get user data
-user = ParseForge::User.retrieve('123')
-puts user
-
-# Create data
-result = ParseForge::Data.create(
-  name: 'Example',
-  value: 'Sample data'
-)</pre>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Go SDK -->
-            <div id="sdk-go" class="sdk-content">
-                <div class="sdk-card">
-                    <div class="sdk-header">
-                        <div class="sdk-title">
-                            <span class="sdk-icon">🔷</span>
-                            <div class="sdk-info">
-                                <h2>Go SDK</h2>
-                                <span class="sdk-version">v2.0.5 • Latest</span>
-                            </div>
-                        </div>
-                        <a href="#" class="btn-primary">View on GitHub</a>
-                    </div>
-
-                    <p style="color: var(--gray); margin-bottom: 2rem;">
-                        Official Go package for ParseForge API. Requires Go 1.18+.
-                    </p>
-
-                    <h3 style="margin-bottom: 1rem;">Installation</h3>
-                    <div class="install-box">
-                        <pre>go get github.com/parseforge/parseforge-go</pre>
-                    </div>
-
-                    <h3 style="margin-bottom: 1rem;">Quick Start</h3>
-                    <div class="install-box">
-                        <pre>package main
-
-import "github.com/parseforge/parseforge-go"
-
-func main() {
-    client := parseforge.NewClient("your_api_key_here")
-    
-    // Get user data
-    user, err := client.Users.Get("123")
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println(user)
-}</pre>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Java SDK -->
-            <div id="sdk-java" class="sdk-content">
-                <div class="sdk-card">
-                    <div class="sdk-header">
-                        <div class="sdk-title">
-                            <span class="sdk-icon">☕</span>
-                            <div class="sdk-info">
-                                <h2>Java SDK</h2>
-                                <span class="sdk-version">v4.2.1 • Latest</span>
-                            </div>
-                        </div>
-                        <a href="#" class="btn-primary">View on GitHub</a>
-                    </div>
-
-                    <p style="color: var(--gray); margin-bottom: 2rem;">
-                        Official Java library for ParseForge API. Supports Java 11+ and includes Kotlin support.
-                    </p>
-
-                    <h3 style="margin-bottom: 1rem;">Installation (Maven)</h3>
-                    <div class="install-box">
-                        <pre>&lt;dependency&gt;
-  &lt;groupId&gt;com.parseforge&lt;/groupId&gt;
-  &lt;artifactId&gt;parseforge-java&lt;/artifactId&gt;
-  &lt;version&gt;4.2.1&lt;/version&gt;
-&lt;/dependency&gt;</pre>
-                    </div>
-
-                    <h3 style="margin-bottom: 1rem;">Quick Start</h3>
-                    <div class="install-box">
-                        <pre>import com.parseforge.ParseForge;
-
-ParseForge.apiKey = "your_api_key_here";
-
-// Get user data
-User user = User.retrieve("123");
-System.out.println(user);
-
-// Create data
-Data result = Data.create(params);</pre>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PHP SDK -->
-            <div id="sdk-php" class="sdk-content">
-                <div class="sdk-card">
-                    <div class="sdk-header">
-                        <div class="sdk-title">
-                            <span class="sdk-icon">🐘</span>
-                            <div class="sdk-info">
-                                <h2>PHP SDK</h2>
-                                <span class="sdk-version">v5.1.2 • Latest</span>
-                            </div>
-                        </div>
-                        <a href="#" class="btn-primary">View on GitHub</a>
-                    </div>
-
-                    <p style="color: var(--gray); margin-bottom: 2rem;">
-                        Official PHP library for ParseForge API. Works with PHP 7.4+ and includes Laravel integration.
-                    </p>
-
-                    <h3 style="margin-bottom: 1rem;">Installation</h3>
-                    <div class="install-box">
-                        <pre>composer require parseforge/parseforge-php</pre>
-                    </div>
-
-                    <h3 style="margin-bottom: 1rem;">Quick Start</h3>
-                    <div class="install-box">
-                        <pre>&lt;?php
-require_once('vendor/autoload.php');
-
-\ParseForge\ParseForge::setApiKey('your_api_key_here');
-
-// Get user data
-$user = \ParseForge\User::retrieve('123');
-echo $user;
-
-// Create data
-$result = \ParseForge\Data::create([
-    'name' => 'Example',
-    'value' => 'Sample data'
-]);</pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- API Overview -->
     <section class="api-section" style="background: var(--light);">
         <div class="container">
-            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">Complete API Suite</h2>
+            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">Choose the right access model</h2>
             <p style="text-align: center; color: var(--gray); font-size: 1.25rem; max-width: 700px; margin: 0 auto 3rem;">
-                Build powerful applications with our comprehensive set of REST APIs
+                APIs are sold as individual monthly or yearly subscriptions. SDKs are sold as one-time licenses.
             </p>
 
             <div class="api-grid">
                 <div class="api-card">
-                    <div class="api-card-icon">👥</div>
-                    <h3>Users API</h3>
-                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Manage user accounts, profiles, and authentication</p>
+                    <div class="api-card-icon">API</div>
+                    <h3>API Subscriptions</h3>
+                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Subscribe only to the hosted APIs your product needs.</p>
                     <ul class="api-endpoints">
-                        <li>→ Create & manage users</li>
-                        <li>→ Authentication & sessions</li>
-                        <li>→ Profile management</li>
-                        <li>→ Role-based permissions</li>
+                        <li>Monthly price per API</li>
+                        <li>Yearly price per API</li>
+                        <li>Renewal details shown in the dashboard</li>
+                        <li>Documentation unlocked per active API subscription</li>
                     </ul>
-                    <a href="docs.html#users" style="color: var(--primary); text-decoration: none; font-weight: 600;">View Documentation →</a>
+                    <a href="/marketplace?type=api" style="color: var(--primary); text-decoration: none; font-weight: 600;">Browse APIs</a>
                 </div>
 
                 <div class="api-card">
-                    <div class="api-card-icon">📊</div>
-                    <h3>Data API</h3>
-                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Store and retrieve structured data with ease</p>
+                    <div class="api-card-icon">SDK</div>
+                    <h3>One-time SDK Licenses</h3>
+                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Buy the SDK package once and keep product-level access.</p>
                     <ul class="api-endpoints">
-                        <li>→ CRUD operations</li>
-                        <li>→ Advanced queries</li>
-                        <li>→ Real-time updates</li>
-                        <li>→ Data validation</li>
+                        <li>One-time cost per SDK</li>
+                        <li>No generic subscription required</li>
+                        <li>License appears in buyer dashboard</li>
+                        <li>Documentation unlocked after purchase</li>
                     </ul>
-                    <a href="docs.html#data" style="color: var(--primary); text-decoration: none; font-weight: 600;">View Documentation →</a>
+                    <a href="/marketplace?type=sdk" style="color: var(--primary); text-decoration: none; font-weight: 600;">Browse SDKs</a>
                 </div>
-
-                <div class="api-card">
-                    <div class="api-card-icon">🔔</div>
-                    <h3>Webhooks API</h3>
-                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Receive real-time event notifications</p>
-                    <ul class="api-endpoints">
-                        <li>→ Event subscriptions</li>
-                        <li>→ Secure delivery</li>
-                        <li>→ Retry logic</li>
-                        <li>→ Signature verification</li>
-                    </ul>
-                    <a href="docs.html#webhooks" style="color: var(--primary); text-decoration: none; font-weight: 600;">View Documentation →</a>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-card-icon">💳</div>
-                    <h3>Payments API</h3>
-                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Process secure payments and transactions</p>
-                    <ul class="api-endpoints">
-                        <li>→ Payment processing</li>
-                        <li>→ Subscription billing</li>
-                        <li>→ Refunds & disputes</li>
-                        <li>→ Multi-currency support</li>
-                    </ul>
-                    <a href="pricing.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">See Pricing →</a>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-card-icon">📁</div>
-                    <h3>Storage API</h3>
-                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Upload and manage files and media</p>
-                    <ul class="api-endpoints">
-                        <li>→ File uploads</li>
-                        <li>→ CDN delivery</li>
-                        <li>→ Image transforms</li>
-                        <li>→ Access control</li>
-                    </ul>
-                    <a href="docs.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">View Documentation →</a>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-card-icon">📧</div>
-                    <h3>Email API</h3>
-                    <p style="color: var(--gray); margin-bottom: 1.5rem;">Send transactional and marketing emails</p>
-                    <ul class="api-endpoints">
-                        <li>→ Transactional emails</li>
-                        <li>→ Templates</li>
-                        <li>→ Tracking & analytics</li>
-                        <li>→ Bounce handling</li>
-                    </ul>
-                    <a href="docs.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">View Documentation →</a>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 3rem;">
-                <a href="docs.html" class="btn-cta">Explore All APIs →</a>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>ParseForge</h4>
-                    <p>Build powerful applications with our developer platform.</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Product</h4>
-                    <ul>
-                        <li><a href="docs.html">Documentation</a></li>
-                        <li><a href="sdks.html">SDKs & APIs</a></li>
-                        <li><a href="marketplace.html">Marketplace</a></li>
-                        <li><a href="pricing.html">Pricing</a></li>
-                        <li><a href="playground.html">API Playground</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="resources.html">Guides & Tutorials</a></li>
-                        <li><a href="contact.html">Support</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Account</h4>
-                    <ul>
-                        <li><a href="dashboard.html">Dashboard</a></li>
-                        <li><a href="settings.html">Settings</a></li>
-                        <li><a href="login.html">Login</a></li>
-                        <li><a href="register.html">Sign Up</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="contact.html">Contact</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">Terms of Service</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 ParseForge. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+    <div id="footer-placeholder"></div>
 
-    <script src="assets/js/sdks.js"></script>
+    <script src="assets/js/includes.js"></script>
 </body>
 </html>
-
-
-
-

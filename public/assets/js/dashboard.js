@@ -396,6 +396,7 @@ function updatePurchases() {
                 purchase.renewsAt && (purchase.purchaseType === 'monthly' || purchase.purchaseType === 'yearly')
                     ? `Renews ${formatShortDate(purchase.renewsAt)}`
                     : 'Lifetime access';
+            const docsHref = `docs.html?product=${encodeURIComponent(purchase.product.slug || purchase.product.id)}`;
 
             return `
                 <article class="purchase-card">
@@ -424,7 +425,7 @@ function updatePurchases() {
                             <span>${renewalLine}</span>
                         </div>
                         <div class="purchase-actions">
-                            <a href="${purchase.product.documentation || 'docs.html'}" class="btn-secondary">Open Docs</a>
+                            <a href="${docsHref}" class="btn-secondary">Open Docs</a>
                             <span class="purchase-order">${purchase.orderReference}</span>
                         </div>
                     </div>

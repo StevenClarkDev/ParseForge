@@ -52,10 +52,6 @@
                     <span class="menu-icon">OV</span>
                     <span>Overview</span>
                 </button>
-                <button class="admin-menu-item" data-section="pricing">
-                    <span class="menu-icon">PR</span>
-                    <span>Pricing Plans</span>
-                </button>
                 <button class="admin-menu-item" data-section="apis">
                     <span class="menu-icon">AP</span>
                     <span>APIs & SDKs</span>
@@ -88,7 +84,6 @@
                     </div>
                     <div class="admin-hero-actions">
                         <button class="btn-primary" type="button" onclick="openAPIModal()">Add Product</button>
-                        <button class="btn-secondary" type="button" onclick="openPricingModal()">Add Pricing Plan</button>
                     </div>
                 </div>
 
@@ -153,11 +148,10 @@
             <section id="pricing" class="admin-section">
                 <div class="admin-header">
                     <div>
-                        <span class="admin-section-kicker">Plans</span>
-                        <h1>Manage Pricing Plans</h1>
-                        <p>Create and adjust subscription tiers offered across ParseForge.</p>
+                        <span class="admin-section-kicker">Legacy</span>
+                        <h1>Generic Plans Disabled</h1>
+                        <p>Manage API monthly/yearly prices and SDK one-time prices inside each catalog product.</p>
                     </div>
-                    <button class="btn-primary" onclick="openPricingModal()">Add New Plan</button>
                 </div>
 
                 <div class="table-shell">
@@ -319,7 +313,7 @@
                 <div class="admin-header">
                     <div>
                         <span class="admin-section-kicker">Users</span>
-                        <h1>Users & Subscriptions</h1>
+                        <h1>Users & Product Access</h1>
                         <p>Review accounts, inspect masked payment records, and enter read-only support sessions.</p>
                     </div>
                     <div class="header-actions">
@@ -335,7 +329,7 @@
                                 <th>User ID</th>
                                 <th>Name</th>
                                 <th>Email</th>
-                                <th>Plan</th>
+                                <th>Account Label</th>
                                 <th>Status</th>
                                 <th>Joined</th>
                                 <th>Actions</th>
@@ -353,7 +347,7 @@
     <div id="pricingModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="pricingModalTitle">Add Pricing Plan</h2>
+                <h2 id="pricingModalTitle">Generic Plans Disabled</h2>
                 <button class="modal-close" onclick="closePricingModal()">&times;</button>
             </div>
             <form id="pricingForm">
@@ -442,7 +436,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="apiDocumentation">Documentation URL</label>
+                    <label for="apiDocumentation">Private Documentation Reference</label>
                     <input type="url" id="apiDocumentation" class="form-control">
                 </div>
                 <div class="form-row">
@@ -460,38 +454,29 @@
                     <input type="number" id="apiReviews" class="form-control" min="0" value="0">
                 </div>
                 <div class="form-group">
-                    <label>Billing Model</label>
-                    <div class="option-grid option-grid-two">
-                        <label class="option-card">
-                            <input type="radio" name="apiBillingModel" id="apiBillingOneTime" value="one_time" checked>
-                            <span>One-time Purchase</span>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="apiBillingModel" id="apiBillingSubscription" value="subscription">
-                            <span>Subscription</span>
-                        </label>
-                    </div>
-                    <p class="form-helper">Each product can use one billing model only: one-time or subscription.</p>
+                    <label>Billing Rule</label>
+                    <p class="form-helper" id="apiBillingSummary">APIs are sold as product-specific monthly or yearly subscriptions.</p>
                 </div>
                 <div id="apiOneTimePricingGroup">
                     <div class="form-group">
-                        <label for="apiOneTimePrice">One-time Price ($)</label>
+                        <label for="apiOneTimePrice">SDK One-time Price ($)</label>
                         <input type="number" id="apiOneTimePrice" class="form-control" step="0.01" min="0" value="0">
                     </div>
                 </div>
                 <div id="apiSubscriptionPricingGroup" hidden>
                     <div class="form-group">
-                        <label>Subscription Plans</label>
+                        <label>API Subscription Cadence</label>
                         <div class="option-grid option-grid-two">
                             <label class="option-card">
-                                <input type="checkbox" id="apiAllowMonthly" checked>
+                                <input type="checkbox" id="apiAllowMonthly" checked disabled>
                                 <span>Monthly Subscription</span>
                             </label>
                             <label class="option-card">
-                                <input type="checkbox" id="apiAllowYearly" checked>
+                                <input type="checkbox" id="apiAllowYearly" checked disabled>
                                 <span>Yearly Subscription</span>
                             </label>
                         </div>
+                        <p class="form-helper">Every API must offer both monthly and yearly subscription options.</p>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -541,7 +526,7 @@
                     <input type="email" id="userEmail" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="userPlan">Subscription Plan</label>
+                    <label for="userPlan">Account Label</label>
                     <select id="userPlan" class="form-control">
                         <option value="starter">Starter</option>
                         <option value="professional">Professional</option>
