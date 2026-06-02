@@ -9,8 +9,16 @@ function createPasswordHash(password) {
 
 function verifyPassword(password, storedHash) {
     const [salt, originalHash] = storedHash.split(':');
+    if (!salt || !originalHash) {
+        return false;
+    }
+
     const derivedKey = crypto.scryptSync(password, salt, 64);
     const originalBuffer = Buffer.from(originalHash, 'hex');
+    if (derivedKey.length !== originalBuffer.length) {
+        return false;
+    }
+
     return crypto.timingSafeEqual(derivedKey, originalBuffer);
 }
 

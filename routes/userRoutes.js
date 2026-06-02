@@ -3,13 +3,31 @@ const express = require('express');
 function createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHash, logActivity }) {
     const router = express.Router();
 
+    function isAdmin(req) {
+        return req.user.role === 'admin';
+    }
+
+    function canAccessUser(req, userId) {
+        return isAdmin(req) || req.user._id.toString() === String(userId);
+    }
+
     router.get('/', authMiddleware, async (req, res) => {
+        if (!isAdmin(req)) {
+            logActivity('GET', '/api/users', 200);
+            return res.json([sanitizeUser(req.user)]);
+        }
+
         const users = await User.find().sort({ createdAt: -1 }).limit(25);
         logActivity('GET', '/api/users', 200);
         return res.json(users.map(sanitizeUser));
     });
 
     router.get('/:id', authMiddleware, async (req, res) => {
+        if (!canAccessUser(req, req.params.id)) {
+            logActivity('GET', `/api/users/${req.params.id}`, 403);
+            return res.status(403).json({ error: 'You can only access your own user profile' });
+        }
+
         const user = await User.findById(req.params.id);
 
         if (!user) {
@@ -22,10 +40,18 @@ function createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHa
     });
 
     router.post('/', authMiddleware, async (req, res) => {
-        const { firstName, lastName, email, password = 'changeme123', company = '', useCase = '' } = req.body;
+        if (!isAdmin(req)) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
 
-        if (!firstName || !lastName || !email) {
-            return res.status(400).json({ error: 'First name, last name, and email are required' });
+        const { firstName, lastName, email, password, company = '', useCase = '' } = req.body;
+
+        if (!firstName || !lastName || !email || !password) {
+            return res.status(400).json({ error: 'First name, last name, email, and password are required' });
+        }
+
+        if (String(password).length < 8) {
+            return res.status(400).json({ error: 'Password must be at least 8 characters long' });
         }
 
         const normalizedEmail = String(email).trim().toLowerCase();
@@ -49,7 +75,14 @@ function createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHa
     });
 
     router.put('/:id', authMiddleware, async (req, res) => {
-        const allowedFields = ['firstName', 'lastName', 'company', 'useCase', 'plan', 'status'];
+        if (!canAccessUser(req, req.params.id)) {
+            logActivity('PUT', `/api/users/${req.params.id}`, 403);
+            return res.status(403).json({ error: 'You can only update your own user profile' });
+        }
+
+        const allowedFields = isAdmin(req)
+            ? ['firstName', 'lastName', 'company', 'useCase', 'plan', 'status']
+            : ['firstName', 'lastName', 'company', 'useCase'];
         const updates = {};
 
         allowedFields.forEach((field) => {
@@ -70,6 +103,11 @@ function createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHa
     });
 
     router.delete('/:id', authMiddleware, async (req, res) => {
+        if (!canAccessUser(req, req.params.id)) {
+            logActivity('DELETE', `/api/users/${req.params.id}`, 403);
+            return res.status(403).json({ error: 'You can only delete your own user profile' });
+        }
+
         const user = await User.findByIdAndDelete(req.params.id);
 
         if (!user) {

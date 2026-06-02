@@ -1,5 +1,5 @@
 const DEFAULT_BOOTSTRAP_ADMIN = {
-    enabled: true,
+    enabled: false,
     firstName: 'ParseForge',
     lastName: 'Admin',
     email: 'admin@parseforge.dev',
@@ -9,7 +9,7 @@ const DEFAULT_BOOTSTRAP_ADMIN = {
     plan: 'enterprise'
 };
 
-function normalizeBoolean(value, fallback = true) {
+function normalizeBoolean(value, fallback = false) {
     if (typeof value === 'boolean') {
         return value;
     }
@@ -22,10 +22,20 @@ function normalizeBoolean(value, fallback = true) {
 }
 
 function getBootstrapAdminConfig() {
-    const enabled = normalizeBoolean(process.env.BOOTSTRAP_ADMIN_ENABLED, true);
+    const enabled = normalizeBoolean(
+        process.env.BOOTSTRAP_ADMIN_ENABLED,
+        process.env.NODE_ENV !== 'production'
+    );
 
     if (!enabled) {
         return null;
+    }
+
+    if (
+        process.env.NODE_ENV === 'production' &&
+        !process.env.BOOTSTRAP_ADMIN_PASSWORD
+    ) {
+        throw new Error('BOOTSTRAP_ADMIN_PASSWORD is required when bootstrap admin is enabled in production');
     }
 
     return {

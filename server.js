@@ -1,10 +1,14 @@
+require('express-async-errors');
+
 const express = require('express');
-const bodyParser = require('body-parser');
+const compression = require('compression');
 const cors = require('cors');
+const helmet = require('helmet');
 const http = require('http');
+const rateLimit = require('express-rate-limit');
 
 const connectDb = require('./configDb');
-const { port, jwtSecret, publicDir } = require('./config/appConfig');
+const { port, jwtSecret, publicDir, allowedOrigins, isProduction } = require('./config/appConfig');
 const { usageStats, initializeRuntimeData, logActivity, getRecentActivity } = require('./data/runtimeStore');
 const {
     createPasswordHash,
@@ -43,10 +47,36 @@ const server = http.createServer(app);
 const authMiddleware = createAuthMiddleware(jwtSecret);
 const optionalAuth = createOptionalAuthMiddleware(authMiddleware);
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(publicDir));
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
+app.use(compression());
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(Object.assign(new Error('Origin is not allowed by CORS'), { statusCode: 403 }));
+    },
+    credentials: false
+}));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '250kb' }));
+app.use('/api', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: isProduction ? 300 : 2000,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Too many requests. Please try again later.' }
+}));
+app.use(express.static(publicDir, {
+    maxAge: isProduction ? '1d' : 0,
+    etag: true
+}));
 
 app.use('/api/auth', createAuthRoutes({ jwtSecret, authMiddleware }));
 app.use('/api/dashboard', createDashboardRoutes({ optionalAuth, usageStats, getRecentActivity, ApiKey }));
@@ -76,6 +106,28 @@ app.use('/api/admin', createAdminRoutes({
 }));
 app.use('/', createSiteRoutes({ publicDir, logActivity }));
 
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not found' });
+});
+
+app.use((error, req, res, next) => {
+    if (res.headersSent) {
+        return next(error);
+    }
+
+    const statusCode = Number(error.statusCode || error.status || 500);
+    const safeStatus = statusCode >= 400 && statusCode < 600 ? statusCode : 500;
+    const isPublicError = safeStatus < 500;
+
+    if (!isPublicError) {
+        console.error('Unhandled request error:', error);
+    }
+
+    return res.status(safeStatus).json({
+        error: isPublicError ? error.message : 'Internal server error'
+    });
+});
+
 initializeRuntimeData();
 
 async function start() {
@@ -85,7 +137,7 @@ async function start() {
         await ensureBootstrapAdminUser({ User, createPasswordHash });
         await ensureBootstrapTestUser({ User, createPasswordHash });
         server.listen(port, () => {
-            console.log(`ParseForge server running on http://localhost:${port}`);
+            console.log(`ParseForge server running on port ${port}`);
         });
     } catch (error) {
         console.error(`Failed to start server on port ${port}`);

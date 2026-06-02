@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const { serializeCatalogItem } = require('../utils/serializers');
 
 function normalizeFeatureInput(features) {
@@ -860,12 +861,13 @@ function createAdminRoutes({
     router.post('/users', async (req, res) => {
         const [firstName = '', ...lastNameParts] = String(req.body.name || '').trim().split(' ');
         const lastName = lastNameParts.join(' ') || 'User';
+        const temporaryPassword = String(req.body.password || '').trim() || crypto.randomBytes(12).toString('base64url');
 
         const user = await User.create({
             firstName: firstName || 'New',
             lastName,
             email: String(req.body.email).trim().toLowerCase(),
-            passwordHash: createPasswordHash('changeme123'),
+            passwordHash: createPasswordHash(temporaryPassword),
             plan: req.body.plan || 'starter',
             status: req.body.status || 'active'
         });
@@ -879,7 +881,8 @@ function createAdminRoutes({
                 plan: user.plan,
                 status: user.status,
                 joined: user.createdAt
-            }
+            },
+            temporaryPassword
         });
     });
 

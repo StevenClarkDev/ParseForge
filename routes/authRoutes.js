@@ -41,8 +41,6 @@ function createAuthRoutes({ jwtSecret, authMiddleware }) {
                 return res.status(409).json({ error: 'An account with this email already exists' });
             }
 
-            const adminExists = (await User.countDocuments({ role: 'admin' })) > 0;
-
             const user = await User.create({
                 firstName: String(firstName).trim(),
                 lastName: String(lastName).trim(),
@@ -51,7 +49,7 @@ function createAuthRoutes({ jwtSecret, authMiddleware }) {
                 company: String(company).trim(),
                 useCase: String(useCase).trim(),
                 newsletter: Boolean(newsletter),
-                role: adminExists ? 'developer' : 'admin'
+                role: 'developer'
             });
 
             return res.status(201).json({

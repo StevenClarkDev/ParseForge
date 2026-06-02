@@ -13,8 +13,14 @@ function readArgument(flag, fallback) {
 }
 
 async function main() {
+    const password = readArgument('--password', process.env.BOOTSTRAP_ADMIN_PASSWORD || '');
+    if (!password || password.length < 12) {
+        throw new Error('Provide an admin password of at least 12 characters with --password or BOOTSTRAP_ADMIN_PASSWORD');
+    }
+
+    process.env.BOOTSTRAP_ADMIN_ENABLED = 'true';
     process.env.BOOTSTRAP_ADMIN_EMAIL = readArgument('--email', 'admin@parseforge.dev');
-    process.env.BOOTSTRAP_ADMIN_PASSWORD = readArgument('--password', 'ParseForgeAdmin123!');
+    process.env.BOOTSTRAP_ADMIN_PASSWORD = password;
     process.env.BOOTSTRAP_ADMIN_FIRST_NAME = readArgument('--first-name', 'ParseForge');
     process.env.BOOTSTRAP_ADMIN_LAST_NAME = readArgument('--last-name', 'Admin');
 
@@ -31,8 +37,7 @@ async function main() {
                 success: true,
                 id: user.id,
                 email: user.email,
-                role: user.role,
-                password: process.env.BOOTSTRAP_ADMIN_PASSWORD
+                role: user.role
             },
             null,
             2

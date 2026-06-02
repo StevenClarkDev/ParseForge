@@ -1,5 +1,5 @@
 const DEFAULT_BOOTSTRAP_TEST_USER = {
-    enabled: true,
+    enabled: false,
     firstName: 'Test',
     lastName: 'Developer',
     email: 'tester@parseforge.dev',
@@ -9,7 +9,7 @@ const DEFAULT_BOOTSTRAP_TEST_USER = {
     plan: 'starter'
 };
 
-function normalizeBoolean(value, fallback = true) {
+function normalizeBoolean(value, fallback = false) {
     if (typeof value === 'boolean') {
         return value;
     }
@@ -22,10 +22,20 @@ function normalizeBoolean(value, fallback = true) {
 }
 
 function getBootstrapTestUserConfig() {
-    const enabled = normalizeBoolean(process.env.BOOTSTRAP_TEST_USER_ENABLED, true);
+    const enabled = normalizeBoolean(
+        process.env.BOOTSTRAP_TEST_USER_ENABLED,
+        process.env.NODE_ENV !== 'production'
+    );
 
     if (!enabled) {
         return null;
+    }
+
+    if (
+        process.env.NODE_ENV === 'production' &&
+        !process.env.BOOTSTRAP_TEST_USER_PASSWORD
+    ) {
+        throw new Error('BOOTSTRAP_TEST_USER_PASSWORD is required when bootstrap test user is enabled in production');
     }
 
     return {
