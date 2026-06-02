@@ -249,9 +249,14 @@
         }
 
         .features-list .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
             color: var(--cyber-green);
             font-weight: 700;
             flex-shrink: 0;
+            line-height: 1.45;
         }
 
         .features-list .icon.unavailable {
