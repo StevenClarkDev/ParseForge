@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+const MIN_PRODUCT_PRICE = 999;
+const MIN_YEARLY_API_PRICE = 9990;
+
 function inferBillingModel(doc) {
     if (doc.type === 'api') {
         return 'subscription';
@@ -149,17 +152,17 @@ apiCatalogItemSchema.pre('validate', function setSlug() {
         this.allowYearlySubscription = true;
         this.oneTimePrice = 0;
 
-        if (!(Number(this.monthlyPrice) > 0)) {
+        if (Number(this.monthlyPrice) < MIN_PRODUCT_PRICE) {
             this.invalidate(
                 'monthlyPrice',
-                'APIs require a monthly subscription price greater than 0'
+                'APIs require a monthly subscription price of at least $999'
             );
         }
 
-        if (!(Number(this.yearlyPrice) > 0)) {
+        if (Number(this.yearlyPrice) < MIN_YEARLY_API_PRICE) {
             this.invalidate(
                 'yearlyPrice',
-                'APIs require a yearly subscription price greater than 0'
+                'APIs require a yearly subscription price of at least $9,990'
             );
         }
     } else if (this.type === 'sdk') {
@@ -170,8 +173,8 @@ apiCatalogItemSchema.pre('validate', function setSlug() {
         this.monthlyPrice = 0;
         this.yearlyPrice = 0;
 
-        if (!(Number(this.oneTimePrice) > 0)) {
-            this.invalidate('oneTimePrice', 'SDKs require a one-time price greater than 0');
+        if (Number(this.oneTimePrice) < MIN_PRODUCT_PRICE) {
+            this.invalidate('oneTimePrice', 'SDKs require a one-time price of at least $999');
         }
     } else if (this.billingModel === 'subscription') {
         this.allowOneTimePurchase = false;
@@ -184,17 +187,17 @@ apiCatalogItemSchema.pre('validate', function setSlug() {
             );
         }
 
-        if (this.allowMonthlySubscription && !(Number(this.monthlyPrice) > 0)) {
+        if (this.allowMonthlySubscription && Number(this.monthlyPrice) < MIN_PRODUCT_PRICE) {
             this.invalidate(
                 'monthlyPrice',
-                'Monthly subscriptions must have a price greater than 0'
+                'Monthly subscriptions must have a price of at least $999'
             );
         }
 
-        if (this.allowYearlySubscription && !(Number(this.yearlyPrice) > 0)) {
+        if (this.allowYearlySubscription && Number(this.yearlyPrice) < MIN_YEARLY_API_PRICE) {
             this.invalidate(
                 'yearlyPrice',
-                'Yearly subscriptions must have a price greater than 0'
+                'Yearly subscriptions must have a price of at least $9,990'
             );
         }
     } else {
@@ -204,8 +207,8 @@ apiCatalogItemSchema.pre('validate', function setSlug() {
         this.monthlyPrice = 0;
         this.yearlyPrice = 0;
 
-        if (!(Number(this.oneTimePrice) > 0)) {
-            this.invalidate('oneTimePrice', 'One-time products must have a price greater than 0');
+        if (Number(this.oneTimePrice) < MIN_PRODUCT_PRICE) {
+            this.invalidate('oneTimePrice', 'One-time products must have a price of at least $999');
         }
     }
 });

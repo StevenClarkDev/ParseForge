@@ -5,6 +5,8 @@ const SUPPORT_CONTEXT_KEY = 'parseforge_support_context';
 const ADMIN_PATH = '/admin.html';
 const LOGIN_REDIRECT_URL = `/admin-login.html?next=${encodeURIComponent(ADMIN_PATH)}`;
 const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
+const MIN_PRODUCT_PRICE = 999;
+const MIN_YEARLY_API_PRICE = 9990;
 
 let currentUsersPage = 1;
 let currentUsersSearch = '';
@@ -273,16 +275,16 @@ function buildAPIFormPayload() {
     const allowMonthlySubscription = billingModel === 'subscription';
     const allowYearlySubscription = billingModel === 'subscription';
 
-    if (productType === 'sdk' && !(oneTimePrice > 0)) {
-        throw new Error('Enter a valid one-time SDK price greater than 0.');
+    if (productType === 'sdk' && oneTimePrice < MIN_PRODUCT_PRICE) {
+        throw new Error('Enter a one-time SDK price of at least $999.');
     }
 
-    if (productType === 'api' && !(monthlyPrice > 0)) {
-        throw new Error('Enter a valid monthly API subscription price greater than 0.');
+    if (productType === 'api' && monthlyPrice < MIN_PRODUCT_PRICE) {
+        throw new Error('Enter a monthly API subscription price of at least $999.');
     }
 
-    if (productType === 'api' && !(yearlyPrice > 0)) {
-        throw new Error('Enter a valid yearly API subscription price greater than 0.');
+    if (productType === 'api' && yearlyPrice < MIN_YEARLY_API_PRICE) {
+        throw new Error('Enter a yearly API subscription price of at least $9,990.');
     }
 
     return {
