@@ -249,11 +249,44 @@
 }
 
 .endpoint-header code {
-    background: #000;
+    background: #0f172a;
     padding: 0.5rem 1rem;
     border-radius: 4px;
     font-size: 0.95rem;
-    color: var(--dark);
+    color: #e2e8f0;
+}
+
+.product-documentation-body {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.product-documentation-body h2:first-child {
+    margin-top: 0;
+}
+
+.product-documentation-body code {
+    background: #e2e8f0;
+    color: #0f172a;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.product-documentation-body .code-block code {
+    background: transparent;
+    color: #e2e8f0;
+    padding: 0;
+}
+
+.product-doc-section {
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.product-doc-section:last-child {
+    border-bottom: none;
 }
 
 /* Parameters Table */

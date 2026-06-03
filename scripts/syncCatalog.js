@@ -5,8 +5,7 @@ const ApiCatalogItem = require('../models/ApiCatalogItem');
 const CatalogPurchase = require('../models/CatalogPurchase');
 const {
     curatedCatalogItems,
-    curatedCatalogSlugs,
-    isLegacyTestCatalogItem
+    curatedCatalogSlugs
 } = require('../seeds/catalogSeedData');
 
 const dryRun = process.argv.includes('--dry-run');
@@ -17,12 +16,12 @@ async function main() {
     const existingItems = await ApiCatalogItem.find({}, 'name slug').lean();
     const removableItems = existingItems.filter((item) => {
         const slug = String(item.slug || '').toLowerCase();
-        return !curatedCatalogSlugs.includes(slug) && isLegacyTestCatalogItem(item);
+        return !curatedCatalogSlugs.includes(slug);
     });
     const removableIds = removableItems.map((item) => item._id);
 
     if (dryRun) {
-        console.log(`[dry-run] Would remove ${removableItems.length} test or placeholder products.`);
+        console.log(`[dry-run] Would remove ${removableItems.length} non-curated catalog products.`);
     } else if (removableIds.length) {
         const purchaseResult = await CatalogPurchase.deleteMany({
             catalogItemId: { $in: removableIds }
@@ -32,7 +31,7 @@ async function main() {
         });
 
         console.log(
-            `Removed ${deleteResult.deletedCount} test products and ${purchaseResult.deletedCount} related purchases.`
+            `Removed ${deleteResult.deletedCount} non-curated products and ${purchaseResult.deletedCount} related purchases.`
         );
     } else {
         console.log('No removable test products found.');

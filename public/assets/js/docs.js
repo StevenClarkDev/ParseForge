@@ -84,9 +84,111 @@ console.log(result);</code></pre>
     `;
 }
 
+function renderInlineMarkdown(value) {
+    return escapeHtml(value)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+}
+
+function renderDocumentationContent(documentation) {
+    const source = String(documentation || '').trim();
+
+    if (!source || source.startsWith('/')) {
+        return '';
+    }
+
+    const lines = source.split(/\r?\n/);
+    let html = '';
+    let listItems = [];
+    let codeLines = [];
+    let inCodeBlock = false;
+    let codeLabel = 'Example';
+
+    function flushList() {
+        if (!listItems.length) {
+            return;
+        }
+
+        html += `<ul>${listItems.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join('')}</ul>`;
+        listItems = [];
+    }
+
+    function flushCode() {
+        if (!codeLines.length) {
+            return;
+        }
+
+        html += `
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span>${escapeHtml(codeLabel)}</span>
+                    <button class="copy-btn" type="button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>
+            </div>
+        `;
+        codeLines = [];
+        codeLabel = 'Example';
+    }
+
+    lines.forEach((rawLine) => {
+        const line = rawLine.trimEnd();
+
+        if (line.startsWith('```')) {
+            if (inCodeBlock) {
+                flushCode();
+                inCodeBlock = false;
+                return;
+            }
+
+            flushList();
+            inCodeBlock = true;
+            codeLabel = line.replace(/^```/, '').trim() || 'Example';
+            return;
+        }
+
+        if (inCodeBlock) {
+            codeLines.push(rawLine);
+            return;
+        }
+
+        const trimmed = line.trim();
+        if (!trimmed) {
+            flushList();
+            return;
+        }
+
+        if (trimmed.startsWith('### ')) {
+            flushList();
+            html += `<h3>${renderInlineMarkdown(trimmed.slice(4))}</h3>`;
+            return;
+        }
+
+        if (trimmed.startsWith('## ')) {
+            flushList();
+            html += `<h2>${renderInlineMarkdown(trimmed.slice(3))}</h2>`;
+            return;
+        }
+
+        if (trimmed.startsWith('- ')) {
+            listItems.push(trimmed.slice(2));
+            return;
+        }
+
+        flushList();
+        html += `<p>${renderInlineMarkdown(trimmed)}</p>`;
+    });
+
+    flushList();
+    flushCode();
+
+    return html;
+}
+
 function buildProductDocs(product) {
     const anchor = getProductAnchor(product);
     const isApi = product.type === 'api';
+    const productDocumentation = renderDocumentationContent(product.documentation);
 
     return `
         <section class="doc-section product-doc-section" id="${escapeHtml(anchor)}">
@@ -117,6 +219,8 @@ function buildProductDocs(product) {
             </div>
 
             ${isApi ? buildApiReference(product) : buildSdkReference(product)}
+
+            ${productDocumentation ? `<div class="product-documentation-body">${productDocumentation}</div>` : ''}
         </section>
     `;
 }
