@@ -185,6 +185,16 @@ function getSelectedAPIBillingModel() {
     return document.getElementById('apiType')?.value === 'api' ? 'subscription' : 'one_time';
 }
 
+function getSelectedAPIType() {
+    const value = document.getElementById('apiType')?.value;
+
+    if (value === 'api' || value === 'sdk') {
+        return value;
+    }
+
+    throw new Error('Choose either API or SDK as the product type.');
+}
+
 function syncSubscriptionPriceFields(forceDisabled = false) {
     const monthlyInput = document.getElementById('apiMonthlyPrice');
     const yearlyInput = document.getElementById('apiYearlyPrice');
@@ -256,7 +266,7 @@ function resetAPIBillingDefaults() {
 
 function buildAPIFormPayload() {
     const billingModel = getSelectedAPIBillingModel();
-    const productType = document.getElementById('apiType').value;
+    const productType = getSelectedAPIType();
     const oneTimePrice = Number.parseFloat(document.getElementById('apiOneTimePrice').value) || 0;
     const monthlyPrice = Number.parseFloat(document.getElementById('apiMonthlyPrice').value) || 0;
     const yearlyPrice = Number.parseFloat(document.getElementById('apiYearlyPrice').value) || 0;

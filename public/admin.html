@@ -399,7 +399,7 @@
                 </div>
                 <div class="form-group">
                     <label for="apiType">Type</label>
-                    <select id="apiType" class="form-control">
+                    <select id="apiType" class="form-control" autocomplete="off" required>
                         <option value="api">API</option>
                         <option value="sdk">SDK</option>
                     </select>
@@ -436,8 +436,8 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="apiDocumentation">Private Documentation Reference</label>
-                    <input type="url" id="apiDocumentation" class="form-control">
+                    <label for="apiDocumentation">Private Documentation</label>
+                    <textarea id="apiDocumentation" class="form-control" rows="8" placeholder="Paste product documentation that should unlock after purchase. Markdown-style headings and code fences are supported."></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">

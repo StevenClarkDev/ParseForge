@@ -250,11 +250,19 @@ function buildPaymentDetailsSummary(purchase, product, revealSensitive = false) 
 }
 
 function buildCatalogItemPayload(body) {
-    const type = body.type === 'sdk' ? 'sdk' : 'api';
+    if (body.type !== 'api' && body.type !== 'sdk') {
+        throw createValidationError('Choose either API or SDK as the product type');
+    }
+
+    const allowedBadges = new Set(['', 'featured', 'bestseller', 'new']);
+    const allowedStatuses = new Set(['stable', 'beta', 'deprecated']);
+    const type = body.type;
     const billingModel = type === 'api' ? 'subscription' : 'one_time';
     const oneTimePrice = normalizePositiveNumber(body.oneTimePrice);
     const monthlyPrice = normalizePositiveNumber(body.monthlyPrice);
     const yearlyPrice = normalizePositiveNumber(body.yearlyPrice);
+    const badge = allowedBadges.has(body.badge) ? body.badge : '';
+    const status = allowedStatuses.has(body.status) ? body.status : 'stable';
 
     const payload = {
         name: body.name,
@@ -266,13 +274,13 @@ function buildCatalogItemPayload(body) {
         documentation: body.documentation,
         features: normalizeFeatureInput(body.features),
         icon: body.icon,
-        badge: body.badge || '',
+        badge,
         billingModel,
         downloads: Number(body.downloads) || 0,
         rating: Number(body.rating) || 0,
         reviews: Number(body.reviews) || 0,
         isPublished: normalizeBooleanInput(body.isPublished, true),
-        status: body.status || 'stable'
+        status
     };
 
     if (type === 'sdk') {
