@@ -1482,13 +1482,7 @@ button[type="submit"].btn-primary:active {
     gap: 1rem;
 }
 
-.hero-signal-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-}
-
-.hero-signal-card,
+.hero-buyer-panel,
 .hero-spotlight,
 .collection-card,
 .product-fact-card {
@@ -1499,7 +1493,13 @@ button[type="submit"].btn-primary:active {
     backdrop-filter: blur(20px);
 }
 
-.hero-signal-card span,
+.hero-buyer-panel {
+    display: grid;
+    gap: 1rem;
+    padding: 1.35rem;
+}
+
+.hero-panel-kicker,
 .product-fact-card span {
     display: block;
     color: var(--text-muted);
@@ -1508,7 +1508,58 @@ button[type="submit"].btn-primary:active {
     letter-spacing: 0.06em;
 }
 
-.hero-signal-card strong,
+.hero-buyer-panel h3 {
+    color: var(--text-primary);
+    font-size: 1.35rem;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.hero-workflow-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.hero-workflow-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.35rem 0.8rem;
+    align-items: flex-start;
+    padding: 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    background: rgba(10, 14, 39, 0.38);
+}
+
+.hero-workflow-item > span {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(29, 233, 182, 0.1);
+    border: 1px solid rgba(29, 233, 182, 0.24);
+    color: var(--cyber-green);
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.hero-workflow-item strong {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    line-height: 1.25;
+}
+
+.hero-workflow-item p {
+    grid-column: 2;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
 .product-fact-card strong {
     display: block;
     color: var(--text-primary);
@@ -1651,18 +1702,19 @@ button[type="submit"].btn-primary:active {
 }
 
 .results-copy {
-    display: flex;
-    align-items: baseline;
-    gap: 0.6rem;
+    display: grid;
+    gap: 0.25rem;
+    max-width: 660px;
 }
 
 .results-copy strong {
-    font-size: 1.8rem;
+    font-size: 1.05rem;
     color: var(--text-primary);
 }
 
 .results-copy span {
     color: var(--text-secondary);
+    line-height: 1.5;
 }
 
 .results-chips {
@@ -1895,6 +1947,14 @@ button[type="submit"].btn-primary:active {
     
     .marketplace-hero h1 {
         font-size: 2rem;
+    }
+
+    .hero-workflow-item {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-workflow-item p {
+        grid-column: 1;
     }
     
     .hero-stats {

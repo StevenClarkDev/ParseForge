@@ -259,11 +259,11 @@ function filterProducts() {
 
         const effectivePrice = Number(product.pricing?.minPrice || 0);
         if (currentFilters.priceRange !== 'all') {
-            if (currentFilters.priceRange === '200+' && effectivePrice < 200) {
+            if (currentFilters.priceRange === '10000+' && effectivePrice < 10000) {
                 return false;
             }
 
-            if (currentFilters.priceRange !== '200+') {
+            if (currentFilters.priceRange !== '10000+') {
                 const [min, max] = currentFilters.priceRange.split('-').map((value) => Number(value));
                 if (effectivePrice < min || effectivePrice > max) {
                     return false;
@@ -312,25 +312,6 @@ function sortProducts(products) {
                 return (badgeOrder[a.badge || ''] || 9) - (badgeOrder[b.badge || ''] || 9);
             });
     }
-}
-
-function updateHeroStats() {
-    const statMap = {
-        heroApiCount: catalogItems.filter((item) => item.type === 'api').length,
-        heroSdkCount: catalogItems.filter((item) => item.type === 'sdk').length,
-        heroSubscriptionProducts: catalogItems.filter(
-            (item) => item.pricing?.billingModel === 'subscription'
-        ).length,
-        heroOneTimeProducts: catalogItems.filter((item) => item.pricing?.billingModel === 'one_time')
-            .length
-    };
-
-    Object.entries(statMap).forEach(([id, value]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = String(value);
-        }
-    });
 }
 
 function renderCollections() {
@@ -429,7 +410,7 @@ function renderActiveFilters() {
     }
 
     if (currentFilters.priceRange !== 'all') {
-        chips.push(`Price: ${currentFilters.priceRange}`);
+        chips.push(`Price: ${formatPriceRangeLabel(currentFilters.priceRange)}`);
     }
 
     if (currentFilters.sortBy !== 'featured') {
@@ -447,19 +428,30 @@ function renderActiveFilters() {
     `;
 }
 
+function formatPriceRangeLabel(range) {
+    const labels = {
+        '999-2499': '$999 - $2,499',
+        '2500-4999': '$2,500 - $4,999',
+        '5000-9999': '$5,000 - $9,999',
+        '10000+': '$10,000+'
+    };
+
+    return labels[range] || range;
+}
+
 function updateResultsSummary(filteredProducts) {
     const countElement = document.getElementById('resultsCount');
     const summaryElement = document.getElementById('resultsSummary');
 
     if (countElement) {
-        countElement.textContent = String(filteredProducts.length);
+        countElement.textContent = filteredProducts.length === catalogItems.length ? 'Catalog' : 'Filtered catalog';
     }
 
     if (summaryElement) {
         summaryElement.textContent =
             filteredProducts.length === catalogItems.length
-                ? 'products ready to ship'
-                : 'products match your current filters';
+                ? 'Browse buyer-ready APIs and SDKs by category, billing model, and implementation fit.'
+                : 'Review the products that match your current filters.';
     }
 }
 
@@ -528,7 +520,7 @@ function createProductCard(product) {
             <div class="product-footer">
                 <div class="price-stack">
                     <div class="product-price">${escapeHtml(buildStartingPriceLabel(product))}</div>
-                    <span class="product-price-label">${escapeHtml(product.language)} · ${escapeHtml(`${product.reviews || 0} reviews`)}</span>
+                    <span class="product-price-label">${escapeHtml(`${product.language} - ${product.reviews || 0} reviews`)}</span>
                 </div>
             </div>
             <div class="product-cta-row">
@@ -605,7 +597,16 @@ function renderProducts() {
 function changePage(page) {
     currentPage = page;
     renderProducts();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToCatalogResults();
+}
+
+function scrollToCatalogResults() {
+    const target =
+        document.getElementById('catalogResultsAnchor') ||
+        document.getElementById('productsGrid') ||
+        document.getElementById('catalog');
+
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function addToCart(productId, purchaseType) {
@@ -968,7 +969,6 @@ async function handleCheckout(event) {
         saveCart();
         await fetchCatalog();
         normalizeCart();
-        updateHeroStats();
         renderCollections();
         updateCartUI();
         renderProducts();
@@ -1035,7 +1035,7 @@ function applyQuickFilter(category = 'all', billing = 'all', sortBy = 'featured'
     document.getElementById('sortBy').value = sortBy;
 
     renderProducts();
-    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToCatalogResults();
 }
 
 function clearFilters() {
@@ -1105,7 +1105,6 @@ async function initializeMarketplace() {
         normalizeCart();
         setupEventListeners();
         handlePaymentChange({ target: { value: getSelectedPaymentMethod() } });
-        updateHeroStats();
         renderCollections();
         renderProducts();
         updateCartUI();
