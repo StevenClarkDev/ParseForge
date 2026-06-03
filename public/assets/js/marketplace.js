@@ -124,6 +124,10 @@ async function fetchCatalog() {
         throw new Error(payload.error || 'Unable to load marketplace items');
     }
 
+    if (payload.sessionExpired) {
+        window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+
     catalogItems = Array.isArray(payload.items) ? payload.items : [];
 }
 

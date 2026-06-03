@@ -62,7 +62,32 @@ function createOptionalAuthMiddleware(authMiddleware) {
             return next();
         }
 
-        return authMiddleware(req, res, next);
+        const originalStatus = res.status.bind(res);
+        const originalJson = res.json.bind(res);
+        let authStatusCode = 200;
+
+        res.status = function captureStatus(code) {
+            authStatusCode = code;
+            return res;
+        };
+
+        res.json = function ignoreOptionalAuthFailure(payload) {
+            res.status = originalStatus;
+            res.json = originalJson;
+
+            if (authStatusCode === 401) {
+                req.optionalAuthError = payload?.error || 'Invalid optional session';
+                return next();
+            }
+
+            return originalStatus(authStatusCode).json(payload);
+        };
+
+        return authMiddleware(req, res, function optionalAuthSuccess(error) {
+            res.status = originalStatus;
+            res.json = originalJson;
+            return next(error);
+        });
     };
 }
 

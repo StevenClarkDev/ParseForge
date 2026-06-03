@@ -240,7 +240,8 @@ function createCatalogRoutes({
                     ownership: ownershipMap.get(item._id.toString()) || []
                 }),
             ),
-            total: items.length
+            total: items.length,
+            sessionExpired: Boolean(req.optionalAuthError)
         });
     });
 
