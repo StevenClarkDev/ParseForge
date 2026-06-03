@@ -132,7 +132,7 @@ const apiCatalogItemSchema = new mongoose.Schema(
     }
 );
 
-apiCatalogItemSchema.pre('validate', function setSlug(next) {
+apiCatalogItemSchema.pre('validate', function setSlug() {
     if (!this.slug && this.name) {
         this.slug = String(this.name)
             .toLowerCase()
@@ -208,8 +208,6 @@ apiCatalogItemSchema.pre('validate', function setSlug(next) {
             this.invalidate('oneTimePrice', 'One-time products must have a price greater than 0');
         }
     }
-
-    next();
 });
 
 module.exports = mongoose.models.ApiCatalogItem || mongoose.model('ApiCatalogItem', apiCatalogItemSchema);
