@@ -1245,6 +1245,163 @@ const additionalSdkProducts = [
     }
 ];
 
+const researchedSdkProducts = [
+    {
+        name: 'Mobile Crash Reporting SDK',
+        slug: 'mobile-crash-reporting-sdk',
+        language: 'Kotlin + Swift',
+        description: 'Crash capture, non-fatal error reporting, breadcrumbs, symbol upload helpers, and release health summaries for mobile teams.',
+        features: ['Crash capture', 'Non-fatal errors', 'Breadcrumbs', 'Release health summaries'],
+        badge: 'featured',
+        oneTimePrice: 1799,
+        downloads: 15400,
+        rating: 4.9,
+        reviews: 173,
+        install: 'npm install @parseforge/mobile-crash-reporting-sdk',
+        overview: 'Use this SDK when mobile teams need crash, performance, and release stability data embedded directly into product workflows.'
+    },
+    {
+        name: 'Privacy Consent SDK',
+        slug: 'privacy-consent-sdk',
+        language: 'JavaScript',
+        description: 'Consent banners, region-aware privacy controls, preference storage, and audit-ready consent event capture.',
+        features: ['Consent banners', 'Region rules', 'Preference storage', 'Consent event audit'],
+        badge: '',
+        oneTimePrice: 1499,
+        downloads: 9900,
+        rating: 4.8,
+        reviews: 108,
+        install: 'npm install @parseforge/privacy-consent-sdk',
+        overview: 'Use this SDK to add privacy preferences and consent evidence to web products without hand-building every region rule.'
+    },
+    {
+        name: 'RAG Knowledge Base SDK',
+        slug: 'rag-knowledge-base-sdk',
+        language: 'TypeScript',
+        description: 'Document ingestion, chunking, source attribution, retrieval policies, and grounded answer helpers for RAG products.',
+        features: ['Document ingestion', 'Chunking helpers', 'Source attribution', 'Retrieval policies'],
+        badge: 'bestseller',
+        oneTimePrice: 2499,
+        downloads: 12100,
+        rating: 4.9,
+        reviews: 142,
+        install: 'npm install @parseforge/rag-knowledge-base-sdk',
+        overview: 'Use this SDK to build retrieval-augmented AI features with auditable sources, repeatable indexing, and safer answer assembly.'
+    },
+    {
+        name: 'AI Observability SDK',
+        slug: 'ai-observability-sdk',
+        language: 'TypeScript',
+        description: 'Prompt traces, token cost tracking, model routing telemetry, output validation logs, and quality review hooks.',
+        features: ['Prompt traces', 'Token cost tracking', 'Model telemetry', 'Output validation logs'],
+        badge: 'new',
+        oneTimePrice: 2299,
+        downloads: 8700,
+        rating: 4.8,
+        reviews: 94,
+        install: 'npm install @parseforge/ai-observability-sdk',
+        overview: 'Use this SDK to understand AI feature cost, latency, quality, and model behavior before support teams are guessing from raw logs.'
+    },
+    {
+        name: 'Attribution Tracking SDK',
+        slug: 'attribution-tracking-sdk',
+        language: 'React Native',
+        description: 'Install attribution, campaign parameters, SKAdNetwork-style events, referral capture, and revenue attribution helpers.',
+        features: ['Install attribution', 'Campaign capture', 'Revenue attribution', 'Referral events'],
+        badge: '',
+        oneTimePrice: 1699,
+        downloads: 10300,
+        rating: 4.8,
+        reviews: 116,
+        install: 'npm install @parseforge/attribution-tracking-sdk',
+        overview: 'Use this SDK to connect mobile acquisition campaigns to activation, purchases, and account-level product behavior.'
+    },
+    {
+        name: 'In-App Messaging SDK',
+        slug: 'in-app-messaging-sdk',
+        language: 'React',
+        description: 'Targeted in-app announcements, onboarding prompts, lifecycle messages, dismiss state, and audience rules.',
+        features: ['Announcements', 'Onboarding prompts', 'Audience rules', 'Dismiss state'],
+        badge: '',
+        oneTimePrice: 1299,
+        downloads: 13600,
+        rating: 4.8,
+        reviews: 151,
+        install: 'npm install @parseforge/in-app-messaging-sdk',
+        overview: 'Use this SDK to show product messages, onboarding nudges, and lifecycle prompts without shipping one-off modal code.'
+    },
+    {
+        name: 'Mobile Ads Mediation SDK',
+        slug: 'mobile-ads-mediation-sdk',
+        language: 'Kotlin + Swift',
+        description: 'Ad network mediation, placement rules, consent-aware loading, revenue callbacks, and frequency controls.',
+        features: ['Ad mediation', 'Placement rules', 'Consent-aware loading', 'Revenue callbacks'],
+        badge: '',
+        oneTimePrice: 1999,
+        downloads: 7400,
+        rating: 4.7,
+        reviews: 79,
+        install: 'npm install @parseforge/mobile-ads-mediation-sdk',
+        overview: 'Use this SDK when mobile monetization needs placement governance, revenue events, and privacy-aware ad loading.'
+    },
+    {
+        name: 'Fraud Device Fingerprint SDK',
+        slug: 'fraud-device-fingerprint-sdk',
+        language: 'JavaScript',
+        description: 'Device signals, session fingerprints, bot hints, risk metadata, and account abuse correlation helpers.',
+        features: ['Device signals', 'Session fingerprints', 'Bot hints', 'Risk metadata'],
+        badge: 'featured',
+        oneTimePrice: 2199,
+        downloads: 9200,
+        rating: 4.8,
+        reviews: 101,
+        install: 'npm install @parseforge/fraud-device-fingerprint-sdk',
+        overview: 'Use this SDK to collect consistent browser and device risk signals before signups, checkout, payouts, and admin actions.'
+    },
+    {
+        name: 'Embedded Finance SDK',
+        slug: 'embedded-finance-sdk',
+        language: 'React',
+        description: 'Account balances, payout forms, ledger activity, KYC prompts, and transaction status components for fintech apps.',
+        features: ['Balance widgets', 'Payout forms', 'Ledger activity', 'KYC prompts'],
+        badge: 'bestseller',
+        oneTimePrice: 2499,
+        downloads: 8100,
+        rating: 4.9,
+        reviews: 97,
+        install: 'npm install @parseforge/embedded-finance-sdk',
+        overview: 'Use this SDK to embed account, payout, and ledger surfaces into fintech, marketplace, and creator economy products.'
+    },
+    {
+        name: 'Edge Runtime SDK',
+        slug: 'edge-runtime-sdk',
+        language: 'TypeScript',
+        description: 'Edge-safe request utilities, cache helpers, geo routing, signed headers, and lightweight middleware primitives.',
+        features: ['Edge request utilities', 'Cache helpers', 'Geo routing', 'Signed headers'],
+        badge: 'new',
+        oneTimePrice: 1599,
+        downloads: 6800,
+        rating: 4.8,
+        reviews: 72,
+        install: 'npm install @parseforge/edge-runtime-sdk',
+        overview: 'Use this SDK to build low-latency edge middleware and API handlers with predictable request, cache, and routing helpers.'
+    },
+    {
+        name: 'On-Prem Connector SDK',
+        slug: 'on-prem-connector-sdk',
+        language: 'Go',
+        description: 'Private network connectors, outbound tunnels, key rotation, health checks, and audit events for enterprise deployments.',
+        features: ['Private connectors', 'Outbound tunnels', 'Key rotation', 'Health checks'],
+        badge: 'featured',
+        oneTimePrice: 2999,
+        downloads: 5200,
+        rating: 4.8,
+        reviews: 61,
+        install: 'go get github.com/parseforge/on-prem-connector-sdk',
+        overview: 'Use this SDK when enterprise buyers need ParseForge-powered workflows connected to private databases, services, and regulated environments.'
+    }
+];
+
 function withApiDefaults(product, index) {
     const label = product.resource || product.slug.replace(/-api$/, '');
     const operationName = label
@@ -1291,7 +1448,12 @@ await client.activate({
 }
 
 apiProducts.push(...additionalApiProducts.map(withApiDefaults));
-sdkProducts.push(...additionalSdkProducts.map(withSdkDefaults));
+sdkProducts.push(
+    ...additionalSdkProducts.map(withSdkDefaults),
+    ...researchedSdkProducts.map((product, index) =>
+        withSdkDefaults(product, additionalSdkProducts.length + index),
+    ),
+);
 
 function buildApiDocumentation(product) {
     return `## Overview
