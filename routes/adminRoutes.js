@@ -2,9 +2,6 @@ const express = require('express');
 const crypto = require('crypto');
 const { serializeCatalogItem } = require('../utils/serializers');
 
-const MIN_PRODUCT_PRICE = 999;
-const MIN_YEARLY_API_PRICE = 9990;
-
 function normalizeFeatureInput(features) {
     return Array.isArray(features)
         ? features
@@ -287,8 +284,8 @@ function buildCatalogItemPayload(body) {
     };
 
     if (type === 'sdk') {
-        if (oneTimePrice < MIN_PRODUCT_PRICE) {
-            throw createValidationError('SDKs must have a one-time price of at least $999');
+        if (!(oneTimePrice > 0)) {
+            throw createValidationError('SDKs must have a one-time price greater than 0');
         }
 
         return {
@@ -302,12 +299,12 @@ function buildCatalogItemPayload(body) {
         };
     }
 
-    if (monthlyPrice < MIN_PRODUCT_PRICE) {
-        throw createValidationError('APIs must have a monthly subscription price of at least $999');
+    if (!(monthlyPrice > 0)) {
+        throw createValidationError('APIs must have a monthly subscription price greater than 0');
     }
 
-    if (yearlyPrice < MIN_YEARLY_API_PRICE) {
-        throw createValidationError('APIs must have a yearly subscription price of at least $9,990');
+    if (!(yearlyPrice > 0)) {
+        throw createValidationError('APIs must have a yearly subscription price greater than 0');
     }
 
     return {
