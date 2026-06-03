@@ -335,7 +335,7 @@ function updateStats() {
             ? `${dashboardData.apiKeys.filter((key) => key.type === 'production').length} production keys configured`
             : 'Create and manage credentials';
     document.getElementById('apiCallsMeta').textContent =
-        `${stats.successRate || 0}% success rate · ${stats.avgResponseTime || 0}ms average`;
+        `${stats.successRate || 0}% success rate - ${stats.avgResponseTime || 0}ms average`;
 }
 
 function updatePurchaseSummary() {
@@ -355,7 +355,7 @@ function updatePurchaseSummary() {
 
     if (orderLine) {
         orderLine.textContent = latestPurchase
-            ? `${latestPurchase.product.name} · ${formatPurchaseType(latestPurchase.purchaseType)}`
+            ? `${latestPurchase.product.name} - ${formatPurchaseType(latestPurchase.purchaseType)}`
             : 'No completed purchases yet';
     }
 
@@ -499,15 +499,14 @@ function updateActivity() {
         .map((activity) => {
             const isSuccess = activity.status >= 200 && activity.status < 300;
             const iconClass = isSuccess ? 'success' : 'error';
-            const icon = isSuccess ? 'OK' : 'ER';
             const timeAgo = getRelativeTime(new Date(activity.timestamp));
 
             return `
                 <div class="activity-item">
-                    <div class="activity-icon ${iconClass}">${icon}</div>
+                    <div class="activity-icon ${iconClass}" aria-hidden="true"></div>
                     <div class="activity-info">
                         <div class="activity-title">${activity.method} ${activity.path}</div>
-                        <div class="activity-meta">${timeAgo} · ${activity.status} · ${activity.responseTime}ms</div>
+                        <div class="activity-meta">${timeAgo} - ${activity.status} - ${activity.responseTime}ms</div>
                     </div>
                 </div>
             `;

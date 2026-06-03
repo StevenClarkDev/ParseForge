@@ -451,8 +451,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
     flex-shrink: 0;
+    position: relative;
 }
 
 .activity-icon.success {
@@ -461,10 +461,38 @@
     color: var(--cyber-green);
 }
 
+.activity-icon.success::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.8rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    margin-top: -0.15rem;
+}
+
 .activity-icon.error {
     background: rgba(255, 51, 102, 0.18);
     border: 1px solid rgba(255, 51, 102, 0.28);
     color: var(--danger);
+}
+
+.activity-icon.error::before,
+.activity-icon.error::after {
+    content: '';
+    position: absolute;
+    width: 1rem;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.activity-icon.error::before {
+    transform: rotate(45deg);
+}
+
+.activity-icon.error::after {
+    transform: rotate(-45deg);
 }
 
 .charts-grid {
