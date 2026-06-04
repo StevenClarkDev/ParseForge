@@ -80,7 +80,14 @@ app.use(express.static(publicDir, {
 }));
 
 app.use('/api/auth', createAuthRoutes({ jwtSecret, authMiddleware }));
-app.use('/api/dashboard', createDashboardRoutes({ optionalAuth, usageStats, getRecentActivity, ApiKey }));
+app.use('/api/dashboard', createDashboardRoutes({
+    authMiddleware,
+    usageStats,
+    getRecentActivity,
+    ApiKey,
+    CatalogPurchase,
+    ApiCatalogItem
+}));
 app.use('/api/keys', createKeyRoutes({ authMiddleware, ApiKey, createApiKeyValue, hashApiKey, maskKeyFromParts }));
 app.use('/api/users', createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHash, logActivity }));
 app.use('/api/data', createDataRoutes({ authMiddleware, logActivity }));

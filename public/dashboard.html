@@ -246,7 +246,50 @@
         </main>
     </div>
 
+    <div class="dashboard-modal" id="createKeyModal" hidden>
+        <div class="dashboard-modal-panel" role="dialog" aria-modal="true" aria-labelledby="createKeyTitle">
+            <button class="modal-close" type="button" id="closeCreateKeyModal" aria-label="Close create API key dialog">&times;</button>
+            <span class="dashboard-kicker">API Credential</span>
+            <h2 id="createKeyTitle">Create API key</h2>
+            <p class="modal-copy">Name the key for its environment so your team can recognize it later.</p>
+            <form id="createKeyForm" class="key-form">
+                <label for="keyName">Key name</label>
+                <input id="keyName" name="keyName" type="text" placeholder="Production app server" maxlength="80" required>
+
+                <label for="keyType">Environment</label>
+                <select id="keyType" name="keyType">
+                    <option value="test">Test key</option>
+                    <option value="production">Production key</option>
+                </select>
+
+                <div class="key-secret-box" id="createdKeyBox" hidden>
+                    <span>Copy this now. It will not be shown again.</span>
+                    <code id="createdKeyValue"></code>
+                    <button class="btn-secondary" type="button" id="copyCreatedKeyButton">Copy Key</button>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" type="button" id="cancelCreateKeyButton">Cancel</button>
+                    <button class="btn-primary" type="submit" id="createKeySubmit">Create Key</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="dashboard-modal" id="confirmRevokeModal" hidden>
+        <div class="dashboard-modal-panel compact" role="dialog" aria-modal="true" aria-labelledby="revokeKeyTitle">
+            <button class="modal-close" type="button" id="closeRevokeModal" aria-label="Close revoke API key dialog">&times;</button>
+            <span class="dashboard-kicker">Revoke Key</span>
+            <h2 id="revokeKeyTitle">Revoke this key?</h2>
+            <p class="modal-copy">This immediately disables the credential. Any integration using it will stop working.</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" type="button" id="cancelRevokeButton">Cancel</button>
+                <button class="btn-danger" type="button" id="confirmRevokeButton">Revoke Key</button>
+            </div>
+        </div>
+    </div>
+
     <script src="assets/js/session.js?v=20260406b"></script>
-    <script src="assets/js/dashboard.js?v=20260406b"></script>
+    <script src="assets/js/dashboard.js?v=20260604a"></script>
 </body>
 </html>

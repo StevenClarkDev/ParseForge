@@ -23,6 +23,17 @@ let dashboardData = {
     purchases: [],
     supportSession: null
 };
+let pendingRevokeKeyId = '';
+let pendingRevokeButton = null;
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 function toggleMenu() {
     const navLinks = document.querySelector('.nav-links');
@@ -154,11 +165,11 @@ async function loadDashboardData() {
             await Promise.all([
                 fetchJson(`${API_BASE}/api/auth/me`, { headers: getAuthHeaders() }),
                 fetchJson(`${API_BASE}/api/dashboard/stats`, { headers: getAuthHeaders() }),
-                fetchJson(`${API_BASE}/api/dashboard/usage?period=7`),
-                fetchJson(`${API_BASE}/api/dashboard/response-times`),
-                fetchJson(`${API_BASE}/api/dashboard/status-codes`),
-                fetchJson(`${API_BASE}/api/dashboard/endpoints`),
-                fetchJson(`${API_BASE}/api/dashboard/activity`),
+                fetchJson(`${API_BASE}/api/dashboard/usage?period=7`, { headers: getAuthHeaders() }),
+                fetchJson(`${API_BASE}/api/dashboard/response-times`, { headers: getAuthHeaders() }),
+                fetchJson(`${API_BASE}/api/dashboard/status-codes`, { headers: getAuthHeaders() }),
+                fetchJson(`${API_BASE}/api/dashboard/endpoints`, { headers: getAuthHeaders() }),
+                fetchJson(`${API_BASE}/api/dashboard/activity`, { headers: getAuthHeaders() }),
                 fetchJson(`${API_BASE}/api/keys`, { headers: getAuthHeaders() }),
                 fetchJson(`${API_BASE}/api/catalog/purchases`, { headers: getAuthHeaders() })
             ]);
@@ -403,30 +414,30 @@ function updatePurchases() {
                     <div class="purchase-card-top">
                         <div>
                             <span class="purchase-type">${formatPurchaseType(purchase.purchaseType)}</span>
-                            <h3>${purchase.product.name}</h3>
+                            <h3>${escapeHtml(purchase.product.name)}</h3>
                         </div>
-                        <span class="purchase-status">${purchase.status}</span>
+                    <span class="purchase-status">${escapeHtml(purchase.status)}</span>
                     </div>
-                    <p class="purchase-description">${purchase.product.description}</p>
+                    <p class="purchase-description">${escapeHtml(purchase.product.description)}</p>
                     <div class="purchase-meta">
-                        <span>${purchase.product.type.toUpperCase()}</span>
-                        <span>${purchase.product.language}</span>
+                        <span>${escapeHtml(purchase.product.type.toUpperCase())}</span>
+                        <span>${escapeHtml(purchase.product.language)}</span>
                         <span>${formatShortDate(purchase.createdAt)}</span>
                     </div>
                     <div class="purchase-features">
                         ${(purchase.product.features || [])
                             .slice(0, 3)
-                            .map((feature) => `<span>${feature}</span>`)
+                            .map((feature) => `<span>${escapeHtml(feature)}</span>`)
                             .join('')}
                     </div>
                     <div class="purchase-card-bottom">
                         <div class="purchase-pricing">
                             <strong>$${Number(purchase.unitPrice || 0).toFixed(2)}</strong>
-                            <span>${renewalLine}</span>
+                            <span>${escapeHtml(renewalLine)}</span>
                         </div>
                         <div class="purchase-actions">
                             <a href="${docsHref}" class="btn-secondary">Open Docs</a>
-                            <span class="purchase-order">${purchase.orderReference}</span>
+                            <span class="purchase-order">${escapeHtml(purchase.orderReference)}</span>
                         </div>
                     </div>
                 </article>
@@ -465,10 +476,10 @@ function updateAPIKeys() {
                 <div class="key-item" data-key-id="${key.id}">
                     <div class="key-info">
                         <div class="key-topline">
-                            <div class="key-name">${key.name}</div>
-                            <span class="key-type">${key.type}</span>
+                            <div class="key-name">${escapeHtml(key.name)}</div>
+                            <span class="key-type">${escapeHtml(key.type)}</span>
                         </div>
-                        <code class="key-value">${key.key}</code>
+                        <code class="key-value">${escapeHtml(key.key)}</code>
                         <div class="key-meta">
                             <span>Created ${created}</span>
                             <span>Last used ${lastUsed}</span>
@@ -500,13 +511,14 @@ function updateActivity() {
             const isSuccess = activity.status >= 200 && activity.status < 300;
             const iconClass = isSuccess ? 'success' : 'error';
             const timeAgo = getRelativeTime(new Date(activity.timestamp));
+            const detail = activity.detail ? ` - ${escapeHtml(activity.detail)}` : '';
 
             return `
                 <div class="activity-item">
                     <div class="activity-icon ${iconClass}" aria-hidden="true"></div>
                     <div class="activity-info">
-                        <div class="activity-title">${activity.method} ${activity.path}</div>
-                        <div class="activity-meta">${timeAgo} - ${activity.status} - ${activity.responseTime}ms</div>
+                        <div class="activity-title">${escapeHtml(activity.method)} ${escapeHtml(activity.path)}</div>
+                        <div class="activity-meta">${timeAgo} - ${escapeHtml(activity.status)}${detail}</div>
                     </div>
                 </div>
             `;
@@ -516,7 +528,17 @@ function updateActivity() {
 
 function updateEndpoints() {
     const endpointsList = document.getElementById('topEndpointsList');
-    if (!endpointsList || !dashboardData.endpoints.length) {
+    if (!endpointsList) {
+        return;
+    }
+
+    if (!dashboardData.endpoints.length) {
+        endpointsList.innerHTML = `
+            <div class="empty-state-card compact">
+                <h3>No API usage yet</h3>
+                <p>Purchased API subscriptions will show usage trends here after your team creates a key and starts integrating.</p>
+            </div>
+        `;
         return;
     }
 
@@ -528,8 +550,8 @@ function updateEndpoints() {
             return `
                 <div class="endpoint-item">
                     <div class="endpoint-info">
-                        <span class="endpoint-method ${endpoint.method.toLowerCase()}">${endpoint.method}</span>
-                        <span class="endpoint-path">${endpoint.path}</span>
+                        <span class="endpoint-method ${escapeHtml(endpoint.method.toLowerCase())}">${escapeHtml(endpoint.method)}</span>
+                        <span class="endpoint-path">${escapeHtml(endpoint.path)}</span>
                     </div>
                     <div class="endpoint-stat">
                         <span class="endpoint-count">${endpoint.count.toLocaleString()}</span>
@@ -549,7 +571,9 @@ function initializeEventListeners() {
     if (usagePeriod) {
         usagePeriod.addEventListener('change', async (event) => {
             try {
-                dashboardData.usage = await fetchJson(`${API_BASE}/api/dashboard/usage?period=${event.target.value}`);
+                dashboardData.usage = await fetchJson(`${API_BASE}/api/dashboard/usage?period=${event.target.value}`, {
+                    headers: getAuthHeaders()
+                });
                 updateUsageChart();
             } catch (error) {
                 showNotification(error.message || 'Failed to update chart', 'error');
@@ -565,6 +589,21 @@ function initializeEventListeners() {
 
         event.preventDefault();
         exitSupportSession();
+    });
+
+    document.getElementById('createKeyForm')?.addEventListener('submit', handleCreateKeySubmit);
+    document.getElementById('closeCreateKeyModal')?.addEventListener('click', hideCreateKeyModal);
+    document.getElementById('cancelCreateKeyButton')?.addEventListener('click', hideCreateKeyModal);
+    document.getElementById('copyCreatedKeyButton')?.addEventListener('click', copyCreatedKey);
+    document.getElementById('closeRevokeModal')?.addEventListener('click', hideRevokeModal);
+    document.getElementById('cancelRevokeButton')?.addEventListener('click', hideRevokeModal);
+    document.getElementById('confirmRevokeButton')?.addEventListener('click', confirmRevokeKey);
+    document.querySelectorAll('.dashboard-modal').forEach((modal) => {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.hidden = true;
+            }
+        });
     });
 }
 
@@ -782,16 +821,43 @@ function showCreateKeyModal() {
         return;
     }
 
-    const name = prompt('Enter API key name:');
-    if (!name) {
+    const modal = document.getElementById('createKeyModal');
+    const form = document.getElementById('createKeyForm');
+    const createdKeyBox = document.getElementById('createdKeyBox');
+
+    if (!modal || !form) {
         return;
     }
 
-    const type = confirm('Create production key? Click Cancel for a test key.') ? 'production' : 'test';
-    createAPIKey(name, type);
+    form.reset();
+    createdKeyBox.hidden = true;
+    document.getElementById('createdKeyValue').textContent = '';
+    modal.hidden = false;
+    setTimeout(() => document.getElementById('keyName')?.focus(), 50);
 }
 
-async function createAPIKey(name, type) {
+function hideCreateKeyModal() {
+    const modal = document.getElementById('createKeyModal');
+    if (modal) {
+        modal.hidden = true;
+    }
+}
+
+async function handleCreateKeySubmit(event) {
+    event.preventDefault();
+
+    const submitButton = document.getElementById('createKeySubmit');
+    const name = document.getElementById('keyName').value.trim();
+    const type = document.getElementById('keyType').value;
+
+    if (!name) {
+        showNotification('Enter a name for this API key', 'error');
+        return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Creating...';
+
     try {
         const newKey = await fetchJson(`${API_BASE}/api/keys`, {
             method: 'POST',
@@ -799,7 +865,8 @@ async function createAPIKey(name, type) {
             body: JSON.stringify({ name, type })
         });
 
-        alert(`API key created.\n\n${newKey.fullKey}\n\nCopy it now. It will only be shown once.`);
+        document.getElementById('createdKeyBox').hidden = false;
+        document.getElementById('createdKeyValue').textContent = newKey.fullKey;
 
         dashboardData.apiKeys = await fetchJson(`${API_BASE}/api/keys`, {
             headers: getAuthHeaders()
@@ -816,6 +883,9 @@ async function createAPIKey(name, type) {
     } catch (error) {
         console.error('Error creating API key:', error);
         showNotification(error.message || 'Failed to create API key', 'error');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Create Key';
     }
 }
 
@@ -825,9 +895,33 @@ async function revokeKey(keyId, button) {
         return;
     }
 
-    if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+    pendingRevokeKeyId = keyId;
+    pendingRevokeButton = button;
+    const modal = document.getElementById('confirmRevokeModal');
+    if (modal) {
+        modal.hidden = false;
+    }
+}
+
+function hideRevokeModal() {
+    const modal = document.getElementById('confirmRevokeModal');
+    if (modal) {
+        modal.hidden = true;
+    }
+    pendingRevokeKeyId = '';
+    pendingRevokeButton = null;
+}
+
+async function confirmRevokeKey() {
+    if (!pendingRevokeKeyId) {
         return;
     }
+
+    const keyId = pendingRevokeKeyId;
+    const button = pendingRevokeButton;
+    const confirmButton = document.getElementById('confirmRevokeButton');
+    confirmButton.disabled = true;
+    confirmButton.textContent = 'Revoking...';
 
     try {
         await fetchJson(`${API_BASE}/api/keys/${keyId}`, {
@@ -839,10 +933,26 @@ async function revokeKey(keyId, button) {
         updateStats();
         updateAPIKeys();
         showNotification('API key revoked successfully', 'success');
+        hideRevokeModal();
     } catch (error) {
         console.error('Error revoking API key:', error);
         showNotification(error.message || 'Failed to revoke API key', 'error');
+    } finally {
+        confirmButton.disabled = false;
+        confirmButton.textContent = 'Revoke Key';
     }
+}
+
+function copyCreatedKey() {
+    const keyValue = document.getElementById('createdKeyValue')?.textContent || '';
+    if (!keyValue) {
+        return;
+    }
+
+    navigator.clipboard
+        .writeText(keyValue)
+        .then(() => showNotification('API key copied', 'success'))
+        .catch(() => showNotification('Failed to copy key', 'error'));
 }
 
 function getRelativeTime(date) {
