@@ -34,7 +34,7 @@ const catalogPurchaseSchema = new mongoose.Schema(
         },
         paymentProvider: {
             type: String,
-            enum: ['stripe_simulated'],
+            enum: ['stripe_simulated', 'stripe'],
             default: 'stripe_simulated'
         },
         paymentMethodType: {

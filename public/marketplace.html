@@ -260,32 +260,13 @@
                         <div class="payment-methods">
                             <label class="payment-option">
                                 <input type="radio" name="payment" value="stripe_checkout" checked>
-                                <span>Stripe Checkout (Simulated)</span>
-                            </label>
-                            <label class="payment-option">
-                                <input type="radio" name="payment" value="stripe_card">
-                                <span>Stripe Card Entry (Simulated)</span>
+                                <span>Stripe Checkout (Sandbox)</span>
                             </label>
                         </div>
-                        <p class="payment-note">This environment uses simulated Stripe flows. No real card charge is processed.</p>
-
-                        <div class="card-details" id="cardDetails" style="display: none;">
-                            <div class="form-group">
-                                <label class="required">Card Number</label>
-                                <input type="text" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
-                            </div>
-                            <div class="form-group">
-                                <label class="required">Expiry Date</label>
-                                <input type="text" name="expiry" placeholder="MM/YY" maxlength="5">
-                            </div>
-                            <div class="form-group">
-                                <label class="required">CVV</label>
-                                <input type="text" name="cvv" placeholder="123" maxlength="4">
-                            </div>
-                        </div>
+                        <p class="payment-note">This environment uses Stripe test mode. Use Stripe sandbox card numbers only.</p>
 
                         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1.5rem;">
-                            Complete Simulated Payment
+                            Continue to Stripe Checkout
                         </button>
                     </form>
                 </div>
@@ -313,8 +294,8 @@
                     </p>
 
                     <div class="security-badges">
-                        <p>Simulated Stripe Checkout</p>
-                        <p style="font-size: 0.875rem; color: var(--text-muted);">Fast demo-safe checkout with no live charge created.</p>
+                        <p>Stripe Sandbox Checkout</p>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Test-mode checkout. No live charge is created while sandbox keys are active.</p>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Complete | ParseForge</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=20260603">
+    <link rel="stylesheet" href="assets/css/marketplace.css?v=20260604">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+
+    <main class="marketplace-section">
+        <div class="container">
+            <div class="empty-results" id="checkoutStatus">
+                <h3>Confirming Stripe checkout...</h3>
+                <p>Please wait while ParseForge verifies the sandbox payment and unlocks your purchases.</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="assets/js/main.js?v=20260603"></script>
+    <script>
+        const AUTH_TOKEN_KEY = 'parseforge_auth_token';
+        const CART_KEY = 'parseforge_cart_v2';
+        const statusPanel = document.getElementById('checkoutStatus');
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session_id');
+        const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
+
+        function renderStatus(title, message, actions = '') {
+            statusPanel.innerHTML = `
+                <h3>${title}</h3>
+                <p>${message}</p>
+                ${actions}
+            `;
+        }
+
+        async function confirmCheckout() {
+            if (!sessionId) {
+                renderStatus(
+                    'Checkout session missing',
+                    'Stripe did not return a checkout session id. Please return to the marketplace and try again.',
+                    '<a class="btn-primary" href="/marketplace.html">Back to Marketplace</a>'
+                );
+                return;
+            }
+
+            if (!token) {
+                window.location.href = `/login.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/catalog/checkout/complete?session_id=${encodeURIComponent(sessionId)}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const payload = await response.json().catch(() => ({}));
+
+                if (response.status === 401) {
+                    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+                    window.location.href = `/login.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(payload.error || 'Unable to confirm checkout.');
+                }
+
+                window.localStorage.removeItem(CART_KEY);
+                renderStatus(
+                    'Checkout complete',
+                    'Your Stripe sandbox payment was verified and the purchased documentation is now available in your dashboard.',
+                    '<a class="btn-primary" href="/dashboard.html">Open Buyer Dashboard</a> <a class="btn-secondary" href="/docs.html">Open Docs</a>'
+                );
+            } catch (error) {
+                renderStatus(
+                    'Checkout needs attention',
+                    error.message || 'Unable to confirm checkout.',
+                    '<a class="btn-primary" href="/marketplace.html">Back to Marketplace</a>'
+                );
+            }
+        }
+
+        confirmCheckout();
+    </script>
+</body>
+</html>

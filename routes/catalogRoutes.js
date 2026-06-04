@@ -1,5 +1,11 @@
 const express = require('express');
+const Stripe = require('stripe');
 const { serializeCatalogItem } = require('../utils/serializers');
+
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+const stripePublishableKey =
+    process.env.STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHING_KEY || '';
+const stripeClient = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 function addDays(date, dayCount) {
     const result = new Date(date);
@@ -29,6 +35,49 @@ function createStripeChargeId() {
 
 function createStripeClientSecret(paymentIntentId) {
     return `${paymentIntentId}_secret_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function getRequestBaseUrl(req) {
+    const configuredUrl = process.env.APP_URL || process.env.PUBLIC_SITE_URL || process.env.SITE_URL;
+    if (configuredUrl) {
+        return configuredUrl.replace(/\/+$/, '');
+    }
+
+    return `${req.protocol}://${req.get('host')}`;
+}
+
+function encodeCheckoutItems(checkoutItems) {
+    return checkoutItems
+        .map((item) => `${item.product._id.toString()}:${item.purchaseType}`)
+        .join('|');
+}
+
+function decodeCheckoutItems(value) {
+    return String(value || '')
+        .split('|')
+        .map((entry) => {
+            const [productId, purchaseType] = entry.split(':');
+            return { productId, purchaseType };
+        })
+        .filter((item) => item.productId && item.purchaseType);
+}
+
+function buildStripeLineItems(checkoutItems) {
+    return checkoutItems.map((item) => ({
+        quantity: 1,
+        price_data: {
+            currency: 'usd',
+            unit_amount: Math.round(Number(item.purchaseOption.price || 0) * 100),
+            product_data: {
+                name: item.product.name,
+                description: item.purchaseOption.label,
+                metadata: {
+                    productId: item.product._id.toString(),
+                    purchaseType: item.purchaseType
+                }
+            }
+        }
+    }));
 }
 
 function normalizePaymentMethodType(value) {
@@ -142,6 +191,110 @@ function summarizeCheckoutItems(checkoutItems) {
         (summary, item) => {
             summary.total += item.purchaseOption.price;
             if (item.purchaseType === 'monthly' || item.purchaseType === 'yearly') {
+                summary.subscriptions += 1;
+            } else {
+                summary.oneTimePurchases += 1;
+            }
+            return summary;
+        },
+        { total: 0, subscriptions: 0, oneTimePurchases: 0 },
+    );
+}
+
+async function processCheckoutPurchases({
+    userId,
+    checkoutItems,
+    CatalogPurchase,
+    paymentProvider,
+    paymentMethodType,
+    providerSessionId,
+    providerPaymentIntentId,
+    providerChargeId,
+    paymentDetails
+}) {
+    const existingSessionPurchases = await CatalogPurchase.find({
+        userId,
+        providerSessionId
+    });
+
+    if (providerSessionId && existingSessionPurchases.length) {
+        return existingSessionPurchases;
+    }
+
+    const processedPurchases = [];
+
+    for (const item of checkoutItems) {
+        const { product, purchaseType, purchaseOption } = item;
+
+        const existingOneTime = await CatalogPurchase.findOne({
+            userId,
+            catalogItemId: product._id,
+            purchaseType: 'one_time',
+            status: 'active'
+        });
+
+        if (purchaseType === 'one_time' && existingOneTime) {
+            processedPurchases.push(existingOneTime);
+            continue;
+        }
+
+        const activeSubscription = await CatalogPurchase.findOne({
+            userId,
+            catalogItemId: product._id,
+            purchaseType: { $in: ['monthly', 'yearly'] },
+            status: 'active'
+        });
+
+        const renewalDate =
+            purchaseType === 'monthly'
+                ? addDays(new Date(), 30)
+                : purchaseType === 'yearly'
+                  ? addDays(new Date(), 365)
+                  : null;
+
+        if ((purchaseType === 'monthly' || purchaseType === 'yearly') && activeSubscription) {
+            activeSubscription.purchaseType = purchaseType;
+            activeSubscription.unitPrice = purchaseOption.price;
+            activeSubscription.renewsAt = renewalDate;
+            activeSubscription.orderReference = createOrderReference();
+            activeSubscription.paymentProvider = paymentProvider;
+            activeSubscription.paymentMethodType = paymentMethodType;
+            activeSubscription.providerSessionId = providerSessionId;
+            activeSubscription.providerPaymentIntentId = providerPaymentIntentId;
+            activeSubscription.providerChargeId = providerChargeId;
+            activeSubscription.paymentDetails = paymentDetails;
+            await activeSubscription.save();
+            processedPurchases.push(activeSubscription);
+            continue;
+        }
+
+        const purchase = await CatalogPurchase.create({
+            userId,
+            catalogItemId: product._id,
+            purchaseType,
+            unitPrice: purchaseOption.price,
+            currency: 'USD',
+            paymentProvider,
+            paymentMethodType,
+            providerSessionId,
+            providerPaymentIntentId,
+            providerChargeId,
+            paymentDetails,
+            renewsAt: renewalDate,
+            orderReference: createOrderReference()
+        });
+
+        processedPurchases.push(purchase);
+    }
+
+    return processedPurchases;
+}
+
+function summarizeProcessedPurchases(processedPurchases) {
+    return processedPurchases.reduce(
+        (summary, purchase) => {
+            summary.total += purchase.unitPrice;
+            if (purchase.purchaseType === 'monthly' || purchase.purchaseType === 'yearly') {
                 summary.subscriptions += 1;
             } else {
                 summary.oneTimePurchases += 1;
@@ -305,6 +458,54 @@ function createCatalogRoutes({
 
             const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
             const summary = summarizeCheckoutItems(checkoutItems);
+
+            if (stripeClient && stripePublishableKey) {
+                const baseUrl = getRequestBaseUrl(req);
+                const session = await stripeClient.checkout.sessions.create({
+                    mode: 'payment',
+                    client_reference_id: req.user._id.toString(),
+                    customer_email: req.user.email,
+                    line_items: buildStripeLineItems(checkoutItems),
+                    success_url: `${baseUrl}/checkout-success.html?session_id={CHECKOUT_SESSION_ID}`,
+                    cancel_url: `${baseUrl}/marketplace.html?checkout=cancelled`,
+                    metadata: {
+                        userId: req.user._id.toString(),
+                        items: encodeCheckoutItems(checkoutItems),
+                        paymentMethodType
+                    },
+                    payment_intent_data: {
+                        metadata: {
+                            userId: req.user._id.toString(),
+                            items: encodeCheckoutItems(checkoutItems)
+                        }
+                    }
+                });
+
+                logActivity('POST', '/api/catalog/checkout/session', 201);
+
+                return res.status(201).json({
+                    success: true,
+                    provider: 'stripe',
+                    publishableKey: stripePublishableKey,
+                    session: {
+                        id: session.id,
+                        url: session.url,
+                        amount: summary.total,
+                        currency: 'USD',
+                        expiresAt: session.expires_at
+                            ? new Date(session.expires_at * 1000).toISOString()
+                            : null,
+                        lineItems: checkoutItems.map((item) => ({
+                            productId: item.product._id.toString(),
+                            name: item.product.name,
+                            purchaseType: item.purchaseType,
+                            label: item.purchaseOption.label,
+                            price: item.purchaseOption.price
+                        }))
+                    }
+                });
+            }
+
             const paymentIntentId = createStripePaymentIntentId();
             const sessionId = createStripeSessionId();
 
@@ -357,7 +558,6 @@ function createCatalogRoutes({
             }
 
             const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
-            const processedPurchases = [];
             const providerSessionId = String(req.body.sessionId || createStripeSessionId());
             const providerPaymentIntentId = String(
                 req.body.paymentIntentId || createStripePaymentIntentId(),
@@ -367,85 +567,18 @@ function createCatalogRoutes({
                 req.body.paymentDetails,
                 paymentMethodType,
             );
-
-            for (const item of checkoutItems) {
-                const { product, purchaseType, purchaseOption } = item;
-
-                const existingOneTime = await CatalogPurchase.findOne({
-                    userId: req.user._id,
-                    catalogItemId: product._id,
-                    purchaseType: 'one_time',
-                    status: 'active'
-                });
-
-                if (purchaseType === 'one_time' && existingOneTime) {
-                    processedPurchases.push(existingOneTime);
-                    continue;
-                }
-
-                const activeSubscription = await CatalogPurchase.findOne({
-                    userId: req.user._id,
-                    catalogItemId: product._id,
-                    purchaseType: { $in: ['monthly', 'yearly'] },
-                    status: 'active'
-                });
-
-                const renewalDate =
-                    purchaseType === 'monthly'
-                        ? addDays(new Date(), 30)
-                        : purchaseType === 'yearly'
-                          ? addDays(new Date(), 365)
-                          : null;
-
-                if (purchaseType === 'monthly' || purchaseType === 'yearly') {
-                    if (activeSubscription) {
-                        activeSubscription.purchaseType = purchaseType;
-                        activeSubscription.unitPrice = purchaseOption.price;
-                        activeSubscription.renewsAt = renewalDate;
-                        activeSubscription.orderReference = createOrderReference();
-                        activeSubscription.paymentProvider = paymentProvider;
-                        activeSubscription.paymentMethodType = paymentMethodType;
-                        activeSubscription.providerSessionId = providerSessionId;
-                        activeSubscription.providerPaymentIntentId = providerPaymentIntentId;
-                        activeSubscription.providerChargeId = providerChargeId;
-                        activeSubscription.paymentDetails = paymentDetails;
-                        await activeSubscription.save();
-                        processedPurchases.push(activeSubscription);
-                        continue;
-                    }
-                }
-
-                const purchase = await CatalogPurchase.create({
-                    userId: req.user._id,
-                    catalogItemId: product._id,
-                    purchaseType,
-                    unitPrice: purchaseOption.price,
-                    currency: 'USD',
-                    paymentProvider,
-                    paymentMethodType,
-                    providerSessionId,
-                    providerPaymentIntentId,
-                    providerChargeId,
-                    paymentDetails,
-                    renewsAt: renewalDate,
-                    orderReference: createOrderReference()
-                });
-
-                processedPurchases.push(purchase);
-            }
-
-            const checkoutSummary = processedPurchases.reduce(
-                (summary, purchase) => {
-                    summary.total += purchase.unitPrice;
-                    if (purchase.purchaseType === 'monthly' || purchase.purchaseType === 'yearly') {
-                        summary.subscriptions += 1;
-                    } else {
-                        summary.oneTimePurchases += 1;
-                    }
-                    return summary;
-                },
-                { total: 0, subscriptions: 0, oneTimePurchases: 0 },
-            );
+            const processedPurchases = await processCheckoutPurchases({
+                userId: req.user._id,
+                checkoutItems,
+                CatalogPurchase,
+                paymentProvider,
+                paymentMethodType,
+                providerSessionId,
+                providerPaymentIntentId,
+                providerChargeId,
+                paymentDetails
+            });
+            const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
 
             logActivity('POST', '/api/catalog/checkout', 201);
 
@@ -472,6 +605,97 @@ function createCatalogRoutes({
             return res
                 .status(error.statusCode || 500)
                 .json({ error: error.message || 'Unable to complete checkout' });
+        }
+    });
+
+    router.get('/checkout/complete', authMiddleware, async (req, res) => {
+        try {
+            if (!ensureWritablePurchaseSession(req, res)) {
+                return;
+            }
+
+            if (!stripeClient) {
+                return res.status(503).json({ error: 'Stripe checkout is not configured' });
+            }
+
+            const sessionId = String(req.query.session_id || '');
+            if (!sessionId) {
+                return res.status(400).json({ error: 'Stripe session id is required' });
+            }
+
+            const session = await stripeClient.checkout.sessions.retrieve(sessionId, {
+                expand: ['payment_intent']
+            });
+
+            if (session.client_reference_id !== req.user._id.toString()) {
+                return res.status(403).json({ error: 'This checkout session belongs to another account' });
+            }
+
+            if (session.payment_status !== 'paid') {
+                return res.status(402).json({ error: 'Stripe checkout has not been paid yet' });
+            }
+
+            const items = decodeCheckoutItems(session.metadata?.items);
+            if (!items.length) {
+                return res.status(400).json({ error: 'Stripe checkout session is missing cart metadata' });
+            }
+
+            const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
+            const paymentIntent =
+                typeof session.payment_intent === 'string'
+                    ? null
+                    : session.payment_intent;
+            const chargeId =
+                typeof paymentIntent?.latest_charge === 'string' ? paymentIntent.latest_charge : '';
+            const paymentDetails = buildPaymentDetailsSnapshot(
+                {
+                    billingName: session.customer_details?.name,
+                    billingEmail: session.customer_details?.email,
+                    country: session.customer_details?.address?.country,
+                    region: session.customer_details?.address?.state,
+                    postalCode: session.customer_details?.address?.postal_code
+                },
+                'stripe_checkout',
+            );
+
+            const processedPurchases = await processCheckoutPurchases({
+                userId: req.user._id,
+                checkoutItems,
+                CatalogPurchase,
+                paymentProvider: 'stripe',
+                paymentMethodType: 'stripe_checkout',
+                providerSessionId: session.id,
+                providerPaymentIntentId: paymentIntent?.id || '',
+                providerChargeId: chargeId,
+                paymentDetails
+            });
+            const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
+
+            logActivity('GET', '/api/catalog/checkout/complete', 200);
+
+            return res.json({
+                success: true,
+                summary: checkoutSummary,
+                payment: {
+                    provider: 'stripe',
+                    paymentMethodType: 'stripe_checkout',
+                    sessionId: session.id,
+                    paymentIntentId: paymentIntent?.id || '',
+                    chargeId,
+                    status: session.payment_status
+                },
+                purchases: processedPurchases.map((purchase) => ({
+                    id: purchase._id.toString(),
+                    orderReference: purchase.orderReference,
+                    purchaseType: purchase.purchaseType,
+                    unitPrice: purchase.unitPrice,
+                    renewsAt: purchase.renewsAt
+                }))
+            });
+        } catch (error) {
+            return res
+                .status(error.statusCode || 500)
+                .json({ error: error.message || 'Unable to confirm Stripe checkout' });
         }
     });
 

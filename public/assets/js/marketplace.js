@@ -933,7 +933,12 @@ async function handleCheckout(event) {
         }
 
         if (!sessionResponse.ok) {
-            throw new Error(sessionPayload.error || 'Unable to create the simulated Stripe session');
+            throw new Error(sessionPayload.error || 'Unable to create the Stripe checkout session');
+        }
+
+        if (sessionPayload.provider === 'stripe' && sessionPayload.session?.url) {
+            window.location.href = sessionPayload.session.url;
+            return;
         }
 
         if (submitButton) {
@@ -973,7 +978,7 @@ async function handleCheckout(event) {
         updateCartUI();
         renderProducts();
         closeCheckoutModal();
-        showNotification('Simulated Stripe payment completed successfully.', 'success');
+        showNotification('Stripe test payment completed successfully.', 'success');
         window.setTimeout(() => {
             window.location.href = '/dashboard.html';
         }, 1200);
@@ -982,7 +987,7 @@ async function handleCheckout(event) {
     } finally {
         if (submitButton) {
             submitButton.disabled = false;
-            submitButton.textContent = 'Complete Simulated Payment';
+            submitButton.textContent = 'Continue to Stripe Checkout';
         }
     }
 }
