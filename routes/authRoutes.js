@@ -95,6 +95,10 @@ function createAuthRoutes({ jwtSecret, authMiddleware }) {
                 return res.status(401).json({ error: 'Invalid email or password' });
             }
 
+            if (user.status !== 'active') {
+                return res.status(403).json({ error: 'This account is not active' });
+            }
+
             user.lastLoginAt = new Date();
             await user.save();
 
