@@ -4,19 +4,13 @@ function buildDateKey(date) {
     return date.toISOString().slice(0, 10);
 }
 
-function buildUsageSeries({ purchases, keys, days }) {
+function buildUsageSeries({ purchases, days }) {
     const today = new Date();
     const purchaseCounts = new Map();
-    const keyCounts = new Map();
 
     purchases.forEach((purchase) => {
         const key = buildDateKey(new Date(purchase.createdAt));
         purchaseCounts.set(key, (purchaseCounts.get(key) || 0) + 1);
-    });
-
-    keys.forEach((apiKey) => {
-        const key = buildDateKey(new Date(apiKey.createdAt));
-        keyCounts.set(key, (keyCounts.get(key) || 0) + 1);
     });
 
     const labels = [];
@@ -27,13 +21,13 @@ function buildUsageSeries({ purchases, keys, days }) {
         date.setDate(today.getDate() - index);
         const key = buildDateKey(date);
         labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        values.push((purchaseCounts.get(key) || 0) + (keyCounts.get(key) || 0));
+        values.push(purchaseCounts.get(key) || 0);
     }
 
     return { labels, values };
 }
 
-function createWorkspaceActivity({ purchases, keys, limit = 10 }) {
+function createWorkspaceActivity({ purchases, limit = 10 }) {
     const purchaseActivity = purchases.map((purchase) => ({
         id: `purchase_${purchase._id.toString()}`,
         method: 'BUY',
@@ -44,26 +38,13 @@ function createWorkspaceActivity({ purchases, keys, limit = 10 }) {
         detail: `${purchase.purchaseType === 'one_time' ? 'One-time license' : `${purchase.purchaseType} subscription`} ${purchase.orderReference}`
     }));
 
-    const keyActivity = keys.map((apiKey) => ({
-        id: `key_${apiKey._id.toString()}`,
-        method: 'KEY',
-        path: apiKey.name,
-        status: 201,
-        responseTime: 0,
-        timestamp: apiKey.createdAt,
-        detail: `${apiKey.type} key created`
-    }));
-
-    return [...purchaseActivity, ...keyActivity]
+    return purchaseActivity
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
         .slice(0, limit);
 }
 
-async function getWorkspaceSnapshot({ req, ApiKey, CatalogPurchase, ApiCatalogItem }) {
-    const [keys, purchases] = await Promise.all([
-        ApiKey.find({ userId: req.user._id }).sort({ createdAt: -1 }),
-        CatalogPurchase.find({ userId: req.user._id, status: 'active' }).sort({ createdAt: -1 })
-    ]);
+async function getWorkspaceSnapshot({ req, CatalogPurchase, ApiCatalogItem }) {
+    const purchases = await CatalogPurchase.find({ userId: req.user._id, status: 'active' }).sort({ createdAt: -1 });
 
     const products = purchases.length
         ? await ApiCatalogItem.find({ _id: { $in: purchases.map((purchase) => purchase.catalogItemId) } })
@@ -80,18 +61,17 @@ async function getWorkspaceSnapshot({ req, ApiKey, CatalogPurchase, ApiCatalogIt
         };
     });
 
-    return { keys, purchases: decoratedPurchases };
+    return { purchases: decoratedPurchases };
 }
 
-function createDashboardRoutes({ authMiddleware, usageStats, getRecentActivity, ApiKey, CatalogPurchase, ApiCatalogItem }) {
+function createDashboardRoutes({ authMiddleware, usageStats, getRecentActivity, CatalogPurchase, ApiCatalogItem }) {
     const router = express.Router();
 
     router.use(authMiddleware);
 
     router.get('/stats', async (req, res) => {
-        const { keys, purchases } = await getWorkspaceSnapshot({
+        const { purchases } = await getWorkspaceSnapshot({
             req,
-            ApiKey,
             CatalogPurchase,
             ApiCatalogItem
         });
@@ -99,16 +79,12 @@ function createDashboardRoutes({ authMiddleware, usageStats, getRecentActivity, 
             (purchase) => purchase.purchaseType === 'monthly' || purchase.purchaseType === 'yearly'
         ).length;
         const oneTimeLicenses = purchases.filter((purchase) => purchase.purchaseType === 'one_time').length;
-        const estimatedCalls = Math.max(0, keys.length * 250 + subscriptions * 1000);
 
         return res.json({
-            apiCalls: estimatedCalls,
-            activeKeys: keys.length,
             ownedProducts: purchases.length,
             subscriptions,
             oneTimeLicenses,
-            avgResponseTime: keys.length ? 86 : 0,
-            successRate: keys.length ? '100.0' : '0.0',
+            docsUnlocked: purchases.length,
             savedPaymentMethod: req.user.defaultStripePaymentMethodId
                 ? {
                     brand: req.user.savedPaymentMethod?.brand || '',
@@ -122,39 +98,33 @@ function createDashboardRoutes({ authMiddleware, usageStats, getRecentActivity, 
 
     router.get('/usage', async (req, res) => {
         const days = Number.parseInt(req.query.period, 10) || 7;
-        const { keys, purchases } = await getWorkspaceSnapshot({
+        const { purchases } = await getWorkspaceSnapshot({
             req,
-            ApiKey,
             CatalogPurchase,
             ApiCatalogItem
         });
-        return res.json(buildUsageSeries({ purchases, keys, days: Math.min(Math.max(days, 7), 90) }));
+        return res.json(buildUsageSeries({ purchases, days: Math.min(Math.max(days, 7), 90) }));
     });
 
-    router.get('/response-times', async (req, res) => {
-        const activeKeys = await ApiKey.countDocuments({ userId: req.user._id });
+    router.get('/response-times', (req, res) => {
         const data = usageStats.responseTimes.slice(0, 20).reverse();
 
         return res.json({
             labels: data.map((entry) => new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })),
-            values: activeKeys > 0 ? data.map((entry) => entry.time) : []
+            values: []
         });
     });
 
-    router.get('/status-codes', async (req, res) => {
-        const activeKeys = await ApiKey.countDocuments({ userId: req.user._id });
-        const activeRequests = activeKeys > 0;
-
+    router.get('/status-codes', (req, res) => {
         return res.json({
-            labels: ['Successful', 'Created', 'Client errors', 'Server errors', 'Other'],
-            values: activeRequests ? [96, 3, 1, 0, 0] : [0, 0, 0, 0, 0]
+            labels: ['Active purchases', 'Expired access', 'Pending access'],
+            values: [0, 0, 0]
         });
     });
 
     router.get('/endpoints', async (req, res) => {
         const { purchases } = await getWorkspaceSnapshot({
             req,
-            ApiKey,
             CatalogPurchase,
             ApiCatalogItem
         });
@@ -172,13 +142,12 @@ function createDashboardRoutes({ authMiddleware, usageStats, getRecentActivity, 
     });
 
     router.get('/activity', async (req, res) => {
-        const { keys, purchases } = await getWorkspaceSnapshot({
+        const { purchases } = await getWorkspaceSnapshot({
             req,
-            ApiKey,
             CatalogPurchase,
             ApiCatalogItem
         });
-        const workspaceActivity = createWorkspaceActivity({ purchases, keys, limit: 10 });
+        const workspaceActivity = createWorkspaceActivity({ purchases, limit: 10 });
         return res.json(workspaceActivity.length ? workspaceActivity : getRecentActivity(0));
     });
 

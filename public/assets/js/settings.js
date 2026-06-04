@@ -8,9 +8,8 @@ function normalizeSettingsSidebar() {
     const items = [
         { href: "dashboard.html#overview", code: "OV", label: "Overview" },
         { href: "dashboard.html#purchases", code: "BY", label: "Purchases" },
-        { href: "dashboard.html#api-keys", code: "KY", label: "API Keys" },
-        { href: "dashboard.html#analytics", code: "AN", label: "Analytics" },
-        { href: "dashboard.html#projects", code: "PR", label: "Projects" },
+        { href: "dashboard.html#documents", code: "DC", label: "Documents" },
+        { href: "dashboard.html#billing", code: "BL", label: "Billing" },
         { href: "settings.html", code: "ST", label: "Settings", active: true }
     ];
 

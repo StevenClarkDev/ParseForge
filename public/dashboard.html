@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="assets/css/dashboard.css?v=20260605b">
 </head>
 <body>
     <nav class="navbar">
@@ -55,14 +54,11 @@
                 <a href="#purchases" class="menu-item">
                     <span>BY</span> Purchases
                 </a>
-                <a href="#api-keys" class="menu-item">
-                    <span>KY</span> API Keys
+                <a href="#documents" class="menu-item">
+                    <span>DC</span> Documents
                 </a>
-                <a href="#analytics" class="menu-item">
-                    <span>AN</span> Analytics
-                </a>
-                <a href="#projects" class="menu-item">
-                    <span>PR</span> Projects
+                <a href="#billing" class="menu-item">
+                    <span>BL</span> Billing
                 </a>
                 <a href="settings.html" class="menu-item">
                     <span>ST</span> Settings
@@ -71,28 +67,16 @@
         </aside>
 
         <main class="dashboard-content">
-            <section class="support-session-banner" id="supportSessionBanner" hidden>
-                <div class="support-session-copy">
-                    <span class="dashboard-kicker">Support Session</span>
-                    <h2 id="supportSessionTitle">Read-only customer view active</h2>
-                    <p id="supportSessionMessage">You are viewing this workspace for support. Purchases and key changes are disabled.</p>
-                </div>
-                <div class="support-session-actions">
-                    <a href="admin.html" class="btn-secondary" id="supportReturnLink">Return to Admin</a>
-                    <button class="btn-primary" type="button" id="endSupportSessionButton">Exit Support Session</button>
-                </div>
-            </section>
-
             <section id="overview">
                 <div class="dashboard-header">
                     <div class="dashboard-header-copy">
                         <span class="dashboard-kicker">Buyer Workspace</span>
                         <h1 id="dashboardWelcome">Welcome back.</h1>
-                        <p id="dashboardSubtitle">Your ParseForge purchases, subscriptions, and keys live here.</p>
+                        <p id="dashboardSubtitle">Your purchased APIs, SDK licenses, documentation access, and billing status live here.</p>
                     </div>
                     <div class="dashboard-header-actions">
                         <a href="marketplace.html" class="btn-primary">Browse Marketplace</a>
-                        <button class="btn-secondary" type="button" onclick="showCreateKeyModal()" data-key-action>Create API Key</button>
+                        <a href="docs.html" class="btn-secondary">Open Documentation</a>
                     </div>
                 </div>
 
@@ -107,7 +91,7 @@
                     </div>
                     <div class="summary-banner-item">
                         <span class="summary-label">Next move</span>
-                        <strong id="summaryNextLine">Create a key or buy your first product.</strong>
+                        <strong id="summaryNextLine">Open your purchased documentation or browse more products.</strong>
                     </div>
                 </div>
 
@@ -121,27 +105,27 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">SB</div>
-                        <div class="stat-info">
-                            <h3>Subscriptions</h3>
-                            <p class="stat-value" id="subscriptionsValue">0</p>
-                            <span class="stat-change" id="subscriptionsMeta">Monthly or yearly plans</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">KY</div>
-                        <div class="stat-info">
-                            <h3>Active Keys</h3>
-                            <p class="stat-value" id="activeKeysValue">0</p>
-                            <span class="stat-change" id="activeKeysMeta">Create and manage credentials</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-icon">AP</div>
                         <div class="stat-info">
-                            <h3>API Calls</h3>
-                            <p class="stat-value" id="apiCallsValue">0</p>
-                            <span class="stat-change positive" id="apiCallsMeta">Usage across your workspace</span>
+                            <h3>API Subscriptions</h3>
+                            <p class="stat-value" id="subscriptionsValue">0</p>
+                            <span class="stat-change" id="subscriptionsMeta">Monthly or yearly API access</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">SK</div>
+                        <div class="stat-info">
+                            <h3>SDK Licenses</h3>
+                            <p class="stat-value" id="sdkLicensesValue">0</p>
+                            <span class="stat-change" id="sdkLicensesMeta">One-time SDK ownership</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">DC</div>
+                        <div class="stat-info">
+                            <h3>Docs Unlocked</h3>
+                            <p class="stat-value" id="docsUnlockedValue">0</p>
+                            <span class="stat-change positive" id="docsUnlockedMeta">Documentation is purchase-gated</span>
                         </div>
                     </div>
                 </div>
@@ -153,63 +137,27 @@
                     <a href="marketplace.html" class="view-all">Shop more products</a>
                 </div>
                 <div class="purchases-grid" id="purchasesList">
-                    <p class="empty-state">Your purchased products and subscriptions will appear here.</p>
+                    <p class="empty-state">Your purchased APIs and SDKs will appear here.</p>
                 </div>
             </section>
 
-            <section id="api-keys" class="dashboard-section">
+            <section id="documents" class="dashboard-section">
                 <div class="section-header">
-                    <h2>API Keys</h2>
-                    <button class="btn-primary" type="button" onclick="showCreateKeyModal()" data-key-action>Create New Key</button>
+                    <h2>Unlocked Documentation</h2>
+                    <a href="docs.html" class="view-all">Open docs library</a>
                 </div>
-                <div class="keys-list" id="keysList">
-                    <p class="empty-state">No API keys yet. Create your first key to start integrating.</p>
+                <div class="documents-grid" id="documentsList">
+                    <p class="empty-state">Documentation unlocks after purchase.</p>
                 </div>
             </section>
 
-            <section id="analytics" class="dashboard-section">
+            <section id="billing" class="dashboard-section">
                 <div class="section-header">
-                    <h2>Usage & Performance</h2>
-                    <a href="docs.html" class="view-all">Read docs</a>
+                    <h2>Billing Overview</h2>
+                    <a href="settings.html" class="view-all">Account settings</a>
                 </div>
-
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>API Usage</h3>
-                            <select id="usagePeriod" class="chart-select">
-                                <option value="7">Last 7 Days</option>
-                                <option value="30">Last 30 Days</option>
-                                <option value="90">Last 90 Days</option>
-                            </select>
-                        </div>
-                        <canvas id="usageChart" style="max-height: 300px;"></canvas>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Response Time</h3>
-                            <span class="chart-badge">Live Trend</span>
-                        </div>
-                        <canvas id="responseChart" style="max-height: 300px;"></canvas>
-                    </div>
-                </div>
-
-                <div class="charts-grid charts-grid-bottom">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Status Code Distribution</h3>
-                        </div>
-                        <canvas id="statusChart" style="max-height: 280px;"></canvas>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Top Endpoints</h3>
-                            <span class="chart-badge muted">Workspace snapshot</span>
-                        </div>
-                        <div class="endpoints-list" id="topEndpointsList"></div>
-                    </div>
+                <div class="billing-summary-grid" id="billingSummaryList">
+                    <p class="empty-state">Billing details will appear after checkout.</p>
                 </div>
             </section>
 
@@ -219,77 +167,10 @@
                 </div>
                 <div class="activity-list" id="recentActivityList"></div>
             </section>
-
-            <section id="projects" class="dashboard-section">
-                <div class="section-header">
-                    <h2>Launch Checklist</h2>
-                    <a href="marketplace.html" class="view-all">Return to marketplace</a>
-                </div>
-                <div class="projects-grid">
-                    <article class="project-card">
-                        <span class="project-chip">Step 1</span>
-                        <h3>Confirm what your team owns</h3>
-                        <p>Use the purchases section to verify which SDK licenses and API subscriptions are active in this workspace.</p>
-                    </article>
-                    <article class="project-card">
-                        <span class="project-chip">Step 2</span>
-                        <h3>Create environment-ready keys</h3>
-                        <p>Generate test and production keys for the products your team is integrating right now.</p>
-                    </article>
-                    <article class="project-card">
-                        <span class="project-chip">Step 3</span>
-                        <h3>Ship from docs to deployment</h3>
-                        <p>Jump back to documentation or the marketplace when you need another SDK or a managed API dependency.</p>
-                    </article>
-                </div>
-            </section>
         </main>
     </div>
 
-    <div class="dashboard-modal" id="createKeyModal" hidden>
-        <div class="dashboard-modal-panel" role="dialog" aria-modal="true" aria-labelledby="createKeyTitle">
-            <button class="modal-close" type="button" id="closeCreateKeyModal" aria-label="Close create API key dialog">&times;</button>
-            <span class="dashboard-kicker">API Credential</span>
-            <h2 id="createKeyTitle">Create API key</h2>
-            <p class="modal-copy">Name the key for its environment so your team can recognize it later.</p>
-            <form id="createKeyForm" class="key-form">
-                <label for="keyName">Key name</label>
-                <input id="keyName" name="keyName" type="text" placeholder="Production app server" maxlength="80" required>
-
-                <label for="keyType">Environment</label>
-                <select id="keyType" name="keyType">
-                    <option value="test">Test key</option>
-                    <option value="production">Production key</option>
-                </select>
-
-                <div class="key-secret-box" id="createdKeyBox" hidden>
-                    <span>Copy this now. It will not be shown again.</span>
-                    <code id="createdKeyValue"></code>
-                    <button class="btn-secondary" type="button" id="copyCreatedKeyButton">Copy Key</button>
-                </div>
-
-                <div class="modal-actions">
-                    <button class="btn-secondary" type="button" id="cancelCreateKeyButton">Cancel</button>
-                    <button class="btn-primary" type="submit" id="createKeySubmit">Create Key</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="dashboard-modal" id="confirmRevokeModal" hidden>
-        <div class="dashboard-modal-panel compact" role="dialog" aria-modal="true" aria-labelledby="revokeKeyTitle">
-            <button class="modal-close" type="button" id="closeRevokeModal" aria-label="Close revoke API key dialog">&times;</button>
-            <span class="dashboard-kicker">Revoke Key</span>
-            <h2 id="revokeKeyTitle">Revoke this key?</h2>
-            <p class="modal-copy">This immediately disables the credential. Any integration using it will stop working.</p>
-            <div class="modal-actions">
-                <button class="btn-secondary" type="button" id="cancelRevokeButton">Cancel</button>
-                <button class="btn-danger" type="button" id="confirmRevokeButton">Revoke Key</button>
-            </div>
-        </div>
-    </div>
-
     <script src="assets/js/session.js?v=20260406b"></script>
-    <script src="assets/js/dashboard.js?v=20260604a"></script>
+    <script src="assets/js/dashboard.js?v=20260605b"></script>
 </body>
 </html>

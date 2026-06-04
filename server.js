@@ -84,7 +84,6 @@ app.use('/api/dashboard', createDashboardRoutes({
     authMiddleware,
     usageStats,
     getRecentActivity,
-    ApiKey,
     CatalogPurchase,
     ApiCatalogItem
 }));
