@@ -1,3 +1,32 @@
+function normalizeSettingsSidebar() {
+    const sidebarMenu = document.querySelector(".dashboard-sidebar .sidebar-menu");
+
+    if (!sidebarMenu) {
+        return;
+    }
+
+    const items = [
+        { href: "dashboard.html#overview", code: "OV", label: "Overview" },
+        { href: "dashboard.html#purchases", code: "BY", label: "Purchases" },
+        { href: "dashboard.html#api-keys", code: "KY", label: "API Keys" },
+        { href: "dashboard.html#analytics", code: "AN", label: "Analytics" },
+        { href: "dashboard.html#projects", code: "PR", label: "Projects" },
+        { href: "settings.html", code: "ST", label: "Settings", active: true }
+    ];
+
+    sidebarMenu.innerHTML = items
+        .map(
+            (item) => `
+                <a href="${item.href}" class="menu-item${item.active ? " active" : ""}">
+                    <span>${item.code}</span> ${item.label}
+                </a>
+            `
+        )
+        .join("");
+}
+
+document.addEventListener("DOMContentLoaded", normalizeSettingsSidebar);
+
 function showTab(button, tabName) {
     document.querySelectorAll(".tab-panel").forEach((panel) => {
         panel.classList.remove("active");

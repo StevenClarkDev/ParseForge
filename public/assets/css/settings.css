@@ -1,5 +1,5 @@
 .settings-content {
-            max-width: 900px;
+            max-width: none;
         }
 
         .settings-tabs {
@@ -232,7 +232,7 @@
         }
 
         .subscription-card {
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.2) 0%, rgba(29, 233, 182, 0.2) 100%);
+            background: rgba(17, 24, 49, 0.96);
             border: 1px solid var(--border-neon);
             color: var(--text-primary);
             padding: 2rem;
@@ -242,21 +242,10 @@
             overflow: hidden;
         }
 
-        .subscription-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 50% 50%, rgba(0, 217, 255, 0.1) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
         .subscription-card h3 {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
-            color: var(--neon-blue);
+            color: var(--text-primary);
             position: relative;
             z-index: 1;
         }
@@ -282,6 +271,44 @@
             align-items: center;
             gap: 0.5rem;
             color: var(--text-secondary);
+        }
+
+        .subscription-feature::before {
+            content: '';
+            width: 0.45rem;
+            height: 0.75rem;
+            border-right: 2px solid var(--cyber-green);
+            border-bottom: 2px solid var(--cyber-green);
+            transform: rotate(45deg);
+            flex-shrink: 0;
+            margin-top: -0.15rem;
+        }
+
+        .subscription-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subscription-actions .btn-primary,
+        .subscription-actions .btn-secondary {
+            min-height: 48px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .subscription-actions .btn-primary {
+            background: linear-gradient(135deg, var(--electric-blue), var(--neon-blue));
+            color: var(--text-primary);
+        }
+
+        .subscription-actions .btn-secondary {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-neon);
+            color: var(--neon-blue);
         }
 
         .billing-history table {
