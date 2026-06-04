@@ -958,44 +958,7 @@ async function handleCheckout(event) {
             return;
         }
 
-        if (submitButton) {
-            submitButton.textContent = 'Confirming simulated payment...';
-        }
-
-        const response = await fetch(`${API_BASE}/api/catalog/checkout`, {
-            method: 'POST',
-            headers: getAuthHeaders(true),
-            body: JSON.stringify({
-                items,
-                paymentProvider: 'stripe_simulated',
-                paymentMethodType,
-                sessionId: sessionPayload.session?.id,
-                paymentIntentId: sessionPayload.session?.paymentIntentId,
-                paymentDetails
-            })
-        });
-
-        const payload = await response.json().catch(() => ({}));
-
-        if (response.status === 401) {
-            window.localStorage.removeItem(AUTH_TOKEN_KEY);
-            window.location.href = '/login.html?next=/marketplace.html';
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error(payload.error || 'Checkout failed');
-        }
-
-        selectedCheckoutItem = null;
-        await fetchCatalog();
-        renderCollections();
-        renderProducts();
-        closeCheckoutModal();
-        showNotification('Stripe test payment completed successfully.', 'success');
-        window.setTimeout(() => {
-            window.location.href = '/dashboard.html';
-        }, 1200);
+        throw new Error('Stripe checkout did not return a payment URL. Please try again.');
     } catch (error) {
         showNotification(error.message || 'Checkout failed.', 'error');
     } finally {

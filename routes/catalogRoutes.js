@@ -68,6 +68,13 @@ function buildStripeLineItems(checkoutItems) {
         price_data: {
             currency: 'usd',
             unit_amount: Math.round(Number(item.purchaseOption.price || 0) * 100),
+            ...(item.purchaseType === 'monthly' || item.purchaseType === 'yearly'
+                ? {
+                    recurring: {
+                        interval: item.purchaseType === 'monthly' ? 'month' : 'year'
+                    }
+                }
+                : {}),
             product_data: {
                 name: item.product.name,
                 description: item.purchaseOption.label,
@@ -78,6 +85,34 @@ function buildStripeLineItems(checkoutItems) {
             }
         }
     }));
+}
+
+function getStripeCheckoutMode(checkoutItems) {
+    const hasRecurring = checkoutItems.some(
+        (item) => item.purchaseType === 'monthly' || item.purchaseType === 'yearly'
+    );
+    const hasOneTime = checkoutItems.some((item) => item.purchaseType === 'one_time');
+
+    if (hasRecurring && hasOneTime) {
+        const error = new Error('Purchase recurring API access and one-time SDK licenses separately');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return hasRecurring ? 'subscription' : 'payment';
+}
+
+function getSessionPaymentIntent(session) {
+    if (session.payment_intent && typeof session.payment_intent !== 'string') {
+        return session.payment_intent;
+    }
+
+    const latestInvoice = session.subscription?.latest_invoice;
+    if (latestInvoice?.payment_intent && typeof latestInvoice.payment_intent !== 'string') {
+        return latestInvoice.payment_intent;
+    }
+
+    return null;
 }
 
 async function ensureStripeCustomerForCheckout({ user, account }) {
@@ -572,6 +607,7 @@ function createCatalogRoutes({
             const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
             const summary = summarizeCheckoutItems(checkoutItems);
             const existingUser = await User.findOne({ email: account.email });
+            const stripeMode = getStripeCheckoutMode(checkoutItems);
 
             if (existingUser && !verifyPassword(account.password, existingUser.passwordHash)) {
                 return res.status(409).json({
@@ -605,8 +641,8 @@ function createCatalogRoutes({
                     },
                     expiresAt: addDays(new Date(), 1)
                 });
-                const session = await stripeClient.checkout.sessions.create({
-                    mode: 'payment',
+                const sessionConfig = {
+                    mode: stripeMode,
                     client_reference_id: pendingCheckout._id.toString(),
                     customer: stripeCustomerId,
                     line_items: buildStripeLineItems(checkoutItems),
@@ -616,15 +652,27 @@ function createCatalogRoutes({
                         pendingCheckoutId: pendingCheckout._id.toString(),
                         items: encodeCheckoutItems(checkoutItems),
                         paymentMethodType
-                    },
-                    payment_intent_data: {
+                    }
+                };
+
+                if (stripeMode === 'payment') {
+                    sessionConfig.payment_intent_data = {
                         setup_future_usage: 'off_session',
                         metadata: {
                             pendingCheckoutId: pendingCheckout._id.toString(),
                             items: encodeCheckoutItems(checkoutItems)
                         }
-                    }
-                });
+                    };
+                } else {
+                    sessionConfig.subscription_data = {
+                        metadata: {
+                            pendingCheckoutId: pendingCheckout._id.toString(),
+                            items: encodeCheckoutItems(checkoutItems)
+                        }
+                    };
+                }
+
+                const session = await stripeClient.checkout.sessions.create(sessionConfig);
                 pendingCheckout.stripeSessionId = session.id;
                 await pendingCheckout.save();
 
@@ -653,32 +701,7 @@ function createCatalogRoutes({
                 });
             }
 
-            const paymentIntentId = createStripePaymentIntentId();
-            const sessionId = createStripeSessionId();
-
-            logActivity('POST', '/api/catalog/checkout/session', 201);
-
-            return res.status(201).json({
-                success: true,
-                provider: 'stripe_simulated',
-                publishableKey: 'pk_test_parseforge_simulated',
-                session: {
-                    id: sessionId,
-                    paymentIntentId,
-                    clientSecret: createStripeClientSecret(paymentIntentId),
-                    paymentMethodType,
-                    amount: summary.total,
-                    currency: 'USD',
-                    expiresAt: addDays(new Date(), 1),
-                    lineItems: checkoutItems.map((item) => ({
-                        productId: item.product._id.toString(),
-                        name: item.product.name,
-                        purchaseType: item.purchaseType,
-                        label: item.purchaseOption.label,
-                        price: item.purchaseOption.price
-                    }))
-                }
-            });
+            return res.status(503).json({ error: 'Stripe live checkout is not configured' });
         } catch (error) {
             return res
                 .status(error.statusCode || 500)
@@ -687,72 +710,7 @@ function createCatalogRoutes({
     });
 
     router.post('/checkout', authMiddleware, async (req, res) => {
-        try {
-            if (!ensureWritablePurchaseSession(req, res)) {
-                return;
-            }
-
-            const items = Array.isArray(req.body.items) ? req.body.items : [];
-            const paymentProvider = String(req.body.paymentProvider || 'stripe_simulated');
-            const paymentMethodType = normalizePaymentMethodType(req.body.paymentMethodType);
-
-            if (paymentProvider !== 'stripe_simulated') {
-                return res.status(400).json({ error: 'Only simulated Stripe checkout is supported' });
-            }
-
-            if (!items.length) {
-                return res.status(400).json({ error: 'At least one catalog item is required' });
-            }
-
-            const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
-            const providerSessionId = String(req.body.sessionId || createStripeSessionId());
-            const providerPaymentIntentId = String(
-                req.body.paymentIntentId || createStripePaymentIntentId(),
-            );
-            const providerChargeId = createStripeChargeId();
-            const paymentDetails = buildPaymentDetailsSnapshot(
-                req.body.paymentDetails,
-                paymentMethodType,
-            );
-            const processedPurchases = await processCheckoutPurchases({
-                userId: req.user._id,
-                checkoutItems,
-                CatalogPurchase,
-                paymentProvider,
-                paymentMethodType,
-                providerSessionId,
-                providerPaymentIntentId,
-                providerChargeId,
-                paymentDetails
-            });
-            const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
-
-            logActivity('POST', '/api/catalog/checkout', 201);
-
-            return res.status(201).json({
-                success: true,
-                summary: checkoutSummary,
-                payment: {
-                    provider: paymentProvider,
-                    paymentMethodType,
-                    sessionId: providerSessionId,
-                    paymentIntentId: providerPaymentIntentId,
-                    chargeId: providerChargeId,
-                    status: 'succeeded'
-                },
-                purchases: processedPurchases.map((purchase) => ({
-                    id: purchase._id.toString(),
-                    orderReference: purchase.orderReference,
-                    purchaseType: purchase.purchaseType,
-                    unitPrice: purchase.unitPrice,
-                    renewsAt: purchase.renewsAt
-                }))
-            });
-        } catch (error) {
-            return res
-                .status(error.statusCode || 500)
-                .json({ error: error.message || 'Unable to complete checkout' });
-        }
+        return res.status(410).json({ error: 'Legacy direct checkout is disabled. Use Stripe Checkout.' });
     });
 
     router.post('/checkout/saved-payment', authMiddleware, async (req, res) => {
@@ -865,7 +823,7 @@ function createCatalogRoutes({
             }
 
             const session = await stripeClient.checkout.sessions.retrieve(sessionId, {
-                expand: ['payment_intent']
+                expand: ['payment_intent', 'subscription.latest_invoice.payment_intent']
             });
 
             if (session.payment_status !== 'paid') {
@@ -908,10 +866,7 @@ function createCatalogRoutes({
                 await buyer.save();
             }
 
-            const paymentIntent =
-                typeof session.payment_intent === 'string'
-                    ? null
-                    : session.payment_intent;
+            const paymentIntent = getSessionPaymentIntent(session);
             const paymentMethodId =
                 typeof paymentIntent?.payment_method === 'string' ? paymentIntent.payment_method : '';
             const stripeCustomerId =

@@ -14,7 +14,7 @@
         <div class="container">
             <div class="empty-results" id="checkoutStatus">
                 <h3>Confirming Stripe checkout...</h3>
-                <p>Please wait while ParseForge verifies the sandbox payment and unlocks your purchases.</p>
+                <p>Please wait while ParseForge verifies the payment and unlocks your purchases.</p>
             </div>
         </div>
     </main>
@@ -58,7 +58,7 @@
 
                 renderStatus(
                     'Checkout complete',
-                    'Your Stripe sandbox payment was verified, your account is ready, and the purchased documentation is now available.',
+                    'Your Stripe payment was verified, your account is ready, and the purchased documentation is now available.',
                     '<a class="btn-primary" href="/dashboard.html">Open Buyer Dashboard</a> <a class="btn-secondary" href="/docs.html">Open Docs</a>'
                 );
             } catch (error) {
