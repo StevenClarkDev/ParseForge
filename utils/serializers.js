@@ -13,7 +13,16 @@ function sanitizeUser(user, options = {}) {
         status: user.status,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-        lastLoginAt: user.lastLoginAt
+        lastLoginAt: user.lastLoginAt,
+        savedPaymentMethod: user.defaultStripePaymentMethodId
+            ? {
+                brand: user.savedPaymentMethod?.brand || '',
+                last4: user.savedPaymentMethod?.last4 || '',
+                expMonth: user.savedPaymentMethod?.expMonth || '',
+                expYear: user.savedPaymentMethod?.expYear || '',
+                updatedAt: user.savedPaymentMethod?.updatedAt || null
+            }
+            : null
     };
 
     if (options.supportSession?.active) {

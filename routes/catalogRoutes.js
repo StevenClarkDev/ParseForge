@@ -80,6 +80,63 @@ function buildStripeLineItems(checkoutItems) {
     }));
 }
 
+async function ensureStripeCustomerForCheckout({ user, account }) {
+    if (!stripeClient) {
+        return '';
+    }
+
+    if (user?.stripeCustomerId) {
+        return user.stripeCustomerId;
+    }
+
+    const customer = await stripeClient.customers.create({
+        email: account.email,
+        name: account.fullName,
+        metadata: user
+            ? { userId: user._id.toString() }
+            : { pendingEmail: account.email }
+    });
+
+    if (user) {
+        user.stripeCustomerId = customer.id;
+        await user.save();
+    }
+
+    return customer.id;
+}
+
+async function saveDefaultPaymentMethodFromStripe({ user, stripeCustomerId, paymentMethodId }) {
+    if (!user || !stripeClient || !stripeCustomerId || !paymentMethodId) {
+        return;
+    }
+
+    const paymentMethod = await stripeClient.paymentMethods.retrieve(paymentMethodId);
+    user.stripeCustomerId = stripeCustomerId;
+    user.defaultStripePaymentMethodId = paymentMethod.id;
+    user.savedPaymentMethod = {
+        brand: paymentMethod.card?.brand || '',
+        last4: paymentMethod.card?.last4 || '',
+        expMonth: paymentMethod.card?.exp_month ? String(paymentMethod.card.exp_month).padStart(2, '0') : '',
+        expYear: paymentMethod.card?.exp_year ? String(paymentMethod.card.exp_year) : '',
+        updatedAt: new Date()
+    };
+    user.paymentMethodConsentAt = user.paymentMethodConsentAt || new Date();
+    await user.save();
+}
+
+function getSavedPaymentMethodSummary(user) {
+    if (!user?.defaultStripePaymentMethodId) {
+        return null;
+    }
+
+    return {
+        brand: user.savedPaymentMethod?.brand || '',
+        last4: user.savedPaymentMethod?.last4 || '',
+        expMonth: user.savedPaymentMethod?.expMonth || '',
+        expYear: user.savedPaymentMethod?.expYear || ''
+    };
+}
+
 function normalizePaymentMethodType(value) {
     return value === 'stripe_card' ? 'stripe_card' : 'stripe_checkout';
 }
@@ -120,6 +177,12 @@ function normalizeCheckoutAccount(source = {}) {
 
     if (password.length < 8) {
         const error = new Error('Password must be at least 8 characters long');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (source.savePaymentConsent !== true) {
+        const error = new Error('Authorize saved payment method use to continue');
         error.statusCode = 400;
         throw error;
     }
@@ -518,6 +581,10 @@ function createCatalogRoutes({
 
             if (stripeClient && stripePublishableKey) {
                 const baseUrl = getRequestBaseUrl(req);
+                const stripeCustomerId = await ensureStripeCustomerForCheckout({
+                    user: existingUser,
+                    account
+                });
                 const pendingCheckout = await PendingCheckout.create({
                     email: account.email,
                     passwordHash: existingUser ? '' : createPasswordHash(account.password),
@@ -525,6 +592,7 @@ function createCatalogRoutes({
                     lastName: account.lastName,
                     company: account.company,
                     userId: existingUser?._id || null,
+                    stripeCustomerId,
                     items: checkoutItems.map((item) => ({
                         productId: item.product._id,
                         purchaseType: item.purchaseType
@@ -540,7 +608,7 @@ function createCatalogRoutes({
                 const session = await stripeClient.checkout.sessions.create({
                     mode: 'payment',
                     client_reference_id: pendingCheckout._id.toString(),
-                    customer_email: account.email,
+                    customer: stripeCustomerId,
                     line_items: buildStripeLineItems(checkoutItems),
                     success_url: `${baseUrl}/checkout-success.html?session_id={CHECKOUT_SESSION_ID}`,
                     cancel_url: `${baseUrl}/marketplace.html?checkout=cancelled`,
@@ -550,6 +618,7 @@ function createCatalogRoutes({
                         paymentMethodType
                     },
                     payment_intent_data: {
+                        setup_future_usage: 'off_session',
                         metadata: {
                             pendingCheckoutId: pendingCheckout._id.toString(),
                             items: encodeCheckoutItems(checkoutItems)
@@ -686,6 +755,104 @@ function createCatalogRoutes({
         }
     });
 
+    router.post('/checkout/saved-payment', authMiddleware, async (req, res) => {
+        try {
+            if (!ensureWritablePurchaseSession(req, res)) {
+                return;
+            }
+
+            if (!stripeClient) {
+                return res.status(503).json({ error: 'Stripe checkout is not configured' });
+            }
+
+            if (!req.user.stripeCustomerId || !req.user.defaultStripePaymentMethodId) {
+                return res.status(409).json({
+                    error: 'No saved payment method is available for this account'
+                });
+            }
+
+            const items = Array.isArray(req.body.items) ? req.body.items : [];
+            if (!items.length) {
+                return res.status(400).json({ error: 'At least one catalog item is required' });
+            }
+
+            const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
+            const summary = summarizeCheckoutItems(checkoutItems);
+            const paymentIntent = await stripeClient.paymentIntents.create({
+                amount: Math.round(Number(summary.total || 0) * 100),
+                currency: 'usd',
+                customer: req.user.stripeCustomerId,
+                payment_method: req.user.defaultStripePaymentMethodId,
+                off_session: true,
+                confirm: true,
+                description: `ParseForge purchase for ${req.user.email}`,
+                metadata: {
+                    userId: req.user._id.toString(),
+                    items: encodeCheckoutItems(checkoutItems)
+                }
+            });
+
+            const chargeId =
+                typeof paymentIntent.latest_charge === 'string' ? paymentIntent.latest_charge : '';
+            const paymentDetails = buildPaymentDetailsSnapshot(
+                {
+                    billingName: `${req.user.firstName} ${req.user.lastName}`.trim(),
+                    billingEmail: req.user.email,
+                    companyName: req.user.company
+                },
+                'stripe_checkout',
+            );
+            const processedPurchases = await processCheckoutPurchases({
+                userId: req.user._id,
+                checkoutItems,
+                CatalogPurchase,
+                paymentProvider: 'stripe',
+                paymentMethodType: 'stripe_checkout',
+                providerSessionId: paymentIntent.id,
+                providerPaymentIntentId: paymentIntent.id,
+                providerChargeId: chargeId,
+                paymentDetails
+            });
+            const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
+
+            logActivity('POST', '/api/catalog/checkout/saved-payment', 201);
+
+            return res.status(201).json({
+                success: true,
+                summary: checkoutSummary,
+                payment: {
+                    provider: 'stripe',
+                    paymentMethodType: 'stripe_checkout',
+                    paymentIntentId: paymentIntent.id,
+                    chargeId,
+                    status: paymentIntent.status,
+                    savedPaymentMethod: getSavedPaymentMethodSummary(req.user)
+                },
+                purchases: processedPurchases.map((purchase) => ({
+                    id: purchase._id.toString(),
+                    orderReference: purchase.orderReference,
+                    purchaseType: purchase.purchaseType,
+                    unitPrice: purchase.unitPrice,
+                    renewsAt: purchase.renewsAt
+                }))
+            });
+        } catch (error) {
+            const declineMessage =
+                error.code === 'authentication_required'
+                    ? 'Saved payment method requires authentication. Please checkout with Stripe again.'
+                    : error.message;
+
+            const statusCode =
+                Number(error.statusCode || error.status) >= 400
+                    ? Number(error.statusCode || error.status)
+                    : 402;
+
+            return res
+                .status(statusCode)
+                .json({ error: declineMessage || 'Unable to charge saved payment method' });
+        }
+    });
+
     router.get('/checkout/complete', async (req, res) => {
         try {
             if (!stripeClient) {
@@ -745,6 +912,12 @@ function createCatalogRoutes({
                 typeof session.payment_intent === 'string'
                     ? null
                     : session.payment_intent;
+            const paymentMethodId =
+                typeof paymentIntent?.payment_method === 'string' ? paymentIntent.payment_method : '';
+            const stripeCustomerId =
+                typeof session.customer === 'string'
+                    ? session.customer
+                    : session.customer?.id || pendingCheckout.stripeCustomerId;
             const chargeId =
                 typeof paymentIntent?.latest_charge === 'string' ? paymentIntent.latest_charge : '';
             const paymentDetails = buildPaymentDetailsSnapshot(
@@ -773,6 +946,11 @@ function createCatalogRoutes({
                 paymentDetails
             });
             const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
+            await saveDefaultPaymentMethodFromStripe({
+                user: buyer,
+                stripeCustomerId,
+                paymentMethodId
+            });
             pendingCheckout.userId = buyer._id;
             pendingCheckout.status = 'completed';
             await pendingCheckout.save();

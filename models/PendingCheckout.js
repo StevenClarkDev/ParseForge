@@ -39,6 +39,11 @@ const pendingCheckoutSchema = new mongoose.Schema(
             trim: true,
             index: true
         },
+        stripeCustomerId: {
+            type: String,
+            default: '',
+            trim: true
+        },
         items: [
             {
                 productId: {

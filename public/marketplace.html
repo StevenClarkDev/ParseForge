@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marketplace - Buy SDKs & Subscribe APIs | ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css?v=20260603">
-    <link rel="stylesheet" href="assets/css/marketplace.css?v=20260604b">
+    <link rel="stylesheet" href="assets/css/marketplace.css?v=20260604c">
 </head>
 <body>
     <div id="header-placeholder"></div>
@@ -243,6 +243,11 @@
                         </div>
                         <p class="payment-note">This environment uses Stripe test mode. Use Stripe sandbox card numbers only.</p>
 
+                        <label class="payment-consent">
+                            <input type="checkbox" name="savePaymentConsent" required>
+                            <span>I authorize ParseForge to save my Stripe payment method and use it for future API or SDK purchases I start from my account.</span>
+                        </label>
+
                         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1.5rem;">
                             Continue to Stripe Checkout
                         </button>
@@ -283,6 +288,6 @@
     <div id="footer-placeholder"></div>
 
     <script src="assets/js/includes.js?v=20260604"></script>
-    <script src="assets/js/marketplace.js?v=4.0"></script>
+    <script src="assets/js/marketplace.js?v=4.1"></script>
 </body>
 </html>

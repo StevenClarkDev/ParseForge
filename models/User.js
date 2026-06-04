@@ -54,6 +54,27 @@ const userSchema = new mongoose.Schema(
         lastLoginAt: {
             type: Date,
             default: null
+        },
+        stripeCustomerId: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        defaultStripePaymentMethodId: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        savedPaymentMethod: {
+            brand: { type: String, default: '', trim: true },
+            last4: { type: String, default: '', trim: true },
+            expMonth: { type: String, default: '', trim: true },
+            expYear: { type: String, default: '', trim: true },
+            updatedAt: { type: Date, default: null }
+        },
+        paymentMethodConsentAt: {
+            type: Date,
+            default: null
         }
     },
     {

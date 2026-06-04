@@ -50,6 +50,10 @@ function getCheckoutItemsPayload() {
         : [];
 }
 
+function hasAuthToken() {
+    return Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
+}
+
 function getSelectedPaymentMethod() {
     return document.querySelector('input[name="payment"]:checked')?.value || 'stripe_checkout';
 }
@@ -559,7 +563,7 @@ function scrollToCatalogResults() {
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function openCheckout(productId, purchaseType) {
+async function openCheckout(productId, purchaseType) {
     const product = getProductById(productId);
     const option = getPurchaseOption(product, purchaseType);
 
@@ -582,6 +586,13 @@ function openCheckout(productId, purchaseType) {
         price: option.price,
         priceLabel: buildPriceLabel(option)
     };
+
+    if (hasAuthToken()) {
+        const charged = await chargeSavedPaymentMethod();
+        if (charged) {
+            return;
+        }
+    }
 
     renderCheckoutSummary();
     closeProductModal();
@@ -724,6 +735,53 @@ function renderCheckoutSummary() {
     }
 }
 
+async function chargeSavedPaymentMethod() {
+    if (!selectedCheckoutItem) {
+        return false;
+    }
+
+    showNotification('Checking saved payment method...', 'info');
+
+    try {
+        const response = await fetch(`${API_BASE}/api/catalog/checkout/saved-payment`, {
+            method: 'POST',
+            headers: getAuthHeaders(true),
+            body: JSON.stringify({ items: getCheckoutItemsPayload() })
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            window.localStorage.removeItem(AUTH_TOKEN_KEY);
+            return false;
+        }
+
+        if (response.status === 409) {
+            showNotification('Add a Stripe payment method once to enable instant future purchases.', 'info');
+            return false;
+        }
+
+        if (!response.ok) {
+            showNotification(payload.error || 'Saved payment method could not be charged.', 'error');
+            return false;
+        }
+
+        selectedCheckoutItem = null;
+        await fetchCatalog();
+        renderCollections();
+        renderProducts();
+        closeProductModal();
+        closeCheckoutModal();
+        showNotification('Purchase completed with your saved Stripe payment method.', 'success');
+        window.setTimeout(() => {
+            window.location.href = '/dashboard.html';
+        }, 900);
+        return true;
+    } catch (error) {
+        showNotification(error.message || 'Saved payment method could not be charged.', 'error');
+        return false;
+    }
+}
+
 function closeCheckoutModal() {
     document.getElementById('checkoutModal')?.classList.remove('active');
 }
@@ -777,7 +835,8 @@ async function handleCheckout(event) {
         fullName: event.currentTarget.elements.fullName?.value.trim() || '',
         email: event.currentTarget.elements.email?.value.trim() || '',
         password: event.currentTarget.elements.password?.value || '',
-        company: event.currentTarget.elements.company?.value.trim() || ''
+        company: event.currentTarget.elements.company?.value.trim() || '',
+        savePaymentConsent: Boolean(event.currentTarget.elements.savePaymentConsent?.checked)
     };
 
     if (submitButton) {
