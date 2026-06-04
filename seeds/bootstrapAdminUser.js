@@ -1,8 +1,8 @@
 const DEFAULT_BOOTSTRAP_ADMIN = {
     enabled: false,
     firstName: 'ParseForge',
-    lastName: 'Admin',
-    email: 'admin@parseforge.dev',
+    lastName: 'Super Admin',
+    email: 'admin@parse-forge.com',
     password: 'ParseForgeAdmin123!',
     company: 'ParseForge',
     useCase: 'platform-admin',
