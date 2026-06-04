@@ -856,6 +856,7 @@
 /* Text Inputs & Select */
 input[type="text"],
 input[type="email"],
+input[type="password"],
 input[type="tel"],
 select {
     width: 100%;
@@ -874,6 +875,7 @@ select {
 /* Input Focus State */
 input[type="text"]:focus,
 input[type="email"]:focus,
+input[type="password"]:focus,
 input[type="tel"]:focus,
 select:focus {
     outline: none;
@@ -888,6 +890,7 @@ select:focus {
 /* Input Hover State */
 input[type="text"]:hover,
 input[type="email"]:hover,
+input[type="password"]:hover,
 input[type="tel"]:hover,
 select:hover {
     border-color: rgba(0, 217, 255, 0.5);

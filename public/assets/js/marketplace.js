@@ -1,6 +1,75 @@
 const API_BASE = window.location.origin;
 const AUTH_TOKEN_KEY = 'parseforge_auth_token';
 const ITEMS_PER_PAGE = 9;
+const REGION_OPTIONS = {
+    US: [
+        ['AL', 'Alabama'],
+        ['AK', 'Alaska'],
+        ['AZ', 'Arizona'],
+        ['AR', 'Arkansas'],
+        ['CA', 'California'],
+        ['CO', 'Colorado'],
+        ['CT', 'Connecticut'],
+        ['DE', 'Delaware'],
+        ['FL', 'Florida'],
+        ['GA', 'Georgia'],
+        ['HI', 'Hawaii'],
+        ['ID', 'Idaho'],
+        ['IL', 'Illinois'],
+        ['IN', 'Indiana'],
+        ['IA', 'Iowa'],
+        ['KS', 'Kansas'],
+        ['KY', 'Kentucky'],
+        ['LA', 'Louisiana'],
+        ['ME', 'Maine'],
+        ['MD', 'Maryland'],
+        ['MA', 'Massachusetts'],
+        ['MI', 'Michigan'],
+        ['MN', 'Minnesota'],
+        ['MS', 'Mississippi'],
+        ['MO', 'Missouri'],
+        ['MT', 'Montana'],
+        ['NE', 'Nebraska'],
+        ['NV', 'Nevada'],
+        ['NH', 'New Hampshire'],
+        ['NJ', 'New Jersey'],
+        ['NM', 'New Mexico'],
+        ['NY', 'New York'],
+        ['NC', 'North Carolina'],
+        ['ND', 'North Dakota'],
+        ['OH', 'Ohio'],
+        ['OK', 'Oklahoma'],
+        ['OR', 'Oregon'],
+        ['PA', 'Pennsylvania'],
+        ['RI', 'Rhode Island'],
+        ['SC', 'South Carolina'],
+        ['SD', 'South Dakota'],
+        ['TN', 'Tennessee'],
+        ['TX', 'Texas'],
+        ['UT', 'Utah'],
+        ['VT', 'Vermont'],
+        ['VA', 'Virginia'],
+        ['WA', 'Washington'],
+        ['WV', 'West Virginia'],
+        ['WI', 'Wisconsin'],
+        ['WY', 'Wyoming']
+    ],
+    CA: [
+        ['AB', 'Alberta'],
+        ['BC', 'British Columbia'],
+        ['MB', 'Manitoba'],
+        ['NB', 'New Brunswick'],
+        ['NL', 'Newfoundland and Labrador'],
+        ['NS', 'Nova Scotia'],
+        ['NT', 'Northwest Territories'],
+        ['NU', 'Nunavut'],
+        ['ON', 'Ontario'],
+        ['PE', 'Prince Edward Island'],
+        ['QC', 'Quebec'],
+        ['SK', 'Saskatchewan'],
+        ['YT', 'Yukon']
+    ]
+};
 
 let catalogItems = [];
 let selectedCheckoutItem = null;
@@ -595,6 +664,7 @@ async function openCheckout(productId, purchaseType) {
     }
 
     renderCheckoutSummary();
+    handleCountryChange();
     closeProductModal();
     document.getElementById('checkoutModal')?.classList.add('active');
 }
@@ -805,11 +875,28 @@ function validateSimulatedCardFields(form) {
 
 function handleCountryChange() {
     const stateGroup = document.getElementById('stateGroup');
+    const stateSelect = document.getElementById('stateSelect');
+    const stateLabel = document.getElementById('stateLabel');
     const zipGroup = document.getElementById('zipGroup');
     const country = document.getElementById('countrySelect')?.value;
+    const regions = REGION_OPTIONS[country] || [];
 
     if (stateGroup) {
-        stateGroup.style.display = country === 'US' || country === 'CA' ? 'block' : 'none';
+        stateGroup.style.display = regions.length ? 'block' : 'none';
+    }
+
+    if (stateLabel) {
+        stateLabel.textContent = country === 'CA' ? 'Province' : 'State';
+    }
+
+    if (stateSelect) {
+        stateSelect.required = Boolean(regions.length);
+        stateSelect.innerHTML = `
+            <option value="">Select ${country === 'CA' ? 'province' : 'state'}</option>
+            ${regions
+                .map(([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`)
+                .join('')}
+        `;
     }
 
     if (zipGroup) {
