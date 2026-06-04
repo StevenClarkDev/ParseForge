@@ -9,7 +9,8 @@
     "check": "node --check server.js && node --check routes/catalogRoutes.js && node --check routes/adminRoutes.js && node --check public/assets/js/docs.js && node --check public/assets/js/marketplace.js && node --check public/assets/js/admin.js",
     "user:create-admin": "node scripts/createAdminUser.js",
     "catalog:sync": "node scripts/syncCatalog.js",
-    "catalog:sync:dry": "node scripts/syncCatalog.js --dry-run"
+    "catalog:sync:dry": "node scripts/syncCatalog.js --dry-run",
+    "client:seed-purchases": "node scripts/seedClientPurchases.js"
   },
   "keywords": [
     "api",
