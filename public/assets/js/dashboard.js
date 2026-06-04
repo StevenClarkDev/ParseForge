@@ -1,9 +1,9 @@
 const API_BASE = window.location.origin;
-const AUTH_TOKEN_KEY = 'parseforge_auth_token';
-const SUPPORT_ADMIN_TOKEN_KEY = 'parseforge_support_admin_token';
-const SUPPORT_CONTEXT_KEY = 'parseforge_support_context';
+const DASHBOARD_AUTH_TOKEN_KEY = 'parseforge_auth_token';
+const DASHBOARD_SUPPORT_ADMIN_TOKEN_KEY = 'parseforge_support_admin_token';
+const DASHBOARD_SUPPORT_CONTEXT_KEY = 'parseforge_support_context';
 
-if (!window.localStorage.getItem(AUTH_TOKEN_KEY)) {
+if (!window.localStorage.getItem(DASHBOARD_AUTH_TOKEN_KEY)) {
     window.location.replace('/login.html?next=/dashboard.html');
 }
 
@@ -42,13 +42,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function clearStaleSupportSession() {
-    window.localStorage.removeItem(SUPPORT_ADMIN_TOKEN_KEY);
-    window.localStorage.removeItem(SUPPORT_CONTEXT_KEY);
+    window.localStorage.removeItem(DASHBOARD_SUPPORT_ADMIN_TOKEN_KEY);
+    window.localStorage.removeItem(DASHBOARD_SUPPORT_CONTEXT_KEY);
 }
 
 function getAuthHeaders() {
     return {
-        Authorization: `Bearer ${window.localStorage.getItem(AUTH_TOKEN_KEY) || ''}`,
+        Authorization: `Bearer ${window.localStorage.getItem(DASHBOARD_AUTH_TOKEN_KEY) || ''}`,
         'Content-Type': 'application/json'
     };
 }
@@ -58,7 +58,7 @@ function handleAuthFailure(response) {
         return false;
     }
 
-    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    window.localStorage.removeItem(DASHBOARD_AUTH_TOKEN_KEY);
     clearStaleSupportSession();
     window.location.replace('/login.html?next=/dashboard.html');
     return true;
