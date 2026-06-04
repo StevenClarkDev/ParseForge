@@ -92,6 +92,48 @@ function sanitizeEmail(value) {
     return sanitizeText(value, 160).toLowerCase();
 }
 
+function splitFullName(fullName) {
+    const parts = sanitizeText(fullName, 120).split(/\s+/).filter(Boolean);
+    return {
+        firstName: parts[0] || 'ParseForge',
+        lastName: parts.slice(1).join(' ') || 'Buyer'
+    };
+}
+
+function normalizeCheckoutAccount(source = {}) {
+    const fullName = sanitizeText(source.fullName, 120);
+    const email = sanitizeEmail(source.email);
+    const password = String(source.password || '');
+    const { firstName, lastName } = splitFullName(fullName);
+
+    if (!fullName) {
+        const error = new Error('Full name is required for checkout');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!email) {
+        const error = new Error('Email address is required for checkout');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (password.length < 8) {
+        const error = new Error('Password must be at least 8 characters long');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return {
+        fullName,
+        firstName,
+        lastName,
+        email,
+        password,
+        company: sanitizeText(source.company, 120)
+    };
+}
+
 function sanitizeLast4(value) {
     const digits = String(value || '').replace(/\D/g, '');
     return digits.slice(-4);
@@ -310,7 +352,13 @@ function createCatalogRoutes({
     optionalAuth,
     logActivity,
     ApiCatalogItem,
-    CatalogPurchase
+    CatalogPurchase,
+    PendingCheckout,
+    User,
+    createPasswordHash,
+    verifyPassword,
+    createToken,
+    jwtSecret
 }) {
     const router = express.Router();
 
@@ -443,7 +491,7 @@ function createCatalogRoutes({
         });
     });
 
-    router.post('/checkout/session', authMiddleware, async (req, res) => {
+    router.post('/checkout/session', async (req, res) => {
         try {
             if (!ensureWritablePurchaseSession(req, res)) {
                 return;
@@ -451,6 +499,8 @@ function createCatalogRoutes({
 
             const items = Array.isArray(req.body.items) ? req.body.items : [];
             const paymentMethodType = normalizePaymentMethodType(req.body.paymentMethodType);
+            const account = normalizeCheckoutAccount(req.body.account);
+            const paymentDetails = buildPaymentDetailsSnapshot(req.body.paymentDetails, paymentMethodType);
 
             if (!items.length) {
                 return res.status(400).json({ error: 'At least one catalog item is required' });
@@ -458,28 +508,56 @@ function createCatalogRoutes({
 
             const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
             const summary = summarizeCheckoutItems(checkoutItems);
+            const existingUser = await User.findOne({ email: account.email });
+
+            if (existingUser && !verifyPassword(account.password, existingUser.passwordHash)) {
+                return res.status(409).json({
+                    error: 'An account already exists for this email. Enter its password to attach this purchase.'
+                });
+            }
 
             if (stripeClient && stripePublishableKey) {
                 const baseUrl = getRequestBaseUrl(req);
+                const pendingCheckout = await PendingCheckout.create({
+                    email: account.email,
+                    passwordHash: existingUser ? '' : createPasswordHash(account.password),
+                    firstName: account.firstName,
+                    lastName: account.lastName,
+                    company: account.company,
+                    userId: existingUser?._id || null,
+                    items: checkoutItems.map((item) => ({
+                        productId: item.product._id,
+                        purchaseType: item.purchaseType
+                    })),
+                    paymentDetails: {
+                        ...paymentDetails,
+                        billingName: account.fullName,
+                        billingEmail: account.email,
+                        companyName: account.company
+                    },
+                    expiresAt: addDays(new Date(), 1)
+                });
                 const session = await stripeClient.checkout.sessions.create({
                     mode: 'payment',
-                    client_reference_id: req.user._id.toString(),
-                    customer_email: req.user.email,
+                    client_reference_id: pendingCheckout._id.toString(),
+                    customer_email: account.email,
                     line_items: buildStripeLineItems(checkoutItems),
                     success_url: `${baseUrl}/checkout-success.html?session_id={CHECKOUT_SESSION_ID}`,
                     cancel_url: `${baseUrl}/marketplace.html?checkout=cancelled`,
                     metadata: {
-                        userId: req.user._id.toString(),
+                        pendingCheckoutId: pendingCheckout._id.toString(),
                         items: encodeCheckoutItems(checkoutItems),
                         paymentMethodType
                     },
                     payment_intent_data: {
                         metadata: {
-                            userId: req.user._id.toString(),
+                            pendingCheckoutId: pendingCheckout._id.toString(),
                             items: encodeCheckoutItems(checkoutItems)
                         }
                     }
                 });
+                pendingCheckout.stripeSessionId = session.id;
+                await pendingCheckout.save();
 
                 logActivity('POST', '/api/catalog/checkout/session', 201);
 
@@ -608,12 +686,8 @@ function createCatalogRoutes({
         }
     });
 
-    router.get('/checkout/complete', authMiddleware, async (req, res) => {
+    router.get('/checkout/complete', async (req, res) => {
         try {
-            if (!ensureWritablePurchaseSession(req, res)) {
-                return;
-            }
-
             if (!stripeClient) {
                 return res.status(503).json({ error: 'Stripe checkout is not configured' });
             }
@@ -627,20 +701,46 @@ function createCatalogRoutes({
                 expand: ['payment_intent']
             });
 
-            if (session.client_reference_id !== req.user._id.toString()) {
-                return res.status(403).json({ error: 'This checkout session belongs to another account' });
-            }
-
             if (session.payment_status !== 'paid') {
                 return res.status(402).json({ error: 'Stripe checkout has not been paid yet' });
             }
 
-            const items = decodeCheckoutItems(session.metadata?.items);
+            const pendingCheckout = await PendingCheckout.findOne({ stripeSessionId: session.id });
+            if (!pendingCheckout) {
+                return res.status(404).json({ error: 'Pending checkout was not found' });
+            }
+
+            const items = pendingCheckout.items?.length
+                ? pendingCheckout.items.map((item) => ({
+                    productId: item.productId.toString(),
+                    purchaseType: item.purchaseType
+                }))
+                : decodeCheckoutItems(session.metadata?.items);
             if (!items.length) {
-                return res.status(400).json({ error: 'Stripe checkout session is missing cart metadata' });
+                return res.status(400).json({ error: 'Stripe checkout session is missing purchase metadata' });
             }
 
             const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
+            let buyer = pendingCheckout.userId ? await User.findById(pendingCheckout.userId) : null;
+            if (!buyer) {
+                buyer = await User.findOne({ email: pendingCheckout.email });
+            }
+
+            if (!buyer) {
+                buyer = await User.create({
+                    firstName: pendingCheckout.firstName,
+                    lastName: pendingCheckout.lastName,
+                    email: pendingCheckout.email,
+                    passwordHash: pendingCheckout.passwordHash,
+                    company: pendingCheckout.company,
+                    role: 'developer',
+                    lastLoginAt: new Date()
+                });
+            } else {
+                buyer.lastLoginAt = new Date();
+                await buyer.save();
+            }
+
             const paymentIntent =
                 typeof session.payment_intent === 'string'
                     ? null
@@ -649,17 +749,20 @@ function createCatalogRoutes({
                 typeof paymentIntent?.latest_charge === 'string' ? paymentIntent.latest_charge : '';
             const paymentDetails = buildPaymentDetailsSnapshot(
                 {
-                    billingName: session.customer_details?.name,
-                    billingEmail: session.customer_details?.email,
-                    country: session.customer_details?.address?.country,
-                    region: session.customer_details?.address?.state,
-                    postalCode: session.customer_details?.address?.postal_code
+                    ...pendingCheckout.paymentDetails,
+                    billingName: session.customer_details?.name || pendingCheckout.paymentDetails?.billingName,
+                    billingEmail: session.customer_details?.email || pendingCheckout.email,
+                    country: session.customer_details?.address?.country || pendingCheckout.paymentDetails?.country,
+                    region: session.customer_details?.address?.state || pendingCheckout.paymentDetails?.region,
+                    postalCode:
+                        session.customer_details?.address?.postal_code ||
+                        pendingCheckout.paymentDetails?.postalCode
                 },
                 'stripe_checkout',
             );
 
             const processedPurchases = await processCheckoutPurchases({
-                userId: req.user._id,
+                userId: buyer._id,
                 checkoutItems,
                 CatalogPurchase,
                 paymentProvider: 'stripe',
@@ -670,6 +773,9 @@ function createCatalogRoutes({
                 paymentDetails
             });
             const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
+            pendingCheckout.userId = buyer._id;
+            pendingCheckout.status = 'completed';
+            await pendingCheckout.save();
 
             logActivity('GET', '/api/catalog/checkout/complete', 200);
 
@@ -690,7 +796,15 @@ function createCatalogRoutes({
                     purchaseType: purchase.purchaseType,
                     unitPrice: purchase.unitPrice,
                     renewsAt: purchase.renewsAt
-                }))
+                })),
+                token: createToken(buyer, jwtSecret),
+                user: {
+                    id: buyer._id.toString(),
+                    firstName: buyer.firstName,
+                    lastName: buyer.lastName,
+                    email: buyer.email,
+                    role: buyer.role
+                }
             });
         } catch (error) {
             return res

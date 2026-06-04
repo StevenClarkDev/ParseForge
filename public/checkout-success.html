@@ -22,11 +22,9 @@
     <script src="assets/js/main.js?v=20260603"></script>
     <script>
         const AUTH_TOKEN_KEY = 'parseforge_auth_token';
-        const CART_KEY = 'parseforge_cart_v2';
         const statusPanel = document.getElementById('checkoutStatus');
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session_id');
-        const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
 
         function renderStatus(title, message, actions = '') {
             statusPanel.innerHTML = `
@@ -46,31 +44,21 @@
                 return;
             }
 
-            if (!token) {
-                window.location.href = `/login.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-                return;
-            }
-
             try {
-                const response = await fetch(`/api/catalog/checkout/complete?session_id=${encodeURIComponent(sessionId)}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await fetch(`/api/catalog/checkout/complete?session_id=${encodeURIComponent(sessionId)}`);
                 const payload = await response.json().catch(() => ({}));
-
-                if (response.status === 401) {
-                    window.localStorage.removeItem(AUTH_TOKEN_KEY);
-                    window.location.href = `/login.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-                    return;
-                }
 
                 if (!response.ok) {
                     throw new Error(payload.error || 'Unable to confirm checkout.');
                 }
 
-                window.localStorage.removeItem(CART_KEY);
+                if (payload.token) {
+                    window.localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
+                }
+
                 renderStatus(
                     'Checkout complete',
-                    'Your Stripe sandbox payment was verified and the purchased documentation is now available in your dashboard.',
+                    'Your Stripe sandbox payment was verified, your account is ready, and the purchased documentation is now available.',
                     '<a class="btn-primary" href="/dashboard.html">Open Buyer Dashboard</a> <a class="btn-secondary" href="/docs.html">Open Docs</a>'
                 );
             } catch (error) {

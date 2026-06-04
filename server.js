@@ -29,6 +29,7 @@ const ApiKey = require('./models/ApiKey');
 const PricingPlan = require('./models/PricingPlan');
 const ApiCatalogItem = require('./models/ApiCatalogItem');
 const CatalogPurchase = require('./models/CatalogPurchase');
+const PendingCheckout = require('./models/PendingCheckout');
 const ContentPage = require('./models/ContentPage');
 const BrandingSettings = require('./models/BrandingSettings');
 
@@ -88,7 +89,13 @@ app.use('/api/catalog', createCatalogRoutes({
     optionalAuth,
     logActivity,
     ApiCatalogItem,
-    CatalogPurchase
+    CatalogPurchase,
+    PendingCheckout,
+    User,
+    createPasswordHash,
+    verifyPassword,
+    createToken,
+    jwtSecret
 }));
 app.use('/api/admin', createAdminRoutes({
     authMiddleware,

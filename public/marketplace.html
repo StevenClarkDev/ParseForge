@@ -167,32 +167,6 @@
         </div>
     </section>
 
-    <div class="cart-backdrop" id="cartBackdrop" onclick="toggleCart()"></div>
-
-    <div class="cart-sidebar" id="cartSidebar">
-        <div class="cart-header">
-            <h3>Shopping Cart</h3>
-            <button class="close-cart" onclick="toggleCart()">&times;</button>
-        </div>
-
-        <div class="cart-items" id="cartItems">
-            <div class="empty-cart">
-                <p>Your cart is empty</p>
-                <span class="empty-cart-label">Add a license or subscription to get started</span>
-            </div>
-        </div>
-
-        <div class="cart-footer">
-            <div class="cart-total">
-                <span>Total:</span>
-                <strong id="cartTotal">$0.00</strong>
-            </div>
-            <button class="btn-primary" onclick="proceedToCheckout()" style="width: 100%;">
-                Proceed to Checkout
-            </button>
-        </div>
-    </div>
-
     <div class="modal" id="productModal">
         <div class="modal-content product-modal-content">
             <button class="modal-close" onclick="closeProductModal()">&times;</button>
@@ -217,6 +191,10 @@
                         <div class="form-group">
                             <label class="required">Email Address</label>
                             <input type="email" name="email" placeholder="you@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="required">Password</label>
+                            <input type="password" name="password" placeholder="Create or confirm your password" minlength="8" required>
                         </div>
                         <div class="form-group">
                             <label>Company Name</label>
@@ -304,7 +282,7 @@
 
     <div id="footer-placeholder"></div>
 
-    <script src="assets/js/includes.js"></script>
-    <script src="assets/js/marketplace.js?v=3.0"></script>
+    <script src="assets/js/includes.js?v=20260604"></script>
+    <script src="assets/js/marketplace.js?v=4.0"></script>
 </body>
 </html>

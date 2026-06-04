@@ -1,10 +1,9 @@
 const API_BASE = window.location.origin;
 const AUTH_TOKEN_KEY = 'parseforge_auth_token';
-const CART_KEY = 'parseforge_cart_v2';
 const ITEMS_PER_PAGE = 9;
 
 let catalogItems = [];
-let cart = loadCart();
+let selectedCheckoutItem = null;
 let currentPage = 1;
 let currentFilters = {
     category: 'all',
@@ -13,19 +12,6 @@ let currentFilters = {
     search: '',
     sortBy: 'featured'
 };
-
-function loadCart() {
-    try {
-        const parsed = JSON.parse(window.localStorage.getItem(CART_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-        return [];
-    }
-}
-
-function saveCart() {
-    window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
-}
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -59,10 +45,9 @@ function getAuthHeaders(includeJson = false) {
 }
 
 function getCheckoutItemsPayload() {
-    return cart.map((item) => ({
-        productId: item.productId,
-        purchaseType: item.purchaseType
-    }));
+    return selectedCheckoutItem
+        ? [{ productId: selectedCheckoutItem.productId, purchaseType: selectedCheckoutItem.purchaseType }]
+        : [];
 }
 
 function getSelectedPaymentMethod() {
@@ -149,10 +134,6 @@ function getDefaultPurchaseOption(product) {
     return options.find((option) => option.type === defaultType) || options[0] || null;
 }
 
-function getCartKey(productId, purchaseType) {
-    return `${productId}:${purchaseType}`;
-}
-
 function buildPriceLabel(option) {
     if (!option) {
         return 'Unavailable';
@@ -219,32 +200,6 @@ function isOwnedForPurchase(product, purchaseType) {
     }
 
     return product.ownership.hasSubscription;
-}
-
-function normalizeCart() {
-    cart = cart
-        .map((entry) => {
-            const product = getProductById(entry.productId);
-            const option = product ? getPurchaseOption(product, entry.purchaseType) : null;
-
-            if (!product || !option || isOwnedForPurchase(product, option.type)) {
-                return null;
-            }
-
-            return {
-                key: getCartKey(product.id, option.type),
-                productId: product.id,
-                purchaseType: option.type,
-                name: product.name,
-                category: product.type,
-                icon: product.icon,
-                price: option.price,
-                priceLabel: buildPriceLabel(option)
-            };
-        })
-        .filter(Boolean);
-
-    saveCart();
 }
 
 function filterProducts() {
@@ -465,25 +420,20 @@ function createProductCard(product) {
     const badgeHtml = product.badge
         ? `<div class="product-badge ${escapeHtml(product.badge)}">${escapeHtml(product.badge)}</div>`
         : '';
-    const inCart = defaultOption
-        ? cart.some((item) => item.key === getCartKey(product.id, defaultOption.type))
-        : false;
     const buttonAction =
         options.length > 1 && !isOwned
             ? `event.stopPropagation(); openProductModal('${product.id}')`
             : defaultOption && !isOwned
-              ? `event.stopPropagation(); ${inCart ? `removeFromCartByKey('${getCartKey(product.id, defaultOption.type)}')` : `addToCart('${product.id}', '${defaultOption.type}')`}`
+              ? `event.stopPropagation(); openCheckout('${product.id}', '${defaultOption.type}')`
               : 'event.stopPropagation();';
     const buttonLabel =
         isOwned
             ? ownershipLabel
             : options.length > 1
               ? 'Choose plan'
-              : inCart
-                ? 'Added'
-                : defaultOption
-                  ? 'Add to cart'
-                  : 'Unavailable';
+              : defaultOption
+                ? 'Buy now'
+                : 'Unavailable';
 
     return `
         <article class="product-card" onclick="openProductModal('${product.id}')">
@@ -525,7 +475,7 @@ function createProductCard(product) {
             </div>
             <div class="product-cta-row">
                 <a class="docs-link ${isOwned ? '' : 'locked'}" href="${escapeHtml(docsHref)}" onclick="event.stopPropagation(); ${isOwned ? '' : "showNotification('Purchase this product to unlock its documentation.', 'info'); return false;"}">${escapeHtml(docsLabel)}</a>
-                <button class="add-to-cart-btn ${inCart || isOwned ? 'added' : ''}" onclick="${buttonAction}">
+                <button class="checkout-now-btn ${isOwned ? 'added' : ''}" onclick="${buttonAction}">
                     ${escapeHtml(buttonLabel)}
                 </button>
             </div>
@@ -609,7 +559,7 @@ function scrollToCatalogResults() {
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function addToCart(productId, purchaseType) {
+function openCheckout(productId, purchaseType) {
     const product = getProductById(productId);
     const option = getPurchaseOption(product, purchaseType);
 
@@ -623,14 +573,7 @@ function addToCart(productId, purchaseType) {
         return;
     }
 
-    const key = getCartKey(product.id, option.type);
-    if (cart.some((item) => item.key === key)) {
-        showNotification('That item is already in your cart.', 'info');
-        return;
-    }
-
-    cart.push({
-        key,
+    selectedCheckoutItem = {
         productId: product.id,
         purchaseType: option.type,
         name: product.name,
@@ -638,67 +581,11 @@ function addToCart(productId, purchaseType) {
         icon: product.icon,
         price: option.price,
         priceLabel: buildPriceLabel(option)
-    });
+    };
 
-    saveCart();
-    updateCartUI();
-    renderProducts();
-    showNotification('Added to cart.', 'success');
-}
-
-function removeFromCartByKey(key) {
-    cart = cart.filter((item) => item.key !== key);
-    saveCart();
-    updateCartUI();
-    renderProducts();
-    showNotification('Removed from cart.', 'info');
-}
-
-function updateCartUI() {
-    const cartCount = document.getElementById('cartCount');
-    const cartItems = document.getElementById('cartItems');
-    const cartTotal = document.getElementById('cartTotal');
-    const total = cart.reduce((sum, item) => sum + item.price, 0);
-
-    if (cartCount) {
-        cartCount.textContent = String(cart.length);
-    }
-
-    if (cartItems) {
-        if (!cart.length) {
-            cartItems.innerHTML = `
-                <div class="empty-cart">
-                    <p>Your cart is empty</p>
-                    <span class="empty-cart-label">Add a license or subscription to get started</span>
-                </div>
-            `;
-        } else {
-            cartItems.innerHTML = cart
-                .map(
-                    (item) => `
-                        <div class="cart-item">
-                            <div class="cart-item-icon">${escapeHtml(item.icon || item.category.toUpperCase())}</div>
-                            <div class="cart-item-info">
-                                <div class="cart-item-name">${escapeHtml(item.name)}</div>
-                                <div class="cart-item-category">${escapeHtml(item.priceLabel)}</div>
-                                <div class="cart-item-price">$${item.price.toFixed(2)}</div>
-                            </div>
-                            <button class="remove-item" onclick="removeFromCartByKey('${item.key}')">X</button>
-                        </div>
-                    `,
-                )
-                .join('');
-        }
-    }
-
-    if (cartTotal) {
-        cartTotal.textContent = `$${total.toFixed(2)}`;
-    }
-}
-
-function toggleCart() {
-    document.getElementById('cartSidebar')?.classList.toggle('active');
-    document.getElementById('cartBackdrop')?.classList.toggle('active');
+    renderCheckoutSummary();
+    closeProductModal();
+    document.getElementById('checkoutModal')?.classList.add('active');
 }
 
 function openProductModal(productId) {
@@ -761,20 +648,15 @@ function openProductModal(productId) {
                     ${options
                         .map((option) => {
                             const optionOwned = isOwnedForPurchase(product, option.type);
-                            const optionInCart = cart.some(
-                                (item) => item.key === getCartKey(product.id, option.type)
-                            );
                             const buttonLabel = optionOwned
                                 ? ownershipLabel
-                                : optionInCart
-                                  ? 'Added to cart'
-                                  : 'Add to cart';
+                                : 'Buy now';
 
                             return `
-                                <button class="purchase-option-btn ${optionOwned || optionInCart ? 'added' : ''}" onclick="${optionOwned ? '' : `addToCart('${product.id}', '${option.type}'); closeProductModal();`}">
+                                <button class="purchase-option-btn ${optionOwned ? 'added' : ''}" onclick="${optionOwned ? '' : `openCheckout('${product.id}', '${option.type}')`}">
                                     <span class="purchase-option-title">${escapeHtml(option.label)}</span>
                                     <span class="purchase-option-price">${escapeHtml(buildPriceLabel(option))}</span>
-                                    <span class="purchase-option-copy">${escapeHtml(optionOwned ? 'Your account already has access to this product.' : 'Attach this plan to your buyer workspace after checkout.')}</span>
+                                    <span class="purchase-option-copy">${escapeHtml(optionOwned ? 'Your account already has access to this product.' : 'Checkout now and unlock docs after payment.')}</span>
                                     <span class="purchase-option-action">${escapeHtml(buttonLabel)}</span>
                                 </button>
                             `;
@@ -793,7 +675,7 @@ function closeProductModal() {
 }
 
 function recalculateOrderTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+    const subtotal = selectedCheckoutItem?.price || 0;
     const subtotalElement = document.getElementById('orderSubtotal');
     const totalElement = document.getElementById('orderTotal');
     const taxRow = document.getElementById('taxRow');
@@ -811,28 +693,23 @@ function recalculateOrderTotals() {
     }
 }
 
-function proceedToCheckout() {
-    if (!cart.length) {
-        showNotification('Your cart is empty.', 'error');
+function renderCheckoutSummary() {
+    if (!selectedCheckoutItem) {
+        showNotification('Choose a product option to checkout.', 'error');
         return;
     }
 
     const orderItems = document.getElementById('orderItems');
     if (orderItems) {
-        orderItems.innerHTML = cart
-            .map(
-                (item) => `
-                    <div class="order-item">
-                        <span class="order-item-name">${escapeHtml(item.name)} (${escapeHtml(item.priceLabel)})</span>
-                        <span class="order-item-price">$${item.price.toFixed(2)}</span>
-                    </div>
-                `,
-            )
-            .join('');
+        orderItems.innerHTML = `
+            <div class="order-item">
+                <span class="order-item-name">${escapeHtml(selectedCheckoutItem.name)} (${escapeHtml(selectedCheckoutItem.priceLabel)})</span>
+                <span class="order-item-price">$${selectedCheckoutItem.price.toFixed(2)}</span>
+            </div>
+        `;
     }
 
     recalculateOrderTotals();
-    document.getElementById('checkoutModal')?.classList.add('active');
 
     const emailField = document.querySelector('#checkoutForm input[name="email"]');
     if (emailField && window.localStorage.getItem(AUTH_TOKEN_KEY) && !emailField.value) {
@@ -844,10 +721,6 @@ function proceedToCheckout() {
                 }
             })
             .catch(() => {});
-    }
-
-    if (document.getElementById('cartSidebar')?.classList.contains('active')) {
-        toggleCart();
     }
 }
 
@@ -891,12 +764,8 @@ function handleCountryChange() {
 async function handleCheckout(event) {
     event.preventDefault();
 
-    const authToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
-    if (!authToken) {
-        showNotification('Please sign in to complete your order.', 'error');
-        window.setTimeout(() => {
-            window.location.href = '/login.html?next=/marketplace.html';
-        }, 900);
+    if (!selectedCheckoutItem) {
+        showNotification('Choose a product option before checkout.', 'error');
         return;
     }
 
@@ -904,6 +773,12 @@ async function handleCheckout(event) {
     const paymentMethodType = getSelectedPaymentMethod();
     const items = getCheckoutItemsPayload();
     const paymentDetails = buildPaymentDetailsPayload(event.currentTarget, paymentMethodType);
+    const account = {
+        fullName: event.currentTarget.elements.fullName?.value.trim() || '',
+        email: event.currentTarget.elements.email?.value.trim() || '',
+        password: event.currentTarget.elements.password?.value || '',
+        company: event.currentTarget.elements.company?.value.trim() || ''
+    };
 
     if (submitButton) {
         submitButton.disabled = true;
@@ -917,20 +792,16 @@ async function handleCheckout(event) {
 
         const sessionResponse = await fetch(`${API_BASE}/api/catalog/checkout/session`, {
             method: 'POST',
-            headers: getAuthHeaders(true),
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 items,
-                paymentMethodType
+                paymentMethodType,
+                paymentDetails,
+                account
             })
         });
 
         const sessionPayload = await sessionResponse.json().catch(() => ({}));
-
-        if (sessionResponse.status === 401) {
-            window.localStorage.removeItem(AUTH_TOKEN_KEY);
-            window.location.href = '/login.html?next=/marketplace.html';
-            return;
-        }
 
         if (!sessionResponse.ok) {
             throw new Error(sessionPayload.error || 'Unable to create the Stripe checkout session');
@@ -970,12 +841,9 @@ async function handleCheckout(event) {
             throw new Error(payload.error || 'Checkout failed');
         }
 
-        cart = [];
-        saveCart();
+        selectedCheckoutItem = null;
         await fetchCatalog();
-        normalizeCart();
         renderCollections();
-        updateCartUI();
         renderProducts();
         closeCheckoutModal();
         showNotification('Stripe test payment completed successfully.', 'success');
@@ -1107,13 +975,10 @@ async function initializeMarketplace() {
                 categoryFilter.value = requestedType;
             }
         }
-        normalizeCart();
         setupEventListeners();
         handlePaymentChange({ target: { value: getSelectedPaymentMethod() } });
         renderCollections();
         renderProducts();
-        updateCartUI();
-        window.setTimeout(updateCartUI, 500);
     } catch (error) {
         showNotification(error.message || 'Unable to load marketplace.', 'error');
     }
@@ -1121,17 +986,14 @@ async function initializeMarketplace() {
 
 window.marketplaceDebug = {
     getCatalog: () => catalogItems,
-    getCart: () => cart
+    getSelectedCheckoutItem: () => selectedCheckoutItem
 };
 
 window.changePage = changePage;
-window.toggleCart = toggleCart;
 window.openProductModal = openProductModal;
 window.closeProductModal = closeProductModal;
-window.proceedToCheckout = proceedToCheckout;
+window.openCheckout = openCheckout;
 window.closeCheckoutModal = closeCheckoutModal;
-window.addToCart = addToCart;
-window.removeFromCartByKey = removeFromCartByKey;
 window.applyQuickFilter = applyQuickFilter;
 window.clearFilters = clearFilters;
 

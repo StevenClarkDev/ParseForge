@@ -38,21 +38,7 @@ async function loadIncludes() {
 }
 
 function addPageSpecificElements() {
-    const currentPath = window.location.pathname;
-    const navContainer = document.querySelector('.navbar .container');
-
-    if ((currentPath === '/marketplace' || currentPath === '/marketplace.html') && navContainer) {
-        const cartButton = document.createElement('button');
-        cartButton.className = 'cart-button-nav';
-        cartButton.onclick = function handleCartClick() {
-            toggleCart();
-        };
-        cartButton.innerHTML = `
-            <span class="cart-icon">Cart</span>
-            <span class="cart-count" id="cartCount">0</span>
-        `;
-        navContainer.appendChild(cartButton);
-    }
+    return null;
 }
 
 function setActiveNavLink() {
