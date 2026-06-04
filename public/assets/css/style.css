@@ -161,8 +161,8 @@ body::after {
 .logo-icon {
     display: inline-flex;
     align-items: center;
-    width: 220px;
-    height: 76px;
+    width: 260px;
+    height: 90px;
     overflow: hidden;
 }
 
