@@ -57,6 +57,12 @@ const catalogPurchaseSchema = new mongoose.Schema(
             default: '',
             trim: true
         },
+        providerSubscriptionId: {
+            type: String,
+            default: '',
+            trim: true,
+            index: true
+        },
         orderReference: {
             type: String,
             required: true,

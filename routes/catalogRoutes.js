@@ -5,6 +5,7 @@ const { serializeCatalogItem } = require('../utils/serializers');
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
 const stripePublishableKey =
     process.env.STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHING_KEY || '';
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 const stripeClient = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 function addDays(date, dayCount) {
@@ -113,6 +114,27 @@ function getSessionPaymentIntent(session) {
     }
 
     return null;
+}
+
+function getSessionSubscriptionId(session) {
+    if (typeof session.subscription === 'string') {
+        return session.subscription;
+    }
+
+    return session.subscription?.id || '';
+}
+
+function getInvoicePaymentIntent(invoice) {
+    if (invoice.payment_intent && typeof invoice.payment_intent !== 'string') {
+        return invoice.payment_intent;
+    }
+
+    return null;
+}
+
+function getInvoicePeriodEnd(invoice) {
+    const line = invoice.lines?.data?.find((item) => item.period?.end);
+    return line?.period?.end ? new Date(line.period.end * 1000) : null;
 }
 
 async function ensureStripeCustomerForCheckout({ user, account }) {
@@ -350,6 +372,7 @@ async function processCheckoutPurchases({
     providerSessionId,
     providerPaymentIntentId,
     providerChargeId,
+    providerSubscriptionId = '',
     paymentDetails
 }) {
     const existingSessionPurchases = await CatalogPurchase.find({
@@ -402,6 +425,7 @@ async function processCheckoutPurchases({
             activeSubscription.providerSessionId = providerSessionId;
             activeSubscription.providerPaymentIntentId = providerPaymentIntentId;
             activeSubscription.providerChargeId = providerChargeId;
+            activeSubscription.providerSubscriptionId = providerSubscriptionId;
             activeSubscription.paymentDetails = paymentDetails;
             await activeSubscription.save();
             processedPurchases.push(activeSubscription);
@@ -419,6 +443,7 @@ async function processCheckoutPurchases({
             providerSessionId,
             providerPaymentIntentId,
             providerChargeId,
+            providerSubscriptionId,
             paymentDetails,
             renewsAt: renewalDate,
             orderReference: createOrderReference()
@@ -428,6 +453,190 @@ async function processCheckoutPurchases({
     }
 
     return processedPurchases;
+}
+
+async function fulfillStripeCheckoutSession({
+    session,
+    ApiCatalogItem,
+    CatalogPurchase,
+    PendingCheckout,
+    User,
+    createPasswordHash,
+    createToken,
+    jwtSecret,
+    touchLogin = false
+}) {
+    if (session.payment_status !== 'paid') {
+        const error = new Error('Stripe checkout has not been paid yet');
+        error.statusCode = 402;
+        throw error;
+    }
+
+    const pendingCheckout = await PendingCheckout.findOne({ stripeSessionId: session.id });
+    if (!pendingCheckout) {
+        const error = new Error('Pending checkout was not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const items = pendingCheckout.items?.length
+        ? pendingCheckout.items.map((item) => ({
+            productId: item.productId.toString(),
+            purchaseType: item.purchaseType
+        }))
+        : decodeCheckoutItems(session.metadata?.items);
+    if (!items.length) {
+        const error = new Error('Stripe checkout session is missing purchase metadata');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
+    let buyer = pendingCheckout.userId ? await User.findById(pendingCheckout.userId) : null;
+    if (!buyer) {
+        buyer = await User.findOne({ email: pendingCheckout.email });
+    }
+
+    if (!buyer) {
+        buyer = await User.create({
+            firstName: pendingCheckout.firstName,
+            lastName: pendingCheckout.lastName,
+            email: pendingCheckout.email,
+            passwordHash: pendingCheckout.passwordHash || createPasswordHash(createReference('buyer_password')),
+            company: pendingCheckout.company,
+            role: 'developer',
+            lastLoginAt: touchLogin ? new Date() : null
+        });
+    } else if (touchLogin) {
+        buyer.lastLoginAt = new Date();
+        await buyer.save();
+    }
+
+    const paymentIntent = getSessionPaymentIntent(session);
+    const paymentMethodId =
+        typeof paymentIntent?.payment_method === 'string' ? paymentIntent.payment_method : '';
+    const stripeCustomerId =
+        typeof session.customer === 'string'
+            ? session.customer
+            : session.customer?.id || pendingCheckout.stripeCustomerId;
+    const chargeId =
+        typeof paymentIntent?.latest_charge === 'string' ? paymentIntent.latest_charge : '';
+    const paymentDetails = buildPaymentDetailsSnapshot(
+        {
+            ...pendingCheckout.paymentDetails,
+            billingName: session.customer_details?.name || pendingCheckout.paymentDetails?.billingName,
+            billingEmail: session.customer_details?.email || pendingCheckout.email,
+            country: session.customer_details?.address?.country || pendingCheckout.paymentDetails?.country,
+            region: session.customer_details?.address?.state || pendingCheckout.paymentDetails?.region,
+            postalCode:
+                session.customer_details?.address?.postal_code ||
+                pendingCheckout.paymentDetails?.postalCode
+        },
+        'stripe_checkout',
+    );
+
+    const processedPurchases = await processCheckoutPurchases({
+        userId: buyer._id,
+        checkoutItems,
+        CatalogPurchase,
+        paymentProvider: 'stripe',
+        paymentMethodType: 'stripe_checkout',
+        providerSessionId: session.id,
+        providerPaymentIntentId: paymentIntent?.id || '',
+        providerChargeId: chargeId,
+        providerSubscriptionId: getSessionSubscriptionId(session),
+        paymentDetails
+    });
+    const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
+    await saveDefaultPaymentMethodFromStripe({
+        user: buyer,
+        stripeCustomerId,
+        paymentMethodId
+    });
+    pendingCheckout.userId = buyer._id;
+    pendingCheckout.status = 'completed';
+    await pendingCheckout.save();
+
+    return {
+        success: true,
+        summary: checkoutSummary,
+        payment: {
+            provider: 'stripe',
+            paymentMethodType: 'stripe_checkout',
+            sessionId: session.id,
+            paymentIntentId: paymentIntent?.id || '',
+            chargeId,
+            subscriptionId: getSessionSubscriptionId(session),
+            status: session.payment_status
+        },
+        purchases: processedPurchases.map((purchase) => ({
+            id: purchase._id.toString(),
+            orderReference: purchase.orderReference,
+            purchaseType: purchase.purchaseType,
+            unitPrice: purchase.unitPrice,
+            renewsAt: purchase.renewsAt
+        })),
+        token: touchLogin ? createToken(buyer, jwtSecret) : null,
+        user: {
+            id: buyer._id.toString(),
+            firstName: buyer.firstName,
+            lastName: buyer.lastName,
+            email: buyer.email,
+            role: buyer.role
+        }
+    };
+}
+
+async function updateSubscriptionFromStripeEvent({ subscription, CatalogPurchase, status = 'active' }) {
+    const subscriptionId = typeof subscription === 'string' ? subscription : subscription.id;
+    if (!subscriptionId) {
+        return 0;
+    }
+
+    const update = {
+        status,
+        canceledAt: status === 'canceled' ? new Date() : null
+    };
+
+    if (subscription.current_period_end) {
+        update.renewsAt = new Date(subscription.current_period_end * 1000);
+    }
+
+    const result = await CatalogPurchase.updateMany(
+        { providerSubscriptionId: subscriptionId },
+        { $set: update }
+    );
+
+    return result.modifiedCount || 0;
+}
+
+async function handleInvoicePaid({ invoice, CatalogPurchase }) {
+    const subscriptionId =
+        typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+    if (!subscriptionId) {
+        return 0;
+    }
+
+    const paymentIntent = getInvoicePaymentIntent(invoice);
+    const chargeId =
+        typeof paymentIntent?.latest_charge === 'string' ? paymentIntent.latest_charge : '';
+    const update = {
+        status: 'active',
+        canceledAt: null,
+        providerPaymentIntentId: paymentIntent?.id || '',
+        providerChargeId: chargeId
+    };
+    const periodEnd = getInvoicePeriodEnd(invoice);
+    if (periodEnd) {
+        update.renewsAt = periodEnd;
+    }
+
+    const result = await CatalogPurchase.updateMany(
+        { providerSubscriptionId: subscriptionId },
+        { $set: update }
+    );
+
+    return result.modifiedCount || 0;
 }
 
 function summarizeProcessedPurchases(processedPurchases) {
@@ -826,119 +1035,21 @@ function createCatalogRoutes({
                 expand: ['payment_intent', 'subscription.latest_invoice.payment_intent']
             });
 
-            if (session.payment_status !== 'paid') {
-                return res.status(402).json({ error: 'Stripe checkout has not been paid yet' });
-            }
-
-            const pendingCheckout = await PendingCheckout.findOne({ stripeSessionId: session.id });
-            if (!pendingCheckout) {
-                return res.status(404).json({ error: 'Pending checkout was not found' });
-            }
-
-            const items = pendingCheckout.items?.length
-                ? pendingCheckout.items.map((item) => ({
-                    productId: item.productId.toString(),
-                    purchaseType: item.purchaseType
-                }))
-                : decodeCheckoutItems(session.metadata?.items);
-            if (!items.length) {
-                return res.status(400).json({ error: 'Stripe checkout session is missing purchase metadata' });
-            }
-
-            const checkoutItems = await buildCheckoutSelection(items, ApiCatalogItem);
-            let buyer = pendingCheckout.userId ? await User.findById(pendingCheckout.userId) : null;
-            if (!buyer) {
-                buyer = await User.findOne({ email: pendingCheckout.email });
-            }
-
-            if (!buyer) {
-                buyer = await User.create({
-                    firstName: pendingCheckout.firstName,
-                    lastName: pendingCheckout.lastName,
-                    email: pendingCheckout.email,
-                    passwordHash: pendingCheckout.passwordHash,
-                    company: pendingCheckout.company,
-                    role: 'developer',
-                    lastLoginAt: new Date()
-                });
-            } else {
-                buyer.lastLoginAt = new Date();
-                await buyer.save();
-            }
-
-            const paymentIntent = getSessionPaymentIntent(session);
-            const paymentMethodId =
-                typeof paymentIntent?.payment_method === 'string' ? paymentIntent.payment_method : '';
-            const stripeCustomerId =
-                typeof session.customer === 'string'
-                    ? session.customer
-                    : session.customer?.id || pendingCheckout.stripeCustomerId;
-            const chargeId =
-                typeof paymentIntent?.latest_charge === 'string' ? paymentIntent.latest_charge : '';
-            const paymentDetails = buildPaymentDetailsSnapshot(
-                {
-                    ...pendingCheckout.paymentDetails,
-                    billingName: session.customer_details?.name || pendingCheckout.paymentDetails?.billingName,
-                    billingEmail: session.customer_details?.email || pendingCheckout.email,
-                    country: session.customer_details?.address?.country || pendingCheckout.paymentDetails?.country,
-                    region: session.customer_details?.address?.state || pendingCheckout.paymentDetails?.region,
-                    postalCode:
-                        session.customer_details?.address?.postal_code ||
-                        pendingCheckout.paymentDetails?.postalCode
-                },
-                'stripe_checkout',
-            );
-
-            const processedPurchases = await processCheckoutPurchases({
-                userId: buyer._id,
-                checkoutItems,
+            const result = await fulfillStripeCheckoutSession({
+                session,
+                ApiCatalogItem,
                 CatalogPurchase,
-                paymentProvider: 'stripe',
-                paymentMethodType: 'stripe_checkout',
-                providerSessionId: session.id,
-                providerPaymentIntentId: paymentIntent?.id || '',
-                providerChargeId: chargeId,
-                paymentDetails
+                PendingCheckout,
+                User,
+                createPasswordHash,
+                createToken,
+                jwtSecret,
+                touchLogin: true
             });
-            const checkoutSummary = summarizeProcessedPurchases(processedPurchases);
-            await saveDefaultPaymentMethodFromStripe({
-                user: buyer,
-                stripeCustomerId,
-                paymentMethodId
-            });
-            pendingCheckout.userId = buyer._id;
-            pendingCheckout.status = 'completed';
-            await pendingCheckout.save();
 
             logActivity('GET', '/api/catalog/checkout/complete', 200);
 
-            return res.json({
-                success: true,
-                summary: checkoutSummary,
-                payment: {
-                    provider: 'stripe',
-                    paymentMethodType: 'stripe_checkout',
-                    sessionId: session.id,
-                    paymentIntentId: paymentIntent?.id || '',
-                    chargeId,
-                    status: session.payment_status
-                },
-                purchases: processedPurchases.map((purchase) => ({
-                    id: purchase._id.toString(),
-                    orderReference: purchase.orderReference,
-                    purchaseType: purchase.purchaseType,
-                    unitPrice: purchase.unitPrice,
-                    renewsAt: purchase.renewsAt
-                })),
-                token: createToken(buyer, jwtSecret),
-                user: {
-                    id: buyer._id.toString(),
-                    firstName: buyer.firstName,
-                    lastName: buyer.lastName,
-                    email: buyer.email,
-                    role: buyer.role
-                }
-            });
+            return res.json(result);
         } catch (error) {
             return res
                 .status(error.statusCode || 500)
@@ -949,4 +1060,90 @@ function createCatalogRoutes({
     return router;
 }
 
+function createStripeWebhookRoutes({
+    logActivity,
+    ApiCatalogItem,
+    CatalogPurchase,
+    PendingCheckout,
+    User,
+    createPasswordHash,
+    createToken,
+    jwtSecret
+}) {
+    const router = express.Router();
+
+    router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+        if (!stripeClient || !stripeWebhookSecret) {
+            return res.status(503).json({ error: 'Stripe webhook is not configured' });
+        }
+
+        const signature = req.get('stripe-signature');
+        let event;
+
+        try {
+            event = stripeClient.webhooks.constructEvent(req.body, signature, stripeWebhookSecret);
+        } catch (error) {
+            return res.status(400).json({ error: 'Invalid Stripe webhook signature' });
+        }
+
+        try {
+            if (event.type === 'checkout.session.completed') {
+                const eventSession = event.data.object;
+                const session = await stripeClient.checkout.sessions.retrieve(eventSession.id, {
+                    expand: ['payment_intent', 'subscription.latest_invoice.payment_intent']
+                });
+                await fulfillStripeCheckoutSession({
+                    session,
+                    ApiCatalogItem,
+                    CatalogPurchase,
+                    PendingCheckout,
+                    User,
+                    createPasswordHash,
+                    createToken,
+                    jwtSecret,
+                    touchLogin: false
+                });
+            } else if (event.type === 'invoice.paid') {
+                await handleInvoicePaid({
+                    invoice: event.data.object,
+                    CatalogPurchase
+                });
+            } else if (event.type === 'invoice.payment_failed') {
+                const invoice = event.data.object;
+                const subscriptionId =
+                    typeof invoice.subscription === 'string'
+                        ? invoice.subscription
+                        : invoice.subscription?.id;
+                if (subscriptionId) {
+                    await CatalogPurchase.updateMany(
+                        { providerSubscriptionId: subscriptionId },
+                        { $set: { status: 'canceled', canceledAt: new Date() } }
+                    );
+                }
+            } else if (event.type === 'customer.subscription.updated') {
+                await updateSubscriptionFromStripeEvent({
+                    subscription: event.data.object,
+                    CatalogPurchase,
+                    status: event.data.object.status === 'active' ? 'active' : 'canceled'
+                });
+            } else if (event.type === 'customer.subscription.deleted') {
+                await updateSubscriptionFromStripeEvent({
+                    subscription: event.data.object,
+                    CatalogPurchase,
+                    status: 'canceled'
+                });
+            }
+
+            logActivity('POST', '/api/catalog/stripe/webhook', 200);
+            return res.json({ received: true });
+        } catch (error) {
+            console.error('Stripe webhook processing failed:', error);
+            return res.status(500).json({ error: 'Unable to process Stripe webhook' });
+        }
+    });
+
+    return router;
+}
+
 module.exports = createCatalogRoutes;
+module.exports.createStripeWebhookRoutes = createStripeWebhookRoutes;
