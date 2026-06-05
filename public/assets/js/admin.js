@@ -26,6 +26,12 @@ function getHeaders() {
     };
 }
 
+function getAuthOnlyHeaders() {
+    return {
+        Authorization: `Bearer ${window.localStorage.getItem(AUTH_TOKEN_KEY) || ''}`
+    };
+}
+
 async function fetchJson(url, options = {}) {
     const response = await fetch(url, options);
     const payload = await response.json().catch(() => ({}));
@@ -95,6 +101,72 @@ function buildBillingSummary(api) {
     return options
         .map((option) => `${option.shortLabel} ${formatCurrency(option.price)}`)
         .join(' | ');
+}
+
+function formatFileSize(bytes) {
+    const size = Number(bytes || 0);
+
+    if (size >= 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    if (size >= 1024) {
+        return `${Math.round(size / 1024)} KB`;
+    }
+
+    return `${size} B`;
+}
+
+function renderDocumentationFiles(productId, files = []) {
+    const list = document.getElementById('apiDocumentationFileList');
+
+    if (!list) {
+        return;
+    }
+
+    if (!files.length) {
+        list.innerHTML = '<div class="documentation-file-empty">No documentation files attached yet.</div>';
+        return;
+    }
+
+    list.innerHTML = files
+        .map((file) => `
+            <div class="documentation-file-item">
+                <div>
+                    <strong>${escapeHtml(file.originalName || 'Documentation file')}</strong>
+                    <span>${escapeHtml(formatFileSize(file.size))}</span>
+                </div>
+                <button type="button" class="action-btn delete" onclick="deleteDocumentationFile('${productId}', '${file.id}')">Remove</button>
+            </div>
+        `)
+        .join('');
+}
+
+async function uploadDocumentationFiles(productId) {
+    const input = document.getElementById('apiDocumentationFiles');
+    const files = Array.from(input?.files || []);
+
+    if (!productId || !files.length) {
+        return null;
+    }
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append('documentationFiles', file));
+
+    const response = await fetch(`${API_BASE}/apis/${productId}/documentation-files`, {
+        method: 'POST',
+        headers: getAuthOnlyHeaders(),
+        body: formData
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(payload.error || 'Unable to upload documentation files');
+    }
+
+    input.value = '';
+    renderDocumentationFiles(productId, payload.api?.documentationFiles || []);
+    return payload;
 }
 
 function getChargeablePaymentMethods(paymentMethods = []) {
@@ -549,7 +621,7 @@ async function loadAPIs() {
                         <p>${api.description}</p>
                         <div class="api-billing-summary">${buildBillingSummary(api)}</div>
                         <div class="api-card-footer">
-                            <span class="api-feature-count">${api.features.length} features</span>
+                            <span class="api-feature-count">${api.features.length} features | ${(api.documentationFiles || []).length} files</span>
                             <div class="action-buttons">
                                 <button class="action-btn" onclick="editAPI('${api.id}')">Edit</button>
                                 <button class="action-btn delete" onclick="deleteAPI('${api.id}')">Delete</button>
@@ -597,6 +669,8 @@ async function openAPIModal(apiId = null) {
             document.getElementById('apiYearlyPrice').value = api.pricing?.yearlyPrice || 0;
             document.getElementById('apiStatus').value = api.status;
             document.getElementById('apiPublished').checked = api.isPublished !== false;
+            document.getElementById('apiDocumentationFiles').value = '';
+            renderDocumentationFiles(api.id, api.documentationFiles || []);
             syncAPIBillingForm();
         }
     } else {
@@ -609,6 +683,8 @@ async function openAPIModal(apiId = null) {
         document.getElementById('apiRating').value = '4.8';
         document.getElementById('apiReviews').value = '0';
         document.getElementById('apiPublished').checked = true;
+        document.getElementById('apiDocumentationFiles').value = '';
+        renderDocumentationFiles('', []);
     }
 
     modal.classList.add('active');
@@ -618,6 +694,7 @@ function closeAPIModal() {
     document.getElementById('apiModal').classList.remove('active');
     document.getElementById('apiForm').reset();
     resetAPIBillingDefaults();
+    renderDocumentationFiles('', []);
 }
 
 function editAPI(apiId) {
@@ -651,13 +728,20 @@ document.getElementById('apiForm')?.addEventListener('submit', async (event) => 
     try {
         const apiData = buildAPIFormPayload();
 
-        await fetchJson(apiId ? `${API_BASE}/apis/${apiId}` : `${API_BASE}/apis`, {
+        const payload = await fetchJson(apiId ? `${API_BASE}/apis/${apiId}` : `${API_BASE}/apis`, {
             method: apiId ? 'PUT' : 'POST',
             headers: getHeaders(),
             body: JSON.stringify(apiData)
         });
+        const savedProductId = apiId || payload?.api?.id;
+        const uploadedPayload = await uploadDocumentationFiles(savedProductId);
 
-        showNotification(`API/SDK ${apiId ? 'updated' : 'added'} successfully`, 'success');
+        showNotification(
+            uploadedPayload
+                ? `API/SDK ${apiId ? 'updated' : 'added'} and documentation files uploaded`
+                : `API/SDK ${apiId ? 'updated' : 'added'} successfully`,
+            'success'
+        );
         closeAPIModal();
         loadAPIs();
     } catch (error) {
@@ -665,6 +749,26 @@ document.getElementById('apiForm')?.addEventListener('submit', async (event) => 
         showNotification(error.message || 'Failed to save API/SDK', 'error');
     }
 });
+
+async function deleteDocumentationFile(productId, fileId) {
+    if (!productId || !fileId || !confirm('Remove this documentation file from the product?')) {
+        return;
+    }
+
+    try {
+        const payload = await fetchJson(`${API_BASE}/apis/${productId}/documentation-files/${fileId}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+
+        renderDocumentationFiles(productId, payload.api?.documentationFiles || []);
+        showNotification('Documentation file removed', 'success');
+        loadAPIs();
+    } catch (error) {
+        console.error('Error deleting documentation file:', error);
+        showNotification(error.message || 'Failed to remove documentation file', 'error');
+    }
+}
 
 async function editContent(contentType) {
     const editor = document.getElementById('contentEditor');

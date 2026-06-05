@@ -1,6 +1,68 @@
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const { serializeCatalogItem } = require('../utils/serializers');
+
+const docsUploadRoot = path.join(__dirname, '..', 'uploads', 'docs');
+const allowedDocumentationExtensions = new Set(['.pdf', '.md', '.txt', '.zip', '.doc', '.docx']);
+const allowedDocumentationMimeTypes = new Set([
+    'application/pdf',
+    'text/markdown',
+    'text/plain',
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/octet-stream'
+]);
+
+function ensureDocsUploadRoot() {
+    fs.mkdirSync(docsUploadRoot, { recursive: true });
+}
+
+function sanitizeFileName(value) {
+    const parsed = path.parse(String(value || 'document'));
+    const baseName = parsed.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80) || 'document';
+    const extension = parsed.ext.toLowerCase();
+    return `${baseName}${extension}`;
+}
+
+const documentationUpload = multer({
+    storage: multer.diskStorage({
+        destination(req, file, callback) {
+            ensureDocsUploadRoot();
+            callback(null, docsUploadRoot);
+        },
+        filename(req, file, callback) {
+            const safeName = sanitizeFileName(file.originalname);
+            callback(null, `${Date.now()}-${crypto.randomBytes(8).toString('hex')}-${safeName}`);
+        }
+    }),
+    limits: {
+        fileSize: 25 * 1024 * 1024,
+        files: 5
+    },
+    fileFilter(req, file, callback) {
+        const extension = path.extname(file.originalname || '').toLowerCase();
+        const mimeType = String(file.mimetype || '').toLowerCase();
+
+        if (
+            allowedDocumentationExtensions.has(extension) &&
+            allowedDocumentationMimeTypes.has(mimeType)
+        ) {
+            callback(null, true);
+            return;
+        }
+
+        callback(createValidationError('Upload PDF, Markdown, TXT, DOC, DOCX, or ZIP documentation files only'));
+    }
+});
 
 function normalizeFeatureInput(features) {
     return Array.isArray(features)
@@ -488,11 +550,87 @@ function createAdminRoutes({
         }
     });
 
+    router.post('/apis/:id/documentation-files', documentationUpload.array('documentationFiles', 5), async (req, res) => {
+        try {
+            const api = await ApiCatalogItem.findById(req.params.id);
+
+            if (!api) {
+                (req.files || []).forEach((file) => fs.unlink(file.path, () => {}));
+                return res.status(404).json({ error: 'API/SDK not found' });
+            }
+
+            const files = (req.files || []).map((file) => ({
+                originalName: file.originalname,
+                storedName: file.filename,
+                relativePath: path.relative(path.join(__dirname, '..'), file.path).replace(/\\/g, '/'),
+                mimeType: file.mimetype,
+                size: file.size,
+                uploadedAt: new Date()
+            }));
+
+            if (!files.length) {
+                return res.status(400).json({ error: 'Choose at least one documentation file to upload' });
+            }
+
+            api.documentationFiles.push(...files);
+            await api.save();
+
+            return res.status(201).json({
+                success: true,
+                api: serializeCatalogItem(api, { exposeDocumentation: true })
+            });
+        } catch (error) {
+            (req.files || []).forEach((file) => fs.unlink(file.path, () => {}));
+            const statusCode = error.name === 'ValidationError' ? 400 : error.statusCode || 500;
+            return res.status(statusCode).json({
+                error: error.message || 'Unable to upload documentation files'
+            });
+        }
+    });
+
+    router.delete('/apis/:id/documentation-files/:fileId', async (req, res) => {
+        const api = await ApiCatalogItem.findById(req.params.id);
+
+        if (!api) {
+            return res.status(404).json({ error: 'API/SDK not found' });
+        }
+
+        const file = api.documentationFiles.id(req.params.fileId);
+
+        if (!file) {
+            return res.status(404).json({ error: 'Documentation file not found' });
+        }
+
+        const absolutePath = path.resolve(path.join(__dirname, '..'), file.relativePath);
+        const allowedRoot = path.resolve(path.join(__dirname, '..', 'uploads', 'docs'));
+
+        file.deleteOne();
+        await api.save();
+
+        if (absolutePath.startsWith(allowedRoot)) {
+            fs.unlink(absolutePath, () => {});
+        }
+
+        return res.json({
+            success: true,
+            api: serializeCatalogItem(api, { exposeDocumentation: true })
+        });
+    });
+
     router.delete('/apis/:id', async (req, res) => {
         const api = await ApiCatalogItem.findByIdAndDelete(req.params.id);
         if (!api) {
             return res.status(404).json({ error: 'API/SDK not found' });
         }
+
+        (api.documentationFiles || []).forEach((file) => {
+            const absolutePath = path.resolve(path.join(__dirname, '..'), file.relativePath);
+            const allowedRoot = path.resolve(path.join(__dirname, '..', 'uploads', 'docs'));
+
+            if (absolutePath.startsWith(allowedRoot)) {
+                fs.unlink(absolutePath, () => {});
+            }
+        });
 
         return res.json({ success: true });
     });

@@ -61,6 +61,16 @@ const apiCatalogItemSchema = new mongoose.Schema(
             default: '',
             trim: true
         },
+        documentationFiles: [
+            {
+                originalName: { type: String, required: true, trim: true },
+                storedName: { type: String, required: true, trim: true },
+                relativePath: { type: String, required: true, trim: true },
+                mimeType: { type: String, default: '', trim: true },
+                size: { type: Number, default: 0 },
+                uploadedAt: { type: Date, default: Date.now }
+            }
+        ],
         features: {
             type: [String],
             default: []

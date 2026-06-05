@@ -202,6 +202,18 @@ function serializeCatalogItem(item, { ownership = [], exposeDocumentation = fals
         : 0;
     const ownershipTypes = ownership.map((access) => access.purchaseType);
     const hasDocumentationAccess = exposeDocumentation || ownershipTypes.length > 0;
+    const documentationFiles = Array.isArray(item.documentationFiles)
+        ? item.documentationFiles.map((file) => ({
+            id: file._id?.toString() || '',
+            originalName: file.originalName,
+            mimeType: file.mimeType,
+            size: file.size,
+            uploadedAt: file.uploadedAt,
+            downloadUrl: hasDocumentationAccess
+                ? `/api/catalog/docs/${item._id.toString()}/files/${file._id?.toString()}/download`
+                : ''
+        }))
+        : [];
 
     return {
         id: item._id.toString(),
@@ -217,6 +229,7 @@ function serializeCatalogItem(item, { ownership = [], exposeDocumentation = fals
         version: item.version,
         description: item.description,
         documentation: hasDocumentationAccess ? item.documentation : '',
+        documentationFiles: hasDocumentationAccess ? documentationFiles : [],
         documentationLocked: !hasDocumentationAccess,
         features:
             Array.isArray(item.features) && item.features.length ? item.features : defaults.features,

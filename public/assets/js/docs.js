@@ -185,6 +185,41 @@ function renderDocumentationContent(documentation) {
     return html;
 }
 
+function formatFileSize(bytes) {
+    const size = Number(bytes || 0);
+
+    if (size >= 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    if (size >= 1024) {
+        return `${Math.round(size / 1024)} KB`;
+    }
+
+    return `${size} B`;
+}
+
+function renderDocumentationFiles(files = []) {
+    if (!files.length) {
+        return '';
+    }
+
+    return `
+        <div class="documentation-downloads">
+            <h2>Private Files</h2>
+            <div class="documentation-download-grid">
+                ${files.map((file) => `
+                    <a class="documentation-download-card" href="${escapeHtml(file.downloadUrl)}">
+                        <span class="documentation-file-code">DOC</span>
+                        <strong>${escapeHtml(file.originalName || 'Documentation file')}</strong>
+                        <small>${escapeHtml(formatFileSize(file.size))}</small>
+                    </a>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
 function buildProductDocs(product) {
     const anchor = getProductAnchor(product);
     const isApi = product.type === 'api';
@@ -221,6 +256,7 @@ function buildProductDocs(product) {
             ${isApi ? buildApiReference(product) : buildSdkReference(product)}
 
             ${productDocumentation ? `<div class="product-documentation-body">${productDocumentation}</div>` : ''}
+            ${renderDocumentationFiles(product.documentationFiles || [])}
         </section>
     `;
 }

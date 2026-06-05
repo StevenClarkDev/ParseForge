@@ -1,5 +1,7 @@
 const express = require('express');
 const Stripe = require('stripe');
+const fs = require('fs');
+const path = require('path');
 const { serializeCatalogItem } = require('../utils/serializers');
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
@@ -7,6 +9,7 @@ const stripePublishableKey =
     process.env.STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHING_KEY || '';
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 const stripeClient = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
+const docsUploadRoot = path.resolve(path.join(__dirname, '..', 'uploads', 'docs'));
 
 function addDays(date, dayCount) {
     const result = new Date(date);
@@ -703,6 +706,38 @@ function createCatalogRoutes({
                 };
             })
         });
+    });
+
+    router.get('/docs/:productId/files/:fileId/download', authMiddleware, async (req, res) => {
+        const product = await ApiCatalogItem.findById(req.params.productId);
+
+        if (!product || product.isPublished === false) {
+            return res.status(404).json({ error: 'Documentation file not found' });
+        }
+
+        const purchase = await CatalogPurchase.findOne({
+            userId: req.user._id,
+            catalogItemId: product._id,
+            status: 'active'
+        });
+
+        if (!purchase) {
+            return res.status(403).json({ error: 'Purchase this product to download its documentation' });
+        }
+
+        const file = product.documentationFiles.id(req.params.fileId);
+
+        if (!file) {
+            return res.status(404).json({ error: 'Documentation file not found' });
+        }
+
+        const absolutePath = path.resolve(path.join(__dirname, '..'), file.relativePath);
+
+        if (!absolutePath.startsWith(docsUploadRoot) || !fs.existsSync(absolutePath)) {
+            return res.status(404).json({ error: 'Documentation file not found' });
+        }
+
+        return res.download(absolutePath, file.originalName);
     });
 
     router.get('/', optionalAuth, async (req, res) => {
