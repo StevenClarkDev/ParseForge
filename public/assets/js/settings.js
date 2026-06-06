@@ -136,6 +136,10 @@ function getPurchaseAmount(purchase) {
         return Number(purchase.amountTotal) / 100;
     }
 
+    if (purchase.unitPrice != null) {
+        return Number(purchase.unitPrice);
+    }
+
     if (purchase.amount != null) {
         return Number(purchase.amount);
     }
@@ -145,7 +149,16 @@ function getPurchaseAmount(purchase) {
     }
 
     const product = getPurchaseProduct(purchase);
-    return Number(product.price || product.oneTimePrice || product.monthlyPrice || product.yearlyPrice || 0);
+    return Number(
+        product.price
+        || product.pricing?.oneTimePrice
+        || product.pricing?.monthlyPrice
+        || product.pricing?.yearlyPrice
+        || product.oneTimePrice
+        || product.monthlyPrice
+        || product.yearlyPrice
+        || 0
+    );
 }
 
 function populateBilling(items) {
