@@ -49,6 +49,22 @@
             margin-bottom: 2rem;
         }
 
+        .settings-notice {
+            border: 1px solid rgba(29, 233, 182, 0.45);
+            background: rgba(29, 233, 182, 0.08);
+            color: var(--cyber-green);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        .settings-notice[data-type="error"] {
+            border-color: rgba(255, 51, 102, 0.6);
+            background: rgba(255, 51, 102, 0.1);
+            color: #ff6b91;
+        }
+
         .settings-section h3 {
             font-size: 1.25rem;
             margin-bottom: 0.5rem;
@@ -157,6 +173,13 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+        }
+
+        .settings-microcopy {
+            max-width: 26rem;
+            margin: 0;
+            color: var(--text-secondary);
+            line-height: 1.6;
         }
 
         .toggle-switch {
@@ -331,6 +354,17 @@
             color: var(--text-secondary);
         }
 
+        .billing-history td:nth-child(2) {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .billing-history .table-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
         .status-badge {
             padding: 0.25rem 0.75rem;
             border-radius: 12px;
@@ -394,6 +428,12 @@
         .member-role {
             font-size: 0.875rem;
             color: var(--text-secondary);
+        }
+
+        .member-current {
+            color: var(--cyber-green);
+            font-weight: 700;
+            white-space: nowrap;
         }
 
         @media (max-width: 640px) {

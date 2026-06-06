@@ -1,6 +1,6 @@
 const express = require('express');
 
-function createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHash, logActivity }) {
+function createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHash, verifyPassword, logActivity }) {
     const router = express.Router();
 
     function isAdmin(req) {
@@ -100,6 +100,35 @@ function createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHa
 
         logActivity('PUT', `/api/users/${req.params.id}`, 200);
         return res.json(sanitizeUser(user));
+    });
+
+    router.put('/:id/password', authMiddleware, async (req, res) => {
+        if (!canAccessUser(req, req.params.id)) {
+            logActivity('PUT', `/api/users/${req.params.id}/password`, 403);
+            return res.status(403).json({ error: 'You can only update your own password' });
+        }
+
+        const { currentPassword = '', newPassword = '' } = req.body;
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            logActivity('PUT', `/api/users/${req.params.id}/password`, 404);
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (!isAdmin(req) && !verifyPassword(currentPassword, user.passwordHash)) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+
+        if (String(newPassword).length < 8) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+        }
+
+        user.passwordHash = createPasswordHash(newPassword);
+        await user.save();
+
+        logActivity('PUT', `/api/users/${req.params.id}/password`, 200);
+        return res.json({ success: true });
     });
 
     router.delete('/:id', authMiddleware, async (req, res) => {

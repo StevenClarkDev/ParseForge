@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings - ParseForge</title>
     <link rel="stylesheet" href="assets/css/style.css?v=20260605logo3">
-    <link rel="stylesheet" href="assets/css/dashboard.css?v=20260605a">
-    <link rel="stylesheet" href="assets/css/settings.css?v=20260605a">
+    <link rel="stylesheet" href="assets/css/dashboard.css?v=20260606client1">
+    <link rel="stylesheet" href="assets/css/settings.css?v=20260606client1">
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="logo">
@@ -27,35 +26,24 @@
     </nav>
 
     <div class="dashboard-layout">
-        <!-- Sidebar -->
         <aside class="dashboard-sidebar">
             <div class="sidebar-menu">
-                <a href="dashboard.html" class="menu-item">
-                    <span>📊</span> Overview
-                </a>
-                <a href="#" class="menu-item">
-                    <span>🔑</span> API Keys
-                </a>
-                <a href="#" class="menu-item">
-                    <span>📁</span> Projects
-                </a>
-                <a href="#" class="menu-item">
-                    <span>📈</span> Analytics
-                </a>
-                <a href="settings.html" class="menu-item active">
-                    <span>⚙️</span> Settings
-                </a>
+                <a href="dashboard.html#overview" class="menu-item"><span>OV</span> Overview</a>
+                <a href="dashboard.html#purchases" class="menu-item"><span>BY</span> Purchases</a>
+                <a href="dashboard.html#documents" class="menu-item"><span>DC</span> Documents</a>
+                <a href="dashboard.html#billing" class="menu-item"><span>BL</span> Billing</a>
+                <a href="settings.html" class="menu-item active"><span>ST</span> Settings</a>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="dashboard-content settings-content">
             <div class="dashboard-header">
-                <h1>Account Settings</h1>
-                <p>Manage your account preferences and settings</p>
+                <h1>Account settings</h1>
+                <p>Manage the buyer profile, security, billing records, and workspace preferences tied to this account.</p>
             </div>
 
-            <!-- Settings Tabs -->
+            <div id="settingsNotice" class="settings-notice" hidden></div>
+
             <div class="settings-tabs">
                 <button class="settings-tab active" onclick="showTab(this, 'profile')">Profile</button>
                 <button class="settings-tab" onclick="showTab(this, 'account')">Account</button>
@@ -64,279 +52,197 @@
                 <button class="settings-tab" onclick="showTab(this, 'notifications')">Notifications</button>
             </div>
 
-            <!-- Profile Tab -->
             <div id="profile-tab" class="tab-panel active">
                 <div class="settings-section">
-                    <h3>Profile Information</h3>
-                    <p>Update your personal information and profile photo</p>
+                    <h3>Profile information</h3>
+                    <p>Keep the billing and documentation access profile current for your team.</p>
 
                     <div class="profile-photo">
-                        <div class="photo-preview">👤</div>
+                        <div id="profileInitials" class="photo-preview">PF</div>
                         <div class="photo-actions">
-                            <button class="btn-primary btn-sm">Upload Photo</button>
-                            <button class="btn-secondary btn-sm">Remove</button>
+                            <p class="settings-microcopy">Profile images are not required for product access.</p>
                         </div>
                     </div>
 
                     <form onsubmit="event.preventDefault(); saveProfile();">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="firstName">First Name</label>
-                                <input type="text" id="firstName" value="John">
+                                <label for="firstName">First name</label>
+                                <input type="text" id="firstName" autocomplete="given-name">
                             </div>
                             <div class="form-group">
-                                <label for="lastName">Last Name</label>
-                                <input type="text" id="lastName" value="Doe">
+                                <label for="lastName">Last name</label>
+                                <input type="text" id="lastName" autocomplete="family-name">
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <input type="email" id="email" value="john@example.com">
+                            <label for="email">Email address</label>
+                            <input type="email" id="email" autocomplete="email" disabled>
                         </div>
 
                         <div class="form-group">
                             <label for="company">Company</label>
-                            <input type="text" id="company" value="Acme Inc.">
+                            <input type="text" id="company" autocomplete="organization">
                         </div>
 
                         <div class="form-group">
-                            <label for="bio">Bio</label>
-                            <textarea id="bio" rows="4" placeholder="Tell us about yourself...">Full-stack developer passionate about building great APIs.</textarea>
+                            <label for="useCase">Primary use case</label>
+                            <textarea id="useCase" rows="4" placeholder="What are you building with ParseForge?"></textarea>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-secondary">Cancel</button>
-                            <button type="submit" class="btn-primary">Save Changes</button>
+                            <button type="submit" class="btn-primary">Save changes</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Account Tab -->
             <div id="account-tab" class="tab-panel">
                 <div class="settings-section">
-                    <h3>Change Password</h3>
-                    <p>Update your password to keep your account secure</p>
+                    <h3>Password</h3>
+                    <p>Update the password used to access purchased documentation and account history.</p>
 
                     <form onsubmit="event.preventDefault(); changePassword();">
                         <div class="form-group">
-                            <label for="currentPassword">Current Password</label>
-                            <input type="password" id="currentPassword" required>
+                            <label for="currentPassword">Current password</label>
+                            <input type="password" id="currentPassword" autocomplete="current-password" required>
                         </div>
 
-                        <div class="form-group">
-                            <label for="newPassword">New Password</label>
-                            <input type="password" id="newPassword" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirmPassword">Confirm New Password</label>
-                            <input type="password" id="confirmPassword" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newPassword">New password</label>
+                                <input type="password" id="newPassword" autocomplete="new-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm password</label>
+                                <input type="password" id="confirmPassword" autocomplete="new-password" required>
+                            </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-secondary">Cancel</button>
-                            <button type="submit" class="btn-primary">Update Password</button>
+                            <button type="submit" class="btn-primary">Update password</button>
                         </div>
                     </form>
                 </div>
 
                 <div class="settings-section">
-                    <h3>Two-Factor Authentication</h3>
-                    <p>Add an extra layer of security to your account</p>
+                    <h3>Security notifications</h3>
+                    <p>Important account and purchase events stay enabled for buyer safety.</p>
 
                     <div class="preference-item">
                         <div class="preference-info">
-                            <h4>Enable 2FA</h4>
-                            <p>Use authenticator app for additional security</p>
+                            <h4>Account access alerts</h4>
+                            <p>Receive notices for sign-ins, password changes, and critical purchase events.</p>
                         </div>
-                        <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
+                        <div class="toggle-switch active" aria-label="Account access alerts enabled"></div>
                     </div>
-                </div>
-
-                <div class="settings-section danger-zone">
-                    <h3>Danger Zone</h3>
-                    <p>Irreversible actions that will affect your account</p>
-
-                    <button class="btn-danger">Delete Account</button>
                 </div>
             </div>
 
-            <!-- Billing Tab -->
             <div id="billing-tab" class="tab-panel">
                 <div class="subscription-card">
-                    <h3>Product Purchases</h3>
-                    <p>API subscriptions and SDK licenses are managed per product.</p>
+                    <h3>Product billing</h3>
+                    <p>Every purchase is tied directly to a specific API subscription or SDK license.</p>
                     <div class="subscription-features">
-                        <div class="subscription-feature">APIs renew monthly or yearly</div>
-                        <div class="subscription-feature">SDKs are one-time purchases</div>
-                        <div class="subscription-feature">Documentation unlocks per product</div>
-                        <div class="subscription-feature">Purchases appear in your dashboard</div>
+                        <div class="subscription-feature">APIs renew monthly or yearly by product</div>
+                        <div class="subscription-feature">SDK licenses are one-time purchases</div>
+                        <div class="subscription-feature">Documentation unlocks only for owned products</div>
+                        <div class="subscription-feature">Saved cards are reused for future purchases</div>
                     </div>
                     <div class="subscription-actions">
-                        <a href="/marketplace" class="btn-primary">Browse Marketplace</a>
-                        <a href="/dashboard" class="btn-secondary">View Access</a>
+                        <a href="marketplace.html" class="btn-primary">Browse marketplace</a>
+                        <a href="dashboard.html#billing" class="btn-secondary">View dashboard billing</a>
                     </div>
                 </div>
 
                 <div class="settings-section">
-                    <h3>Payment Method</h3>
-                    <p>Manage your payment information</p>
+                    <h3>Saved payment method</h3>
+                    <p>Your payment method is stored securely by Stripe after checkout.</p>
 
                     <div class="preference-item">
                         <div class="preference-info">
-                            <h4>💳 •••• •••• •••• 4242</h4>
-                            <p>Expires 12/2027</p>
+                            <h4 id="savedPaymentTitle">Checking saved payment method...</h4>
+                            <p id="savedPaymentMeta">This updates after the first successful checkout.</p>
                         </div>
-                        <button class="btn-secondary btn-sm">Update</button>
+                        <a href="marketplace.html" class="btn-secondary btn-sm">Buy product</a>
                     </div>
                 </div>
 
                 <div class="settings-section">
-                    <h3>Billing History</h3>
-                    <p>View and download past invoices</p>
+                    <h3>Billing history</h3>
+                    <p>Recent purchases and renewals associated with this account.</p>
 
                     <div class="billing-history">
                         <table>
                             <thead>
                                 <tr>
                                     <th>Date</th>
+                                    <th>Product</th>
                                     <th>Amount</th>
                                     <th>Status</th>
-                                    <th>Invoice</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Mar 1, 2026</td>
-                                    <td>$149.00</td>
-                                    <td><span class="status-badge paid">Paid</span></td>
-                                    <td><a href="#" style="color: var(--primary); text-decoration: none;">Download</a></td>
-                                </tr>
-                                <tr>
-                                    <td>Feb 1, 2026</td>
-                                    <td>$149.00</td>
-                                    <td><span class="status-badge paid">Paid</span></td>
-                                    <td><a href="#" style="color: var(--primary); text-decoration: none;">Download</a></td>
-                                </tr>
-                                <tr>
-                                    <td>Jan 1, 2026</td>
-                                    <td>$149.00</td>
-                                    <td><span class="status-badge paid">Paid</span></td>
-                                    <td><a href="#" style="color: var(--primary); text-decoration: none;">Download</a></td>
-                                </tr>
+                            <tbody id="billingHistoryBody">
+                                <tr><td colspan="4" class="table-empty">Loading billing history...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Team Tab -->
             <div id="team-tab" class="tab-panel">
                 <div class="settings-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                        <div>
-                            <h3 style="margin-bottom: 0;">Team Members</h3>
-                            <p style="margin: 0;">Manage who has access to your account</p>
-                        </div>
-                        <button class="btn-primary">+ Invite Member</button>
-                    </div>
+                    <h3>Workspace member</h3>
+                    <p>This buyer workspace is connected to the account that owns the purchases.</p>
 
                     <div class="team-member">
                         <div class="member-info">
-                            <div class="member-avatar">JD</div>
+                            <div id="memberInitials" class="member-avatar">PF</div>
                             <div>
-                                <h4 style="margin: 0; color: var(--dark);">John Doe</h4>
-                                <p class="member-role">john@example.com • Owner</p>
+                                <h4 id="memberName">Loading account...</h4>
+                                <p id="memberRole" class="member-role">Owner</p>
                             </div>
                         </div>
-                        <span style="color: var(--gray);">You</span>
-                    </div>
-
-                    <div class="team-member">
-                        <div class="member-info">
-                            <div class="member-avatar" style="background: #10b981;">JS</div>
-                            <div>
-                                <h4 style="margin: 0; color: var(--dark);">Jane Smith</h4>
-                                <p class="member-role">jane@example.com • Admin</p>
-                            </div>
-                        </div>
-                        <button class="btn-secondary btn-sm">Manage</button>
-                    </div>
-
-                    <div class="team-member">
-                        <div class="member-info">
-                            <div class="member-avatar" style="background: #f59e0b;">MC</div>
-                            <div>
-                                <h4 style="margin: 0; color: var(--dark);">Mike Chen</h4>
-                                <p class="member-role">mike@example.com • Developer</p>
-                            </div>
-                        </div>
-                        <button class="btn-secondary btn-sm">Manage</button>
+                        <span class="member-current">Current user</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Notifications Tab -->
             <div id="notifications-tab" class="tab-panel">
                 <div class="settings-section">
-                    <h3>Email Notifications</h3>
-                    <p>Choose what emails you want to receive</p>
+                    <h3>Email notifications</h3>
+                    <p>Choose the non-critical product messages your team wants to receive.</p>
 
                     <div class="preference-item">
                         <div class="preference-info">
-                            <h4>Product Updates</h4>
-                            <p>News about product and feature updates</p>
+                            <h4>Product updates</h4>
+                            <p>New APIs, SDK releases, and documentation improvements.</p>
                         </div>
                         <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
                     </div>
 
                     <div class="preference-item">
                         <div class="preference-info">
-                            <h4>Usage Alerts</h4>
-                            <p>Notifications when you approach rate limits</p>
+                            <h4>Renewal reminders</h4>
+                            <p>Upcoming API subscription renewals and payment notices.</p>
                         </div>
                         <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
                     </div>
 
                     <div class="preference-item">
                         <div class="preference-info">
-                            <h4>Security Alerts</h4>
-                            <p>Important security and account notifications</p>
-                        </div>
-                        <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
-                    </div>
-
-                    <div class="preference-item">
-                        <div class="preference-info">
-                            <h4>Marketing Emails</h4>
-                            <p>Tips, tutorials, and case studies</p>
+                            <h4>Release notes</h4>
+                            <p>Version updates for SDKs and API products you own.</p>
                         </div>
                         <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
                     </div>
-                </div>
-
-                <div class="settings-section">
-                    <h3>Webhook Notifications</h3>
-                    <p>Configure webhook endpoints for real-time events</p>
-
-                    <div class="preference-item">
-                        <div class="preference-info">
-                            <h4>https://example.com/webhook</h4>
-                            <p>Receives: user.created, data.updated</p>
-                        </div>
-                        <button class="btn-secondary btn-sm">Edit</button>
-                    </div>
-
-                    <button class="btn-primary btn-sm" style="margin-top: 1rem;">+ Add Webhook</button>
                 </div>
             </div>
         </main>
     </div>
 
     <script src="assets/js/session.js?v=20260406b"></script>
-    <script src="assets/js/settings.js?v=20260605b"></script>
+    <script src="assets/js/settings.js?v=20260606client1"></script>
 </body>
 </html>
-

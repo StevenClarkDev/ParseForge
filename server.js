@@ -99,7 +99,7 @@ app.use('/api/dashboard', createDashboardRoutes({
     ApiCatalogItem
 }));
 app.use('/api/keys', createKeyRoutes({ authMiddleware, ApiKey, createApiKeyValue, hashApiKey, maskKeyFromParts }));
-app.use('/api/users', createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHash, logActivity }));
+app.use('/api/users', createUserRoutes({ authMiddleware, User, sanitizeUser, createPasswordHash, verifyPassword, logActivity }));
 app.use('/api/data', createDataRoutes({ authMiddleware, logActivity }));
 app.use('/api/catalog', createCatalogRoutes({
     authMiddleware,
