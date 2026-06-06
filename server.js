@@ -87,7 +87,12 @@ app.use('/api', rateLimit({
 }));
 app.use(express.static(publicDir, {
     maxAge: isProduction ? '1d' : 0,
-    etag: true
+    etag: true,
+    setHeaders(res, filePath) {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
 }));
 
 app.use('/api/auth', createAuthRoutes({ jwtSecret, authMiddleware }));
