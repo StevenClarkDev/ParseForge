@@ -1,9 +1,9 @@
-(function initializeTheme() {
+(function () {
     const STORAGE_KEY = 'parseforge_theme';
-    const LIGHT_THEME = 'light';
-    const DARK_THEME = 'dark';
+    const LIGHT = 'light';
+    const DARK = 'dark';
 
-    function getStoredTheme() {
+    function getSavedTheme() {
         try {
             return window.localStorage.getItem(STORAGE_KEY);
         } catch (error) {
@@ -11,7 +11,7 @@
         }
     }
 
-    function persistTheme(theme) {
+    function saveTheme(theme) {
         try {
             window.localStorage.setItem(STORAGE_KEY, theme);
         } catch (error) {
@@ -22,89 +22,60 @@
     }
 
     function normalizeTheme(theme) {
-        return theme === DARK_THEME ? DARK_THEME : LIGHT_THEME;
+        return theme === DARK ? DARK : LIGHT;
     }
 
-    function getCurrentTheme() {
-        return normalizeTheme(document.documentElement.getAttribute('data-theme'));
-    }
+    function updateToggleButtons(theme) {
+        const nextTheme = theme === DARK ? LIGHT : DARK;
 
-    function updateButtons(theme) {
-        const isDark = theme === DARK_THEME;
         document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-            button.setAttribute('aria-pressed', String(isDark));
-            button.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+            button.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
+            button.setAttribute('aria-pressed', String(theme === DARK));
+            button.title = `Switch to ${nextTheme} theme`;
 
             const icon = button.querySelector('[data-theme-toggle-icon]');
-            const label = button.querySelector('[data-theme-toggle-label]');
-
             if (icon) {
-                icon.textContent = isDark ? 'L' : 'D';
-            }
-
-            if (label) {
-                label.textContent = isDark ? 'Light' : 'Dark';
+                icon.textContent = theme === DARK ? 'L' : 'D';
             }
         });
     }
 
-    function applyTheme(theme, shouldPersist) {
+    function applyTheme(theme, persist) {
         const nextTheme = normalizeTheme(theme);
         document.documentElement.setAttribute('data-theme', nextTheme);
         document.documentElement.style.colorScheme = nextTheme;
 
-        if (shouldPersist) {
-            persistTheme(nextTheme);
+        if (persist) {
+            saveTheme(nextTheme);
         }
 
-        updateButtons(nextTheme);
+        updateToggleButtons(nextTheme);
     }
 
-    function createThemeButton(extraClass) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = `theme-toggle${extraClass ? ` ${extraClass}` : ''}`;
-        button.setAttribute('data-theme-toggle', '');
-        button.innerHTML = '<span data-theme-toggle-icon aria-hidden="true"></span><span data-theme-toggle-label></span>';
-        button.addEventListener('click', () => {
-            applyTheme(getCurrentTheme() === DARK_THEME ? LIGHT_THEME : DARK_THEME, true);
-        });
-        return button;
-    }
-
-    function mountThemeToggle() {
-        const navLinks = document.querySelector('.nav-links');
-
-        if (navLinks && !navLinks.querySelector('[data-theme-toggle]')) {
-            const item = document.createElement('li');
-            item.className = 'theme-toggle-item';
-            item.appendChild(createThemeButton());
-            navLinks.insertBefore(item, navLinks.firstChild);
-        }
-
-        if (navLinks) {
-            const floatingToggle = document.querySelector('.theme-toggle-floating');
-            if (floatingToggle) {
-                floatingToggle.remove();
-            }
-        } else if (!document.querySelector('.theme-toggle-floating')) {
-            document.body.appendChild(createThemeButton('theme-toggle-floating'));
-        }
-
-        updateButtons(getCurrentTheme());
-    }
-
-    applyTheme(getStoredTheme(), false);
+    applyTheme(getSavedTheme(), false);
 
     window.ParseForgeTheme = {
         applyTheme,
-        mountThemeToggle
+        updateToggleButtons
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
-        mountThemeToggle();
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-theme-toggle]');
+        if (!button) {
+            return;
+        }
 
-        const observer = new MutationObserver(() => mountThemeToggle());
+        const currentTheme = normalizeTheme(document.documentElement.getAttribute('data-theme'));
+        applyTheme(currentTheme === DARK ? LIGHT : DARK, true);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateToggleButtons(normalizeTheme(document.documentElement.getAttribute('data-theme')));
+
+        const observer = new MutationObserver(() => {
+            updateToggleButtons(normalizeTheme(document.documentElement.getAttribute('data-theme')));
+        });
+
         observer.observe(document.body, { childList: true, subtree: true });
     });
 }());
