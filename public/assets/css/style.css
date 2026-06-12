@@ -1192,6 +1192,16 @@ html[data-theme="light"] .navbar {
     box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
 }
 
+html[data-theme="light"] .btn-primary {
+    background: linear-gradient(135deg, #0052cc 0%, #0066ff 100%);
+    color: #ffffff !important;
+}
+
+html[data-theme="light"] .btn-secondary {
+    color: #0052cc;
+    border-color: rgba(0, 82, 204, 0.35);
+}
+
 html[data-theme="light"] .nav-links {
     background: transparent;
 }
@@ -1221,6 +1231,34 @@ html[data-theme="light"] .signal-bar-item div span,
 html[data-theme="light"] .hero-spotlight li,
 html[data-theme="light"] .collection-card p {
     color: var(--text-secondary);
+}
+
+html[data-theme="light"] .trust-chip strong,
+html[data-theme="light"] .signal-bar-item strong {
+    color: var(--text-primary);
+}
+
+html[data-theme="light"] .trust-chip span,
+html[data-theme="light"] .signal-bar-item span {
+    color: var(--text-secondary);
+}
+
+html[data-theme="light"] .signal-pill,
+html[data-theme="light"] .status-badge,
+html[data-theme="light"] .method.post {
+    color: #00684d;
+}
+
+html[data-theme="light"] .method.get {
+    color: #174ea6;
+}
+
+html[data-theme="light"] .method.put {
+    color: #9a4f00;
+}
+
+html[data-theme="light"] .method.delete {
+    color: #b42318;
 }
 
 html[data-theme="light"] .footer {
@@ -1289,6 +1327,10 @@ html[data-theme="light"] .footer-section p {
 }
 
 .theme-toggle[aria-pressed="true"] .theme-toggle-thumb {
+    left: 17px;
+}
+
+.theme-toggle.is-light .theme-toggle-thumb {
     left: 17px;
 }
 

@@ -11,6 +11,11 @@
     overflow-y: auto;
 }
 
+html[data-theme="light"] .playground-sidebar {
+    background: rgba(255, 255, 255, 0.9);
+    border-right-color: var(--border-glass);
+}
+
 .sidebar-section {
     margin-bottom: 2rem;
 }

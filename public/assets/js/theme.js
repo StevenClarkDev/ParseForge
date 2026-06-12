@@ -23,17 +23,25 @@
         document.documentElement.style.colorScheme = isLight ? 'light' : 'dark';
 
         document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-            button.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
-            button.setAttribute('aria-pressed', String(isLight));
+            const ariaLabel = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+            const ariaPressed = String(isLight);
+            if (button.getAttribute('aria-label') !== ariaLabel) {
+                button.setAttribute('aria-label', ariaLabel);
+            }
+            if (button.getAttribute('aria-pressed') !== ariaPressed) {
+                button.setAttribute('aria-pressed', ariaPressed);
+            }
+            button.classList.toggle('is-light', isLight);
 
             const label = button.querySelector('[data-theme-label]');
-            if (label) {
-                label.textContent = isLight ? 'Dark' : 'Light';
+            const labelText = isLight ? 'Dark' : 'Light';
+            if (label && label.textContent !== labelText) {
+                label.textContent = labelText;
             }
         });
     }
 
-    setTheme(getSavedTheme() === 'light' ? 'light' : 'dark');
+    setTheme(getSavedTheme() === 'dark' ? 'dark' : 'light');
 
     document.addEventListener('click', (event) => {
         const button = event.target.closest('[data-theme-toggle]');
@@ -48,5 +56,11 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         setTheme(document.documentElement.getAttribute('data-theme'));
+
+        const observer = new MutationObserver(() => {
+            setTheme(document.documentElement.getAttribute('data-theme'));
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
     });
 }());
