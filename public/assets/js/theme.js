@@ -23,9 +23,13 @@
         document.documentElement.style.colorScheme = isLight ? 'light' : 'dark';
 
         document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-            button.textContent = isLight ? 'Dark' : 'Light';
             button.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
             button.setAttribute('aria-pressed', String(isLight));
+
+            const label = button.querySelector('[data-theme-label]');
+            if (label) {
+                label.textContent = isLight ? 'Dark' : 'Light';
+            }
         });
     }
 
